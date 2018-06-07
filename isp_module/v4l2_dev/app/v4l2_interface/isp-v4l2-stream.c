@@ -903,6 +903,25 @@ int isp_v4l2_stream_on( isp_v4l2_stream_t *pstream )
 
     LOG( LOG_DEBUG, "[Stream#%d] called", pstream->stream_id );
 
+#if V4L2_FRAME_ID_SYNC
+    {
+        unsigned long sflags;
+
+        spin_lock_irqsave( &sync_slock, sflags );
+#if ISP_HAS_RAW_CB
+        if ( pstream->stream_type == V4L2_STREAM_TYPE_RAW ) {
+            LOG( LOG_DEBUG, "[Stream#%d] releasing RAW sync flag", pstream->stream_id );
+            sync_flag &= ~SYNC_FLAG_RAW;
+        } else
+#endif
+        {
+            LOG( LOG_DEBUG, "[Stream#%d] releasing FR  sync flag", pstream->stream_id );
+            sync_flag &= ~SYNC_FLAG_FR;
+        }
+        spin_unlock_irqrestore( &sync_slock, sflags );
+    }
+#endif
+
 /* for now, we need memcpy */
 #if ISP_HAS_META_CB
     if ( pstream->stream_type != V4L2_STREAM_TYPE_META )
