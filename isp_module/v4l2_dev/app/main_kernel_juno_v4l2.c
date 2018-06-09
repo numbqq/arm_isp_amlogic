@@ -240,16 +240,29 @@ exit:
     return 0;
 }
 
+#if ISP_HAS_DS1
+extern uint8_t *ds1_isp_kaddr;
+extern void config_ds_setting(void);
+#endif
 static ssize_t isp_reg_read(struct device *dev,
                             struct device_attribute *attr, char *buf)
 {
+#if ISP_HAS_DS1
+    config_ds_setting();
+    mdelay(200);
+#endif
+
     write_to_file("/media/lk-a.raw", isp_kaddr, 0x7e9000);
     write_to_file("/media/lk-b.raw", isp_kaddr + (0x7e9000 << 1), 0x7e9000);
+
+#if ISP_HAS_DS1
+    write_to_file("/media/lk-ds1-a.raw", ds1_isp_kaddr, 0x7e9000);
+    write_to_file("/media/lk-ds1-b.raw", ds1_isp_kaddr + (0x7e9000 << 1), 0x7e9000);
+#endif
 
     LOG( LOG_ERR, "LIKE-read\n" );
     return 0;
 }
-
 
 static ssize_t isp_reg_write(struct device *dev,
                              struct device_attribute *attr, char const *buf, size_t size)

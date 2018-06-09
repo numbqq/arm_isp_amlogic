@@ -33,6 +33,17 @@ static tframe_t sensor0_v4l2_fr_frames[ ] = {
  {{ FW_OUTPUT_FORMAT, 0, 0, 0x62400000, 7680, 0x7e9000 } , { FW_OUTPUT_FORMAT_SECONDARY, 0, 0, 0x62400000, 7680, 0x1fa400 }}
 } ;
 
+#if ISP_HAS_DS1
+static tframe_t sensor0_v4l2_ds1_frames[ ] = {
+ {{ FW_OUTPUT_FORMAT, 0, 0, 0x62400000, 7680, 0x7e9000 } , { FW_OUTPUT_FORMAT_SECONDARY, 0, 0, 0xcdfe600, 7680, 0x1fa400 }},
+ {{ FW_OUTPUT_FORMAT, 0, 0, 0x62400000, 7680, 0x7e9000 } , { FW_OUTPUT_FORMAT_SECONDARY, 0, 0, 0xfbc5200, 7680, 0x1fa400 }},
+ {{ FW_OUTPUT_FORMAT, 0, 0, 0x62400000, 7680, 0x7e9000 } , { FW_OUTPUT_FORMAT_SECONDARY, 0, 0, 0x1298be00, 7680, 0x1fa400 }},
+ {{ FW_OUTPUT_FORMAT, 0, 0, 0x62400000, 7680, 0x7e9000 } , { FW_OUTPUT_FORMAT_SECONDARY, 0, 0, 0xcdfe600, 7680, 0x1fa400 }},
+ {{ FW_OUTPUT_FORMAT, 0, 0, 0x62400000, 7680, 0x7e9000 } , { FW_OUTPUT_FORMAT_SECONDARY, 0, 0, 0xfbc5200, 7680, 0x1fa400 }},
+ {{ FW_OUTPUT_FORMAT, 0, 0, 0x62400000, 7680, 0x7e9000 } , { FW_OUTPUT_FORMAT_SECONDARY, 0, 0, 0x1298be00, 7680, 0x1fa400 }}
+} ;
+#endif
+
 static aframe_t sensor0_v4l2_temper_frames[ ] = {
  { FW_OUTPUT_FORMAT, 0, 0, 0x72400000, 7680, 0x7e9000 },
  { FW_OUTPUT_FORMAT, 0, 0, 0x72400000, 7680, 0x7e9000 }
@@ -66,6 +77,15 @@ static acamera_settings settings[ FIRMWARE_CONTEXT_NUMBER ] = {    {
         .callback_meta = callback_meta,
         .fr_frames = sensor0_v4l2_fr_frames,
         .fr_frames_number = sizeof( sensor0_v4l2_fr_frames ) / sizeof( tframe_t ),
+#if ISP_HAS_DS1
+        .ds1_frames = sensor0_v4l2_ds1_frames,
+        .ds1_frames_number = sizeof( sensor0_v4l2_ds1_frames ) / sizeof( tframe_t ),
+        .callback_ds1 = callback_ds1,
+#else
+        .ds1_frames = NULL,
+        .ds1_frames_number = 0,
+        .callback_ds1 = NULL,
+#endif
         .callback_fr = callback_fr,
     }
 } ;

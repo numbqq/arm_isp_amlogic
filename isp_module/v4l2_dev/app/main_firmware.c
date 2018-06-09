@@ -115,6 +115,35 @@ static int connection_thread( void *foo )
 }
 #endif
 
+#if ISP_HAS_DS1
+uint8_t *ds1_isp_kaddr = NULL;
+void config_ds_setting(void)
+{
+    u32 ret_val = -1;
+    acamera_command( TIMAGE, IMAGE_RESIZE_TYPE_ID, SCALER, COMMAND_SET, &ret_val );
+    if (ret_val) {
+        pr_info("config_ds_setting IMAGE_RESIZE_TYPE_ID ret%d\n", ret_val);
+        return;
+    }
+    ret_val = -1;
+    acamera_command( TIMAGE, IMAGE_RESIZE_WIDTH_ID, 1280, COMMAND_SET, &ret_val );
+    if (ret_val) {
+        pr_info("config_ds_setting IMAGE_RESIZE_WIDTH_ID ret%d\n", ret_val);
+        return;
+    }
+    ret_val = -1;
+    acamera_command( TIMAGE, IMAGE_RESIZE_HEIGHT_ID, 720, COMMAND_SET, &ret_val );
+    if (ret_val) {
+        pr_info("config_ds_setting IMAGE_RESIZE_HEIGHT_ID ret%d\n", ret_val);
+        return;
+    }
+    ret_val = -1;
+    acamera_command( TIMAGE, IMAGE_RESIZE_ENABLE_ID, (SCALER<<16) + RUN, COMMAND_SET, &ret_val );
+    if (ret_val)
+        pr_info("config_ds_setting IMAGE_RESIZE_ENABLE_ID ret%d\n", ret_val);
+}
+#endif
+
 static int isp_fw_process( void *data )
 {
     LOG( LOG_CRIT, "isp_fw_process start" );
@@ -174,13 +203,31 @@ void isp_update_setting(void)
         frame[i].primary.address = paddr;
         frame[i].secondary.address = paddr + frame[i].secondary.size;//frame[i].primary.size;
 
-        pr_err("[%d]:p 0x%x, s 0x%x\n", i,
+        pr_err("fr [%d]:p 0x%x, s 0x%x\n", i,
             frame[i].primary.address, frame[i].secondary.address);
 
         paddr = frame[i].primary.address + frame[i].primary.size;// + frame[i].secondary.size;
 
-        pr_err("paddr: 0x%llx\n", paddr);
+        pr_err("fr paddr: 0x%llx\n", paddr);
     }
+
+#if ISP_HAS_DS1
+    frame = settings[0].ds1_frames;
+    fr_num = settings[0].ds1_frames_number;
+    ds1_isp_kaddr = (paddr - isp_paddr) + isp_kaddr;
+    for (i = 0; i < fr_num; i++) {
+        frame[i].primary.address = paddr;
+        frame[i].secondary.address = paddr + frame[i].secondary.size;//frame[i].primary.size;
+
+        pr_err("ds1 [%d]:p 0x%x, s 0x%x\n", i,
+            frame[i].primary.address, frame[i].secondary.address);
+
+        paddr = frame[i].primary.address + frame[i].primary.size;// + frame[i].secondary.size;
+
+        pr_err("ds1 paddr: 0x%llx\n", paddr);
+    }
+    pr_err("fr %p, ds1:%p\n", isp_kaddr, ds1_isp_kaddr);
+#endif
 
     aframe = settings[0].temper_frames;
     fr_num = settings[0].temper_frames_number;

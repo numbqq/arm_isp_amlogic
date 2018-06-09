@@ -136,6 +136,9 @@ typedef struct _acamera_settings {
     tframe_t* fr_frames ;                                              // frames to be used for the fr output dma writer
     uint32_t  fr_frames_number ;                                       // number of frames for frame fr pipe
     void (*callback_fr)( uint32_t ctx_num, tframe_t * tframe, const metadata_t *metadata ) ;  // callback on every FR output frame. can be null if there is no fr output
+    tframe_t* ds1_frames ;                                              // frames to be used for the ds1 dma writer
+    uint32_t  ds1_frames_number ;                                       // number of frames for ds1 pipe
+    void (*callback_ds1)( uint32_t ctx_num, tframe_t * tframe, const metadata_t *metadata ) ; // callback on every DS1 output frame. can be null if there is no ds1 output
 } acamera_settings ;
 
 #endif
