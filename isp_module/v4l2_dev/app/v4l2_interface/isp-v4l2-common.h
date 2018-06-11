@@ -63,6 +63,7 @@ typedef struct _isp_v4l2_sensor_info {
 /* custom v4l2 formats */
 #define ISP_V4L2_PIX_FMT_META v4l2_fourcc( 'M', 'E', 'T', 'A' )        /* META */
 #define ISP_V4L2_PIX_FMT_ARGB2101010 v4l2_fourcc( 'B', 'A', '3', '0' ) /* ARGB2101010 */
+#define ISP_V4L2_PIX_FMT_RGB24			v4l2_fourcc('B', 'G', 'R', '0')
 
 
 /* custom v4l2 events */

@@ -22,7 +22,6 @@
 #include <linux/module.h>
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-async.h>
-#include <linux/clk.h>
 #include "acamera_logger.h"
 #include "acamera_sensor_api.h"
 #include "soc_sensor.h"
@@ -30,8 +29,6 @@
 #include "acamera_command_api.h"
 #include "acamera_firmware_settings.h"
 #include "runtime_initialization_settings.h"
-
-#define I2C_ENABLE 	(0xff634754)
 
 #define ARGS_TO_PTR( arg ) ( (struct soc_sensor_ioctl_args *)arg )
 
@@ -55,19 +52,6 @@ static int camera_log_status( struct v4l2_subdev *sd )
     return 0;
 }
 
-uint32_t write_reg(uint32_t val, unsigned long addr)
-{
-    void __iomem *io_addr;
-
-    io_addr = ioremap_nocache(addr, 8);
-    if (io_addr == NULL) {
-        LOG(LOG_ERR, "%s: Failed to ioremap addr\n", __func__);
-        return -1;
-    }
-    __raw_writel(val, io_addr);
-    iounmap(io_addr);
-    return 0;
-}
 
 static int camera_init( struct v4l2_subdev *sd, u32 val )
 {
@@ -302,27 +286,12 @@ static const struct v4l2_subdev_ops camera_ops = {
 static int32_t soc_sensor_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
-    struct clk *clk_mclk_0;
-    u32 isp_clk_rate = 0;
 
     v4l2_subdev_init( &soc_sensor, &camera_ops );
 
     soc_sensor.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 
     snprintf( soc_sensor.name, V4L2_SUBDEV_NAME_SIZE, "%s", V4L2_SOC_SENSOR_NAME );
-
-    write_reg(0xc000000, I2C_ENABLE);
-
-    clk_mclk_0 = devm_clk_get(&pdev->dev, "g12a_24m");
-    if (IS_ERR(clk_mclk_0)) {
-        pr_err("cannot get clock\n");
-        clk_mclk_0 = NULL;
-        return -1;
-    }
-
-    clk_prepare_enable(clk_mclk_0);
-    isp_clk_rate = clk_get_rate(clk_mclk_0);
-    pr_err("isp init clock is %d MHZ\n",isp_clk_rate/1000000);
 
     soc_sensor.dev = &pdev->dev;
     rc = v4l2_async_register_subdev( &soc_sensor );
@@ -339,11 +308,6 @@ static int soc_sensor_remove( struct platform_device *pdev )
     return 0;
 }
 
-static const struct of_device_id sensor_dt_match[] = {
-    {.compatible = "soc, sensor"},
-    {}};
-
-
 static struct platform_device *soc_sensor_dev;
 
 static struct platform_driver soc_sensor_driver = {
@@ -352,7 +316,6 @@ static struct platform_driver soc_sensor_driver = {
     .driver = {
         .name = "soc_sensor_v4l2",
         .owner = THIS_MODULE,
-        .of_match_table = sensor_dt_match,
     },
 };
 

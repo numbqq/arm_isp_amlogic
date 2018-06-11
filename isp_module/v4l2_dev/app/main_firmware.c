@@ -172,12 +172,12 @@ void isp_update_setting(void)
 
     for (i = 0; i < fr_num; i++) {
         frame[i].primary.address = paddr;
-        frame[i].secondary.address = paddr + frame[i].secondary.size;//frame[i].primary.size;
+        frame[i].secondary.address = 0x00;//paddr + frame[i].primary.size;
 
         pr_err("[%d]:p 0x%x, s 0x%x\n", i,
             frame[i].primary.address, frame[i].secondary.address);
 
-        paddr = frame[i].primary.address + frame[i].primary.size;// + frame[i].secondary.size;
+        paddr = frame[i].primary.address + frame[i].primary.size;
 
         pr_err("paddr: 0x%llx\n", paddr);
     }
