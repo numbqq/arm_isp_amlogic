@@ -155,7 +155,7 @@ static struct i2c_driver arm_sensor_i2c_driver = {
 	.probe  = arm_sensor_i2c_probe,
 	.remove = arm_sensor_i2c_remove,
 	.driver = {
-		.name = "arm,i2c-sensor",
+		.name = "arm, i2c-sensor",
 		.owner = THIS_MODULE,
 		.of_match_table = arm_sensor_i2c_dt_match,
 	},

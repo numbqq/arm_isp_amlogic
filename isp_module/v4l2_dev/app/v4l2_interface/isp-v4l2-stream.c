@@ -94,7 +94,7 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
         },
         {
             .name = "ARGB24",
-            .fourcc = ISP_V4L2_PIX_FMT_RGB24,
+            .fourcc = V4L2_PIX_FMT_RGB24,
             .depth = 24,
             .is_yuv = false,
             .planes = 1,
@@ -426,8 +426,11 @@ void callback_fr( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadata
     pstream->last_frame_id = metadata->frame_id;
 
 #if V4L2_FRAME_ID_SYNC
-    if ( sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_FR ) < 0 )
+    rc = sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_FR );
+    if ( rc  < 0 ) {
+        LOG( LOG_DEBUG, "sync_frame on ctx %d (errno = %d)", ctx_num, rc );
         return;
+    }
 #endif
 
     frame_mgr = &pstream->frame_mgr;
@@ -742,7 +745,6 @@ static int isp_v4l2_stream_copy_thread( void *data )
 #endif
     struct vb2_buffer *vb;
     unsigned int buf_index;
-    int rtn = -1;
 
     if ( !pstream ) {
         LOG( LOG_ERR, "Null stream passed" );
@@ -782,20 +784,16 @@ static int isp_v4l2_stream_copy_thread( void *data )
         spin_unlock_irqrestore( &frame_mgr->frame_slock, flags );
 
         /* try to get an active buffer from vb2 queue  */
+        pbuf = NULL;
         spin_lock( &pstream->slock );
-        rtn = list_empty( &pstream->stream_buffer_list );
-        if ( !rtn ) {
+        if ( !list_empty( &pstream->stream_buffer_list ) ) {
             pbuf = list_entry( pstream->stream_buffer_list.next, isp_v4l2_buffer_t, list );
             list_del( &pbuf->list );
         }
         spin_unlock( &pstream->slock );
 
-        if (rtn) {
-            pr_err("%s: list empty\n", __func__);
-            continue;
-        }
-
         if ( !pbuf ) {
+            frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
             LOG( LOG_INFO, "[Stream#%d] No active buffer to fill, continue.", pstream->stream_id );
             continue;
         }
@@ -885,7 +883,6 @@ static int isp_v4l2_stream_copy_thread( void *data )
             LOG( LOG_ERR, "[Stream#%d] invalid stream type %d", pstream->stream_id, pstream->stream_type );
             break;
         }
-
         tframe = NULL;
     }
 
@@ -1200,7 +1197,7 @@ int isp_v4l2_stream_set_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
     switch ( f->fmt.pix.pixelformat ) {
         case V4L2_PIX_FMT_RGB32:
         case ISP_V4L2_PIX_FMT_ARGB2101010:
-        case ISP_V4L2_PIX_FMT_RGB24:
+        case V4L2_PIX_FMT_RGB24:
         case V4L2_PIX_FMT_NV12:
             pstream->stream_type = V4L2_STREAM_TYPE_FR;
             break;
