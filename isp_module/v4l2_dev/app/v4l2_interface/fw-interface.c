@@ -459,7 +459,7 @@ int fw_intf_stream_set_output_format( isp_v4l2_stream_type_t streamType, uint32_
         break;
 #endif
 #ifdef DMA_FORMAT_RGB24
-    case ISP_V4L2_PIX_FMT_RGB24:
+    case V4L2_PIX_FMT_RGB24:
         value = RGB24;
         break;
 #endif

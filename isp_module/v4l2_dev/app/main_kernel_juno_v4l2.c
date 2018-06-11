@@ -32,13 +32,14 @@
 #include <asm/signal.h>
 #include <linux/of_reserved_mem.h>
 #include <linux/delay.h>
-
+#include <linux/clk.h>
 #include "acamera_firmware_config.h"
 #include "acamera_logger.h"
 #include "system_hw_io.h"
 #include <linux/fs.h>
 #include <asm/uaccess.h>
 #include <asm/unaligned.h>
+#include <linux/delay.h>
 
 
 #define LOG_CONTEXT "[ ACamera ]"
@@ -46,6 +47,13 @@
 #define ISP_V4L2_MODULE_NAME "isp-v4l2"
 
 #include "v4l2_interface/isp-v4l2.h"
+
+#define AO_RTI_GEN_PWR_SLEEP0 	(0xff800000 + 0x3a * 4)
+#define AO_RTI_GEN_PWR_ISO0		(0xff800000 + 0x3b * 4)
+#define HHI_ISP_MEM_PD_REG0		(0xff63c000 + 0x45 * 4)
+#define HHI_ISP_MEM_PD_REG1		(0xff63c000 + 0x46 * 4)
+#define HHI_CSI_PHY_CNTL0		(0xff630000 + 0xd3 * 4)
+#define HHI_CSI_PHY_CNTL1		(0xff630000 + 0x114 * 4)
 
 extern uint8_t *isp_kaddr;
 extern resource_size_t isp_paddr;
@@ -315,16 +323,61 @@ static ssize_t isp_reg_write(struct device *dev,
     return size;
 }
 
+uint32_t write_reg(uint32_t val, unsigned long addr)
+{
+    void __iomem *io_addr;
+    io_addr = ioremap_nocache(addr, 8);
+    if (io_addr == NULL) {
+        LOG(LOG_ERR, "%s: Failed to ioremap addr\n", __func__);
+        return -1;
+    }
+    __raw_writel(val, io_addr);
+    iounmap(io_addr);
+    return 0;
+}
+
+uint32_t read_reg(unsigned long addr)
+{
+    void __iomem *io_addr;
+    uint32_t ret;
+
+    io_addr = ioremap_nocache(addr, 8);
+    if (io_addr == NULL) {
+        LOG(LOG_ERR, "%s: Failed to ioremap addr\n", __func__);
+        return -1;
+    }
+    ret = (uint32_t)__raw_readl(io_addr);
+    iounmap(io_addr);
+    return ret;
+}
+
+uint32_t isp_power_on(void)
+{
+    uint32_t orig, tmp;
+
+    orig = read_reg(AO_RTI_GEN_PWR_SLEEP0);			//AO_PWR_SLEEP0
+    tmp = orig & 0xfff3ffff;						//set bit[18-19]=0
+    write_reg(tmp, AO_RTI_GEN_PWR_SLEEP0);
+    mdelay(5);
+    orig = read_reg(AO_RTI_GEN_PWR_ISO0);			//AO_PWR_ISO0
+    tmp = orig & 0xfff3ffff;						//set bit[18-19]=0
+    write_reg(tmp, AO_RTI_GEN_PWR_ISO0);
+
+    write_reg(0x0, HHI_ISP_MEM_PD_REG0);			//MEM_PD_REG0 set 0
+    write_reg(0x0, HHI_ISP_MEM_PD_REG1);			//MEM_PD_REG1 set 0
+    write_reg(0x5b446585, HHI_CSI_PHY_CNTL0);		//HHI_CSI_PHY_CNTL0
+    write_reg(0x803f4321, HHI_CSI_PHY_CNTL1);		//HHI_CSI_PHY_CNTL1
+    return 0;
+}
 
 static DEVICE_ATTR(isp_reg, S_IRUGO | S_IWUSR, isp_reg_read, isp_reg_write);
 
-static void __iomem *reset_addr;
 static void hw_reset(bool reset)
 {
+    void __iomem *reset_addr;
     uint32_t val;
 
-    if (!reset_addr)
-        reset_addr = ioremap_nocache(0xffd01090, 8);;//ioremap_nocache(0xffd01014, 8);
+    reset_addr = ioremap_nocache(0xffd01090, 8);;//ioremap_nocache(0xffd01014, 8);
     if (reset_addr == NULL) {
         LOG(LOG_ERR, "%s: Failed to ioremap\n", __func__);
         return;
@@ -344,6 +397,7 @@ static void hw_reset(bool reset)
 
     mdelay(5);
 
+    iounmap(reset_addr);
     if (reset)
         LOG(LOG_INFO, "%s:reset isp\n", __func__);
     else
@@ -354,8 +408,10 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
     struct resource *isp_res;
-
-    hw_reset(true);
+    struct clk* clk_isp_0;
+    struct clk* clk_mipi_0;
+    u32 isp_clk_rate = 666666667;
+    u32 isp_mipi_rate = 200000000;
 
     // Initialize irq
     isp_res = platform_get_resource_byname( pdev,
@@ -380,7 +436,34 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
         LOG( LOG_ERR, "Error, no IORESOURCE_MEM DT!\n" );
     }
 
+    isp_power_on();
+
     of_reserved_mem_device_init(&(pdev->dev));
+
+
+    clk_isp_0 = devm_clk_get(&pdev->dev, "cts_mipi_isp_clk_composite");
+    if (IS_ERR(clk_isp_0)) {
+        LOG(LOG_ERR, "cannot get clock\n");
+        clk_isp_0 = NULL;
+        return -1;
+    }
+    clk_set_rate(clk_isp_0, isp_clk_rate);
+    clk_prepare_enable(clk_isp_0);
+    isp_clk_rate = clk_get_rate(clk_isp_0);
+    LOG(LOG_ERR, "isp init clock is %d MHZ\n", isp_clk_rate / 1000000);
+
+    clk_mipi_0 = devm_clk_get(&pdev->dev, "cts_mipi_csi_phy_clk0_composite");
+    if (IS_ERR(clk_mipi_0)) {
+        LOG(LOG_ERR, "cannot get clock\n");
+        clk_mipi_0 = NULL;
+        return -1;
+    }
+    clk_set_rate(clk_mipi_0, isp_mipi_rate);
+    clk_prepare_enable(clk_mipi_0);
+    isp_mipi_rate = clk_get_rate(clk_mipi_0);
+    LOG(LOG_ERR, "mipi init clock is %d MHZ\n",isp_mipi_rate/1000000);
+
+    hw_reset(true);
 
     system_interrupts_init();
 
@@ -447,7 +530,7 @@ free_res:
 
 static int isp_platform_remove(struct platform_device *pdev)
 {
-	return 0;
+    return 0;
 }
 
 static const struct of_device_id isp_dt_match[] = {
