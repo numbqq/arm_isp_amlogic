@@ -618,7 +618,7 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
     /* store dev pointer to destroy later and find stream */
     g_isp_v4l2_dev = dev;
 
-    isp_cma_alloc(pdev, 128);
+    isp_cma_alloc(pdev, 256);
 
     /* initialize isp */
     rc = fw_intf_isp_init();

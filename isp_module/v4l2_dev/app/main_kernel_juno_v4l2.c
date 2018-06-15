@@ -252,8 +252,8 @@ static ssize_t isp_reg_read(struct device *dev,
     mdelay(200);
 #endif
 
-    write_to_file("/media/lk-a.raw", isp_kaddr, 0x7e9000);
-    write_to_file("/media/lk-b.raw", isp_kaddr + (0x7e9000 << 1), 0x7e9000);
+    write_to_file("/media/lk-a.raw", isp_kaddr, 0x1fa4000);
+    write_to_file("/media/lk-b.raw", isp_kaddr + 0x1fa4000, 0x1fa4000);
 
 #if ISP_HAS_DS1
     write_to_file("/media/lk-ds1-a.raw", ds1_isp_kaddr, 0x7e9000);

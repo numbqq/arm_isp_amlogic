@@ -46,7 +46,7 @@
 static void start_streaming( void *ctx );
 static void stop_streaming( void *ctx );
 
-static sensor_mode_t supported_modes[3] = {
+static sensor_mode_t supported_modes[5] = {
     {
         .wdr_mode = WDR_MODE_LINEAR,
         .fps = 5 * 256,
@@ -54,6 +54,8 @@ static sensor_mode_t supported_modes[3] = {
         .resolution.height = 720,
         .bits = 10,
         .exposures = 1,
+        .bps = 250,
+        .lanes = 2,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -62,6 +64,18 @@ static sensor_mode_t supported_modes[3] = {
         .resolution.height = 1080,
         .bits = 10,
         .exposures = 1,
+        .bps = 800,
+        .lanes = 4,
+    },
+    {
+        .wdr_mode = WDR_MODE_LINEAR,
+        .fps = 60 * 256,
+        .resolution.width = 1920,
+        .resolution.height = 1080,
+        .bits = 10,
+        .exposures = 1,
+        .bps = 1440,
+        .lanes = 4,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -70,6 +84,18 @@ static sensor_mode_t supported_modes[3] = {
         .resolution.height = 2160,
         .bits = 10,
         .exposures = 1,
+        .bps = 800,
+        .lanes = 4,
+    },
+    {
+        .wdr_mode = WDR_MODE_LINEAR,
+        .fps = 60 * 256,
+        .resolution.width = 3840,
+        .resolution.height = 2160,
+        .bits = 10,
+        .exposures = 1,
+        .bps = 1440,
+        .lanes = 4,
     }
 };
 
@@ -236,6 +262,46 @@ static void sensor_update( void *ctx )
     p_ctx->again[1] = p_ctx->again[0];
 }
 
+static void sensor_set_iface(sensor_mode_t *mode)
+{
+    am_mipi_info_t mipi_info;
+    struct am_adap_info info;
+
+    if (mode == NULL) {
+        LOG(LOG_ERR, "Error input param\n");
+        return;
+    }
+
+    memset(&mipi_info, 0, sizeof(mipi_info));
+    mipi_info.lanes = mode->lanes;
+    mipi_info.ui_val = 1000 / mode->bps;
+
+    if ((1000 % mode->bps) != 0)
+        mipi_info.ui_val += 1;
+
+    am_mipi_init(&mipi_info);
+
+    switch (mode->bits) {
+    case 10:
+        info.fmt = AM_RAW10;
+        break;
+    case 12:
+        info.fmt = AM_RAW12;
+        break;
+    default :
+        info.fmt = AM_RAW10;
+        break;
+    }
+
+    info.img.width = mode->resolution.width;
+    info.img.height = mode->resolution.height;
+    info.path = PATH0;
+    info.mode = DIR_MODE;
+    am_adap_set_info(&info);
+    am_adap_init();
+    am_adap_start(0);
+}
+
 static void sensor_set_mode( void *ctx, uint8_t mode )
 {
     sensor_context_t *p_ctx = ctx;
@@ -246,14 +312,10 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     system_timer_usleep( 10000 );
     sensor_hw_reset_disable();
     system_timer_usleep( 10000 );
-	LOG(LOG_ERR, "%s: LIKE:wdr mode 0x%08x\n", __func__, param->modes_table[mode].wdr_mode);
-	return;
     switch ( param->modes_table[mode].wdr_mode ) {
     case WDR_MODE_LINEAR:
-		LOG(LOG_ERR, "%s: load setting\n", __func__);
-        //sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_OV08A10_SEQUENCE_DEFAULT_INIT );
-		sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_OV08A10_SEQUENCE_DEFAULT_PREVIEW );
-        p_ctx->s_fps = 30;
+        sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, mode + 1 );
+        p_ctx->s_fps = param->modes_table[mode].fps;
         p_ctx->again_delay = 2;
         param->integration_time_apply_delay = 2;
         param->isp_exposure_channel_delay = 0;
@@ -277,68 +339,27 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
         break;
     }
 
-    if ( param->modes_table[mode].fps == 25 * 256 ) {
-        acamera_sbus_write_u8( p_sbus, 0x0218, 0x46 );
-        acamera_sbus_write_u8( p_sbus, 0x0219, 0x05 );
-        p_ctx->s_fps = 25;
-        p_ctx->vmax = 1350;
-    } else {
-        p_ctx->vmax = 1125;
-    }
-
-    uint8_t r = ( acamera_sbus_read_u8( p_sbus, 0x8207 ) >> 4 );
-    switch ( r ) {
-    case 0: // HD 1080p
-        param->active.width = 1920;
-        param->active.height = 1080;
-        p_ctx->max_L = 3936;
-        p_ctx->max_M = 486 + 30;
-        p_ctx->max_S = 60 - 30;
-        p_ctx->rhs1 = 523;
-        p_ctx->rhs2 = 560;
-        // p_ctx->vmax=1125;
-        break;
-    case 1:
-        param->active.width = 1280;
-        param->active.height = 720;
-        p_ctx->max_L = 2502;
-        p_ctx->max_M = 420;
-        p_ctx->max_S = 60;
-        p_ctx->rhs1 = 427;
-        p_ctx->rhs2 = 494;
-        break;
-    default:
-        // 4- Window cropping from 1080p, Other- Prohibited
-        //LOG(LOG_CRIT,"WRONG IMAGE SIZE CONFIG");
-        break;
-    }
-
-    // Enable syncs on XHS and XVS pins
-    //acamera_sbus_write_u8(p_sbus, 0x024b, 0x0A);
-
-    acamera_sbus_write_u8( p_sbus, 0x0231, ( p_ctx->rhs1 >> 8 ) & 0xFF );
-    acamera_sbus_write_u8( p_sbus, 0x0230, ( p_ctx->rhs1 >> 0 ) & 0xFF );
-    acamera_sbus_write_u8( p_sbus, 0x0235, ( p_ctx->rhs2 >> 8 ) & 0xFF );
-    acamera_sbus_write_u8( p_sbus, 0x0234, ( p_ctx->rhs2 >> 0 ) & 0xFF );
-    param->total.width = ( (uint16_t)acamera_sbus_read_u8( p_sbus, 0x821D ) << 8 ) | acamera_sbus_read_u8( p_sbus, 0x821C );
+    param->active.width = param->modes_table[mode].resolution.width;
+    param->active.height = param->modes_table[mode].resolution.height;
+    param->total.width = param->active.width + 32;
     param->lines_per_second = p_ctx->pixel_clock / param->total.width;
-    param->total.height = (uint16_t)p_ctx->vmax;
+    param->total.height = param->active.height + 40;
     param->pixels_per_line = param->total.width;
     param->integration_time_min = SENSOR_MIN_INTEGRATION_TIME;
     if ( param->modes_table[mode].wdr_mode == WDR_MODE_LINEAR ) {
         param->integration_time_limit = SENSOR_MAX_INTEGRATION_TIME_LIMIT;
-        param->integration_time_max = p_ctx->vmax - 2;
+        param->integration_time_max = param->total.height - 2;
     } else {
         param->integration_time_limit = 60;
         param->integration_time_max = 60;
         if ( param->modes_table[mode].exposures == 2 ) {
-            param->integration_time_long_max = ( p_ctx->vmax << 1 ) - 256;
+            param->integration_time_long_max = ( param->total.height << 1 ) - 256;
             param->lines_per_second = param->lines_per_second >> 1;
             p_ctx->frame = p_ctx->vmax << 1;
         } else {
-            param->integration_time_long_max = ( p_ctx->vmax << 2 ) - 256;
+            param->integration_time_long_max = ( param->total.height << 1 ) - 256;
             param->lines_per_second = param->lines_per_second >> 2;
-            p_ctx->frame = p_ctx->vmax << 2;
+            p_ctx->frame = param->total.height << 2;
         }
     }
     param->sensor_exp_number = param->modes_table[mode].exposures;
@@ -346,12 +367,9 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     param->mode = mode;
     p_ctx->wdr_mode = param->modes_table[mode].wdr_mode;
 
-    if ( p_ctx->streaming_flg )
-        start_streaming( ctx );
-    else
-        stop_streaming( ctx );
+    sensor_set_iface(&param->modes_table[mode]);
 
-	LOG( LOG_CRIT, "RES:%dx%d\n", (int)param->active.width, (int)param->active.height );
+    LOG( LOG_CRIT, "Mode %d, RES:%dx%d\n", mode, (int)param->active.width, (int)param->active.height );
 }
 
 static uint16_t sensor_get_id( void *ctx )
@@ -425,9 +443,7 @@ void sensor_deinit_ov08a10( void *ctx )
 void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl )
 {
     // Local sensor data structure
-	am_mipi_info_t mipi_info;
 	static sensor_context_t s_ctx;
-	struct am_adap_info info;
 	*ctx = &s_ctx;
 
 	s_ctx.sbus.mask = SBUS_MASK_ADDR_16BITS |
@@ -438,10 +454,6 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl )
 	acamera_sbus_init(&s_ctx.sbus, sbus_i2c);
 
 	sensor_get_id(&s_ctx);
-
-	//sensor_load_sequence( &s_ctx.sbus, 1, p_sensor_data, SENSOR_OV08A10_SEQUENCE_DEFAULT_PREVIEW );
-	sensor_load_sequence( &s_ctx.sbus, 1, p_sensor_data, SENSOR_OV08A10_SEQUENCE_SECOND_PREVIEW);
-	LOG(LOG_ERR, "Load setting %d\n", SENSOR_OV08A10_SEQUENCE_DEFAULT_PREVIEW);
 
 	s_ctx.address = SENSOR_DEV_ADDRESS;
 	s_ctx.seq_width = 1;
@@ -461,10 +473,6 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl )
 	s_ctx.param.isp_exposure_channel_delay = 0;
 	s_ctx.param.modes_table = supported_modes;
 	s_ctx.param.modes_num = array_size( supported_modes );
-	s_ctx.param.active.width = 1920;
-	s_ctx.param.active.height = 1080;
-	s_ctx.param.total.width = 3840;
-	s_ctx.param.total.height = 2160;
 	s_ctx.param.sensor_ctx = &s_ctx;
 
 	ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
@@ -485,23 +493,6 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl )
 	system_timer_usleep( 1000 ); // reset at least 1 ms
 	sensor_hw_reset_disable();
 	system_timer_usleep( 1000 );
-
-	memset(&mipi_info, 0, sizeof(mipi_info));
-	mipi_info.lanes = 4;
-	mipi_info.ui_val = 2;
-
-	am_mipi_init(&mipi_info);
-
-	info.fmt = AM_RAW10;
-	info.img.width = s_ctx.param.active.width;
-	info.img.height = s_ctx.param.active.height;
-	info.path = PATH0;
-	info.mode = DIR_MODE;
-	am_adap_set_info(&info);
-	am_adap_init();
-	am_adap_start(0);
-
-	//start_streaming(&s_ctx);
 
 	LOG(LOG_ERR, "%s: Success subdev init\n", __func__);
 }

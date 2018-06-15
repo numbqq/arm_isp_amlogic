@@ -123,7 +123,7 @@ void sensor_hw_init( sensor_fsm_ptr_t p_fsm )
     acamera_init_calibrations( ACAMERA_FSM2CTX_PTR( p_fsm ) );
 
     // 4). update new settings to ISP if necessary
-    acamera_update_cur_settings_to_isp();
+    //acamera_update_cur_settings_to_isp();
 }
 
 void sensor_configure_buffers( sensor_fsm_ptr_t p_fsm )
@@ -181,6 +181,8 @@ void sensor_sw_init( sensor_fsm_ptr_t p_fsm )
     acamera_isp_input_port_mode_request_write( p_fsm->cmn.isp_base, ACAMERA_ISP_INPUT_PORT_MODE_REQUEST_SAFE_START );
 
     sensor_update_black( p_fsm );
+
+    acamera_update_cur_settings_to_isp();
 
     LOG( LOG_NOTICE, "Sensor initialization is complete, ID 0x%04X resolution %dx%d", p_fsm->ctrl.get_id( p_fsm->sensor_ctx ), param->active.width, param->active.height );
 }

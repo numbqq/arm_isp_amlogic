@@ -40,6 +40,8 @@ typedef struct _sensor_mode_t {
     image_resolution_t resolution; // Resolution of the mode
     uint8_t exposures;             // How many exposures this mode supports
     uint8_t bits;                  // Bit depth of data from sensor
+    uint8_t lanes;					//Lane count
+    uint32_t bps;					//Bps of lane,unit is Mega
 } sensor_mode_t;
 
 
