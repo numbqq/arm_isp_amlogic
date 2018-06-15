@@ -31,8 +31,6 @@
 #include "acamera_firmware_settings.h"
 #include "runtime_initialization_settings.h"
 
-#define I2C_ENABLE 	(0xff634754)
-
 #define ARGS_TO_PTR( arg ) ( (struct soc_sensor_ioctl_args *)arg )
 
 
@@ -310,8 +308,6 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
     soc_sensor.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 
     snprintf( soc_sensor.name, V4L2_SUBDEV_NAME_SIZE, "%s", V4L2_SOC_SENSOR_NAME );
-
-    write_reg(0xc000000, I2C_ENABLE);
 
     clk_mclk_0 = devm_clk_get(&pdev->dev, "g12a_24m");
     if (IS_ERR(clk_mclk_0)) {
