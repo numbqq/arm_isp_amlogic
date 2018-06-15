@@ -83,11 +83,12 @@
 #define MIPI_ADAPT_ALIG_CNTL6       0xD8
 #define MIPI_ADAPT_ALIG_CNTL7       0xDC
 #define MIPI_ADAPT_ALIG_CNTL8       0xE0
-#define MIPI_ADAPT_IRQ_MASK0        0x180
-#define MIPI_ADAPT_IRQ_PENDING0  0x184
+#define MIPI_OTHER_CNTL0           0x100
+#define MIPI_ADAPT_IRQ_MASK0       0x180
+#define MIPI_ADAPT_IRQ_PENDING0    0x184
 
 #define MISC_BASE                  0x00005000
-#define MIPI_OTHER_CNTL0           0x100
+
 
 typedef enum {
 	FRONTEND_IO,
@@ -144,6 +145,7 @@ int am_adap_start(int idx);
 int am_adap_reset(void);
 int am_adap_deinit(void);
 void am_adap_set_info(struct am_adap_info *info);
+int am_adap_get_depth(void);
 
 #endif
 

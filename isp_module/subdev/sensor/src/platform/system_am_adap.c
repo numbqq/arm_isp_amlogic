@@ -37,6 +37,7 @@
 #include <linux/fs.h>
 #include <linux/uaccess.h>
 #include <linux/io.h>
+#include <linux/kfifo.h>
 
 
 #define AM_ADAPTER_NAME "amlogic, isp-adapter"
@@ -45,19 +46,41 @@
 struct am_adap *g_adap = NULL;
 struct am_adap_info para;
 
+struct kfifo adapt_fifo;
+
 /*we allocte from CMA*/
 static uint8_t *isp_cma_mem = NULL;
 static struct page *cma_pages = NULL;
 static resource_size_t buffer_start;
 
-#define CMA_ALLOC_SIZE 16
+#define CMA_ALLOC_SIZE 48
+#define DDR_BUF_SIZE 4
 
-static resource_size_t ddr_buf[2];
+static resource_size_t ddr_buf[DDR_BUF_SIZE];
 
-
-static int ft_buf_index;
-static int rd_buf_index;
+static resource_size_t dump_buf_addr;
+static int dump_width;
+static int dump_height;
 static int dump_flag;
+
+static int control_flag;
+static int wbuf_index;
+
+static int ceil_upper(int val, int mod)
+{
+	int ret = 0;
+	if ((val == 0) || (mod == 0)) {
+		pr_info("input a invalid value.\n");
+		return 0;
+	} else {
+		if ((val % mod) == 0) {
+			ret = (val/mod);
+		} else {
+			ret = ((val/mod) + 1);
+		}
+	}
+	return ret;
+}
 
 int  write_to_file (char *buf, int size)
 {
@@ -66,23 +89,20 @@ int  write_to_file (char *buf, int size)
 	mm_segment_t old_fs;
 	loff_t pos = 0;
 	int nwrite = 0;
-	static int offset = 0;
-	static int first_flag=0;
+	int offset = 0;
 
 	/* change to KERNEL_DS address limit */
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 
-	if (first_flag == 0) {
-		first_flag=1;
-		/* open file to write */
-		fp = filp_open("/media/adapt_img.raw", O_WRONLY|O_CREAT, 0640);
-		if (!fp) {
-		   printk("%s: open file error\n", __FUNCTION__);
-		   ret = -1;
-		   goto exit;
-		}
+	/* open file to write */
+	fp = filp_open("/media/adapt_img.raw", O_WRONLY|O_CREAT, 0640);
+	if (!fp) {
+	   printk("%s: open file error\n", __FUNCTION__);
+	   ret = -1;
+	   goto exit;
 	}
+
 	pos=(unsigned long)offset;
 
 	/* Write buf to file */
@@ -102,8 +122,14 @@ static ssize_t adapt_frame_read(struct device *dev,
 {
 	pr_info("adapt-read.\n");
 	uint8_t buf1[100];
-	buf = phys_to_virt(ddr_buf[ft_buf_index]);//ft_buf_index^1
-	write_to_file(buf, 2880 * 1080);
+	uint32_t size;
+	int depth;
+	depth = am_adap_get_depth();
+	if (dump_buf_addr != 0)
+		buf = phys_to_virt(dump_buf_addr);
+	size = ((dump_width * depth)/8) * dump_height;
+	pr_info("dump width = %d, height = %d, size = %d\n", dump_width, dump_height, size);
+	write_to_file(buf, size);
 	return sprintf(buf1,"dump flag:%d", dump_flag);
 }
 
@@ -172,15 +198,6 @@ int am_adap_parse_dt(struct device_node *node)
 		goto irq_error;
 	}
 
-	t_adap->f_end_irq = irq;
-	pr_info("%s:rs info: irq: %d\n", __func__, t_adap->f_end_irq);
-
-	irq = irq_of_parse_and_map(node, 1);
-	if (irq <= 0) {
-		pr_err("%s:Error get adap irq\n", __func__);
-		goto irq_error;
-	}
-
 	t_adap->rd_irq = irq;
 	pr_info("%s:rs info: irq: %d\n", __func__, t_adap->rd_irq);
 
@@ -229,6 +246,7 @@ static inline void update_wr_reg_bits(unsigned int reg,
 			break;
 		case MISC_IO:
 			base = g_adap->base_addr + MISC_BASE;
+			break;
 		default:
 			pr_err("adapter error io type.\n");
 			base = NULL;
@@ -269,6 +287,7 @@ static inline void mipi_adap_reg_wr(int addr, adap_io_type_t io_type, uint32_t v
 			break;
 		case MISC_IO:
 			base_reg_addr = g_adap->base_addr + MISC_BASE;
+			break;
 		default:
 			pr_err("adapter error io type.\n");
 			base_reg_addr = NULL;
@@ -282,10 +301,44 @@ static inline void mipi_adap_reg_wr(int addr, adap_io_type_t io_type, uint32_t v
 
 }
 
+static inline void mipi_adap_reg_rd(int addr, adap_io_type_t io_type, uint32_t *val)
+{
+	void __iomem *base_reg_addr = NULL;
+	void __iomem *reg_addr = NULL;
+	switch (io_type) {
+		case FRONTEND_IO:
+			base_reg_addr = g_adap->base_addr + FRONTEND_BASE;
+			break;
+		case RD_IO:
+			base_reg_addr = g_adap->base_addr + RD_BASE;
+			break;
+		case PIXEL_IO:
+			base_reg_addr = g_adap->base_addr + PIXEL_BASE;
+			break;
+		case ALIGN_IO:
+			base_reg_addr = g_adap->base_addr + ALIGN_BASE;
+			break;
+		case MISC_IO:
+			base_reg_addr = g_adap->base_addr + MISC_BASE;
+		default:
+			pr_err("%s, adapter error io type.\n", __func__);
+			base_reg_addr = NULL;
+			break;
+	}
+	if (base_reg_addr != NULL) {
+		reg_addr = base_reg_addr + addr;
+		*val = readl(reg_addr);
+	} else
+		pr_err("mipi adapter read register failed.\n");
+
+}
+
 void am_adap_set_info(struct am_adap_info *info)
 {
 	memset(&para, 0, sizeof(struct am_adap_info));
 	memcpy(&para, info, sizeof(struct am_adap_info));
+	dump_width = para.img.width;
+	dump_height = para.img.height;
 }
 
 int am_adap_get_depth(void)
@@ -319,8 +372,8 @@ int am_adap_get_depth(void)
 int am_disable_irq(void)
 {
 	//disable irq mask
-	mipi_adap_reg_wr(CSI2_INTERRUPT_CTRL_STAT, FRONTEND_IO, 0x00000000);
-	mipi_adap_reg_wr(MIPI_ADAPT_IRQ_MASK0, ALIGN_IO, 0x00000000);
+	mipi_adap_reg_wr(CSI2_INTERRUPT_CTRL_STAT, FRONTEND_IO, 0xffffffff);
+	mipi_adap_reg_wr(MIPI_ADAPT_IRQ_MASK0, ALIGN_IO, 0xffffffff);
 
 	return 0;
 }
@@ -332,14 +385,13 @@ int am_disable_irq(void)
 void am_adap_frontend_start(void)
 {
 	int width = para.img.width;
-	//int height = para.img.height;
 	int depth, val;
 	depth = am_adap_get_depth();
 	if (!depth)
 		pr_err("is not supported data format.");
 	adap_wr_reg_bits(CSI2_GEN_CTRL0, FRONTEND_IO, 1, 0, 1);
-	pr_info("frontend_start width = %d\n", width);
-	val = round_up(((((width * depth)/8)/16)), 16);
+	val = ceil_upper((width * depth), (8 * 16));
+	pr_info("frontend : width = %d, val = %d\n", width, val);
 	adap_wr_reg_bits(CSI2_DDR_STRIDE_PIX, FRONTEND_IO, val, 4, 28);
 }
 
@@ -364,7 +416,7 @@ int am_adap_frontend_init(void)
 
 	if (para.mode == DDR_MODE) {
 		//config ddr_buf[0] address
-		adap_wr_reg_bits(CSI2_DDR_START_PIX, FRONTEND_IO, ddr_buf[ft_buf_index], 0, 32);
+		adap_wr_reg_bits(CSI2_DDR_START_PIX, FRONTEND_IO, ddr_buf[wbuf_index], 0, 32);
 	}
 
 	//set frame size
@@ -385,7 +437,8 @@ void am_adap_reader_start(void)
 	int width = para.img.width;
 	int val, depth;
 	depth = am_adap_get_depth();
-	val = round_up(((((width * depth)/8)/16)), 16);
+	val = ceil_upper((width * depth), (8 * 16));
+	pr_info("reader : width = %d, val = %d\n", width, val);
 	adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL1, RD_IO, height, 16, 13);
 	adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL1, RD_IO, val, 0, 10);
 	adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 1, 0, 1);
@@ -398,8 +451,7 @@ int am_adap_reader_init(void)
 		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 0xb5000005);
 	} else if (para.mode == DDR_MODE) {
 		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD0_CNTL1, RD_IO, 0x02d00078);
-		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, ddr_buf[rd_buf_index], 0, 32);//ddr mode config frame address
-		rd_buf_index++;
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, ddr_buf[wbuf_index], 0, 32);//ddr mode config frame address
 		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 0x70000001);
 	} else {
 		pr_err("%s, Not supported Mode.\n", __func__);
@@ -449,9 +501,9 @@ void am_adap_alig_start(void)
 	int width, height, alig_width, alig_height, val;
 	width = para.img.width;
 	height = para.img.height;
-	alig_width = width + 40; //hblank > 32 cycles
+	alig_width = width * 2; //hblank > 32 cycles
 	alig_height = height + 60; //vblank > 48 lines
-	val = width + 35; // width < val < alig_width
+	val = alig_width - 100; // width < val < alig_width
 	adap_wr_reg_bits(MIPI_ADAPT_ALIG_CNTL0, ALIGN_IO, alig_width, 0, 13);
 	adap_wr_reg_bits(MIPI_ADAPT_ALIG_CNTL0, ALIGN_IO, alig_height, 16, 13);
 	adap_wr_reg_bits(MIPI_ADAPT_ALIG_CNTL1, ALIGN_IO, width, 16, 13);
@@ -478,7 +530,7 @@ int am_adap_alig_init(void)
 	} else {
 		pr_err("Not supported mode.\n");
 	}
-	mipi_adap_reg_wr(MIPI_ADAPT_IRQ_MASK0, ALIGN_IO, 0x00002100);
+	mipi_adap_reg_wr(MIPI_ADAPT_IRQ_MASK0, ALIGN_IO, 0x00082000);
 
 	return 0;
 }
@@ -487,15 +539,45 @@ int am_adap_alig_init(void)
  *========================AM ADAPTER INTERFACE==========================
  */
 
-static irqreturn_t adpapter_rd_isr(int irq, void *data)
+static irqreturn_t adpapter_isr(int irq, void *para)
 {
-	mipi_adap_reg_wr(MIPI_ADAPT_IRQ_PENDING0, ALIGN_BASE, 0xffffffff);
-	return IRQ_HANDLED;
-}
+	uint32_t data = 0;
+	resource_size_t val = 0;
+	int kfifo_ret = 0;
+	mipi_adap_reg_rd(MIPI_ADAPT_IRQ_PENDING0, ALIGN_IO, &data);
 
-static irqreturn_t adpapter_wr_isr(int irq, void *data)
-{
-	mipi_adap_reg_wr(CSI2_INTERRUPT_CTRL_STAT, FRONTEND_IO, 0xffffffff);
+	if (data & (1 << 19)) {
+		adap_wr_reg_bits(MIPI_ADAPT_IRQ_PENDING0, ALIGN_IO, 1, 19, 1); //clear write done irq
+		if (dump_flag) {
+			mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x10000);
+			dump_buf_addr = ddr_buf[wbuf_index];
+		}
+
+		if (!kfifo_is_full(&adapt_fifo)) {
+			kfifo_in(&adapt_fifo, &ddr_buf[wbuf_index], sizeof(resource_size_t));
+		} else {
+			pr_info("adapt fifo is full .\n");
+		}
+
+		wbuf_index++;
+		wbuf_index = wbuf_index % DDR_BUF_SIZE;
+		val = ddr_buf[wbuf_index];
+		adap_wr_reg_bits(CSI2_DDR_START_PIX, FRONTEND_IO, val, 0, 32);
+
+		if ((!control_flag) && (kfifo_len(&adapt_fifo) > 0)) {
+			adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 1, 31, 1);
+			kfifo_ret = kfifo_out(&adapt_fifo, &val, sizeof(val));
+			control_flag = 1;
+		}
+
+	}
+
+	if (data & (1 << 13)) {
+		adap_wr_reg_bits(MIPI_ADAPT_IRQ_PENDING0, ALIGN_IO, 1, 13, 1);
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, ddr_buf[wbuf_index], 0, 32);
+		control_flag = 0;
+	}
+
 	return IRQ_HANDLED;
 }
 
@@ -523,30 +605,45 @@ int am_adap_init(void)
 {
 	int ret = 0;
 	int depth;
+	int i;
+	int kfifo_ret = 0;
+	resource_size_t temp_buf;
+
+	control_flag = 0;
+	wbuf_index = 0;
+	dump_flag = 0;
+
 	if (para.mode == DDR_MODE) {
 		am_adap_alloc_mem();
 		depth = am_adap_get_depth();
 		if (cma_pages) {
 			//note important : ddr_buf[0] and ddr_buf[1] address should alignment 16 byte
 			ddr_buf[0] = buffer_start;
-			ddr_buf[1] = buffer_start + ((para.img.width) * (para.img.height) * depth)/8;
-			ddr_buf[1] = (ddr_buf[1] + 15)&(~15);
+			temp_buf = ddr_buf[0];
+			for (i = 1; i < DDR_BUF_SIZE; i++) {
+				ddr_buf[i] = temp_buf + ((para.img.width) * (para.img.height) * depth)/8;
+				ddr_buf[i] = (ddr_buf[i] + 15) & (~15);
+				temp_buf = ddr_buf[i];
+				pr_info("ddr_buf %d = %llx.\n", i, ddr_buf[i]);
+			}
 		}
 	}
 
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 1);
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0);
 	if (para.mode == DDR_MODE) {
-		ret = request_irq(g_adap->f_end_irq, &adpapter_wr_isr, IRQF_SHARED | IRQF_TRIGGER_HIGH,
-		"frontend-irq", (void *)g_adap);
-		pr_info("zgs : frontend irq = %d, ret = %d\n", g_adap->f_end_irq, ret);
-		ret = request_irq(g_adap->rd_irq, &adpapter_rd_isr, IRQF_SHARED | IRQF_TRIGGER_HIGH,
-		"ddr_rd-irq", (void *)g_adap);
-		pr_info("zgs : ddr_rd irq = %d, ret = %d\n", g_adap->rd_irq, ret);
+		ret = request_irq(g_adap->rd_irq, &adpapter_isr, IRQF_SHARED | IRQF_TRIGGER_HIGH,
+		"adapter-irq", (void *)g_adap);
+		pr_info("adapter irq = %d, ret = %d\n", g_adap->rd_irq, ret);
 	}
 
-	ft_buf_index = 0;
-	rd_buf_index = 0;
+	if (para.mode == DDR_MODE) {
+		kfifo_ret = kfifo_alloc(&adapt_fifo, PAGE_SIZE, GFP_KERNEL);
+		if (kfifo_ret) {
+			pr_info("alloc adapter fifo failed.\n");
+			return kfifo_ret;
+		}
+	}
 
 	//default setting : 720p & RAW12
 	am_adap_frontend_init();
@@ -554,7 +651,6 @@ int am_adap_init(void)
 	am_adap_pixel_init();
 	am_adap_alig_init();
 
-	dump_flag = 0;
 	return 0;
 }
 
@@ -589,21 +685,24 @@ int am_adap_reset(void)
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x0);
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x6);
 	mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f0000);
-	mipi_adap_reg_wr(MIPI_OTHER_CNTL0, MISC_IO, 0xf0000000);
-	mipi_adap_reg_wr(MIPI_OTHER_CNTL0, MISC_IO, 0x00000000);
+	mipi_adap_reg_wr(MIPI_OTHER_CNTL0, ALIGN_IO, 0xf0000000);
+	mipi_adap_reg_wr(MIPI_OTHER_CNTL0, ALIGN_IO, 0x00000000);
 
 	return 0;
 }
 
 int am_adap_deinit(void)
 {
-	am_adap_free_mem();
+	if (para.mode == DDR_MODE) {
+		am_adap_free_mem();
+		am_disable_irq();
+		kfifo_free(&adapt_fifo);
+	}
 	am_adap_reset();
-	am_disable_irq();
-	ft_buf_index = 0;
-	rd_buf_index = 0;
+	dump_buf_addr = 0;
+	control_flag = 0;
+	wbuf_index = 0;
 	dump_flag = 0;
-	memset(&para, 0, sizeof(struct am_adap_info));
 	return 0;
 }
 
