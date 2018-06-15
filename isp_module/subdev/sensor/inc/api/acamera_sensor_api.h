@@ -42,6 +42,7 @@ typedef struct _sensor_mode_t {
     uint8_t bits;                  // Bit depth of data from sensor
     uint8_t lanes;					//Lane count
     uint32_t bps;					//Bps of lane,unit is Mega
+    uint8_t num;					//the setting idx in seq
 } sensor_mode_t;
 
 

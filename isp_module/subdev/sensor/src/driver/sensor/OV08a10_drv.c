@@ -56,6 +56,7 @@ static sensor_mode_t supported_modes[5] = {
         .exposures = 1,
         .bps = 250,
         .lanes = 2,
+        .num = 1,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -66,6 +67,7 @@ static sensor_mode_t supported_modes[5] = {
         .exposures = 1,
         .bps = 800,
         .lanes = 4,
+        .num = 2,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -76,6 +78,7 @@ static sensor_mode_t supported_modes[5] = {
         .exposures = 1,
         .bps = 1440,
         .lanes = 4,
+        .num = 3,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -86,6 +89,7 @@ static sensor_mode_t supported_modes[5] = {
         .exposures = 1,
         .bps = 800,
         .lanes = 4,
+        .num = 4,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -96,6 +100,7 @@ static sensor_mode_t supported_modes[5] = {
         .exposures = 1,
         .bps = 1440,
         .lanes = 4,
+        .num = 5,
     }
 };
 
@@ -307,14 +312,18 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     sensor_context_t *p_ctx = ctx;
     sensor_param_t *param = &p_ctx->param;
     acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
+    uint8_t setting_num = 0;
 
     sensor_hw_reset_enable();
     system_timer_usleep( 10000 );
     sensor_hw_reset_disable();
     system_timer_usleep( 10000 );
+
+    setting_num = param->modes_table[mode].num;
+
     switch ( param->modes_table[mode].wdr_mode ) {
     case WDR_MODE_LINEAR:
-        sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, mode + 1 );
+        sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, setting_num);
         p_ctx->s_fps = param->modes_table[mode].fps;
         p_ctx->again_delay = 2;
         param->integration_time_apply_delay = 2;
@@ -369,7 +378,8 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
 
     sensor_set_iface(&param->modes_table[mode]);
 
-    LOG( LOG_CRIT, "Mode %d, RES:%dx%d\n", mode, (int)param->active.width, (int)param->active.height );
+    LOG( LOG_CRIT, "Mode %d, Setting num: %d, RES:%dx%d\n", mode, setting_num,
+                (int)param->active.width, (int)param->active.height );
 }
 
 static uint16_t sensor_get_id( void *ctx )
@@ -473,6 +483,7 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl )
 	s_ctx.param.isp_exposure_channel_delay = 0;
 	s_ctx.param.modes_table = supported_modes;
 	s_ctx.param.modes_num = array_size( supported_modes );
+	s_ctx.param.mode = 0;
 	s_ctx.param.sensor_ctx = &s_ctx;
 
 	ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
