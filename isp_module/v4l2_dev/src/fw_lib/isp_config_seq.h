@@ -822,6 +822,7 @@ static acam_reg_t settings_context[] = {
     { 0x1c088, 0x3e803e8L, 0x3ffffff,4 },
     { 0x18ffc, 0xf000f0L, 0xfff0fff,4 },
     { 0x1b2c0, 0x1b29acL, 0x0,4 },
+    { 0x1ab7c, 6, 0xff, 4 }, // set temper bits as 16
     //stop sequence - address is 0x0000
     { 0x0000, 0x0000, 0x0000, 0x0000 }
 };

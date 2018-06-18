@@ -36,6 +36,7 @@
 #include "acamera_firmware_config.h"
 #include "acamera_logger.h"
 #include "system_hw_io.h"
+#include "system_sw_io.h"
 #include <linux/fs.h>
 #include <asm/uaccess.h>
 #include <asm/unaligned.h>
@@ -60,6 +61,7 @@ extern resource_size_t isp_paddr;
 
 extern void system_interrupts_set_irq( int irq_num, int flags );
 extern void system_interrupts_init(void);
+extern uintptr_t acamera_get_isp_sw_setting_base( void );
 
 //map and unmap fpga memory
 extern int32_t init_hw_io( resource_size_t addr, resource_size_t size );
@@ -237,104 +239,189 @@ int  write_to_file (char *fname, char *buf, int size)
     }
 
 exit:
+    set_fs(old_fs);
     return 0;
 }
+
+static void parse_param(
+    char *buf_orig, char **parm)
+{
+    char *ps, *token;
+    unsigned int n = 0;
+    char delim1[3] = " ";
+    char delim2[2] = "\n";
+
+    ps = buf_orig;
+    strcat(delim1, delim2);
+    while (1) {
+        token = strsep(&ps, delim1);
+        if (token == NULL)
+            break;
+        if (*token == '\0')
+            continue;
+        parm[n++] = token;
+    }
+}
+
+static const char *isp_reg_usage_str = {
+    "Usage:\n"
+    "echo r addr(H) > /sys/devices/platform/ff140000.isp/reg;\n"
+    "echo w addr(H) value(H) > /sys/devices/platform/ff140000.isp/reg;\n"
+    "echo d addr(H) num(D) > /sys/devices/platform/ff140000.isp/reg; dump reg from addr\n"
+};
+
+static ssize_t reg_read(
+    struct device *dev,
+    struct device_attribute *attr,
+    char *buf)
+{
+    return sprintf(buf, "%s\n", isp_reg_usage_str);
+}
+
+static ssize_t reg_write(
+    struct device *dev, struct device_attribute *attr,
+    char const *buf, size_t size)
+{
+    char *buf_orig, *parm[8] = {NULL};
+    long val = 0;
+    unsigned int reg_addr, reg_val, i;
+    ssize_t ret = size;
+    uintptr_t isp_sw_base = acamera_get_isp_sw_setting_base();
+
+    if (!buf)
+        return ret;
+
+    buf_orig = kstrdup(buf, GFP_KERNEL);
+    if (!buf_orig)
+        return ret;
+
+    parse_param(buf_orig, (char **)&parm);
+
+    if (!parm[0]) {
+        ret = -EINVAL;
+        goto Err;
+    }
+
+    if (!strcmp(parm[0], "r")) {
+        if (!parm[1] || (kstrtoul(parm[1], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_addr = val;
+        reg_val = system_hw_read_32(reg_addr);
+        pr_info("ISP READ[0x%05x]=0x%08x\n", reg_addr, reg_val);
+    } else if (!strcmp(parm[0], "w")) {
+        if (!parm[1] || (kstrtoul(parm[1], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_addr = val;
+        if (!parm[2] || (kstrtoul(parm[2], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_val = val;
+        if (isp_sw_base)
+            system_sw_write_32((isp_sw_base + reg_addr), reg_val);
+        system_hw_write_32(reg_addr, reg_val);
+        pr_info("ISP WRITE[0x%05x]=0x%08x\n", reg_addr, reg_val);
+    } else if (!strcmp(parm[0], "d")) {
+        if (!parm[1] || (kstrtoul(parm[1], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_addr = val;
+        if (!parm[2] || (kstrtoul(parm[2], 10, &val) < 0))
+            val = 1;
+
+        for (i = 0; i < val; i++) {
+            reg_val = system_hw_read_32(reg_addr);
+            pr_info("ISP DUMP[0x%05x]=0x%08x\n", reg_addr, reg_val);
+            reg_addr += 4;
+        }
+    } else
+        pr_info("unsupprt cmd!\n");
+Err:
+    kfree(buf_orig);
+    return ret;
+}
+static DEVICE_ATTR(reg, S_IRUGO | S_IWUSR, reg_read, reg_write);
+
+static const char *isp_dump_usage_str = {
+    "Usage:\n"
+    "echo <port:fr/ds1> <dst_path> > /sys/devices/platform/ff140000.isp/dump_frame; dump first buffer\n"
+    "echo <port:fr/ds1> <dst_path> buff_size(H)  offset(H) > /sys/devices/platform/ff140000.isp/dump_frame; dump specific buffers\n"
+};
 
 #if ISP_HAS_DS1
 extern uint8_t *ds1_isp_kaddr;
 extern void config_ds_setting(void);
 #endif
-static ssize_t isp_reg_read(struct device *dev,
-                            struct device_attribute *attr, char *buf)
+
+static ssize_t dump_frame_read(
+    struct device *dev,
+    struct device_attribute *attr,
+    char *buf)
 {
-#if ISP_HAS_DS1
-    config_ds_setting();
-    mdelay(200);
-#endif
-
-    write_to_file("/media/lk-a.raw", isp_kaddr, 0x1fa4000);
-    write_to_file("/media/lk-b.raw", isp_kaddr + 0x1fa4000, 0x1fa4000);
-
-#if ISP_HAS_DS1
-    write_to_file("/media/lk-ds1-a.raw", ds1_isp_kaddr, 0x7e9000);
-    write_to_file("/media/lk-ds1-b.raw", ds1_isp_kaddr + (0x7e9000 << 1), 0x7e9000);
-#endif
-
-    LOG( LOG_ERR, "LIKE-read\n" );
-    return 0;
+    return sprintf(buf, "%s\n", isp_dump_usage_str);
 }
 
-static ssize_t isp_reg_write(struct device *dev,
-                             struct device_attribute *attr, char const *buf, size_t size)
+static ssize_t dump_frame_write(
+    struct device *dev, struct device_attribute *attr,
+    char const *buf, size_t size)
 {
-    unsigned long reg_addr = 0;
-    unsigned long reg_count = 0;
-    unsigned long reg_val = 0;
-    unsigned long tmp_addr = 0;
-    uint32_t data = 0;
-    int retval = 0;
-    int i = 0;
-    int j = 0;
-    char addr[9] = {'\0'};
-    char count[16] = {'\0'};
-    char val[16] = {'\0'};
-    char *tmp = NULL;
+    char *buf_orig, *parm[8] = {NULL};
+    long val = 0;
+    ssize_t ret = size;
+    u32 buff_offset = 0, buff_size = 0x7e9000;
 
-    tmp = addr;
+    if (!buf)
+        return ret;
 
-    for (i = 0; i < size; i++) {
-        if (buf[i] == ' ') {
-            data++;
-            if (data == 1) {
-                tmp = count;
-                j = 0;
-                continue;
-            } else if (data == 2) {
-                tmp = val;
-                j = 0;
-                continue;
-            }
-        }
-        tmp[j] = buf[i];
-        j++;
-    }
+    buf_orig = kstrdup(buf, GFP_KERNEL);
+    if (!buf_orig)
+        return ret;
 
-    pr_err("=============================\n");
+    parse_param(buf_orig, (char **)&parm);
 
-    retval = kstrtoul(addr, 16, &reg_addr);
-    if (retval) {
-        LOG(LOG_ERR, "Error to addr strtoul\n");
-        return retval;
-    }
-
-    retval = kstrtoul(count, 10, &reg_count);
-    if (retval) {
-        LOG(LOG_ERR, "Error to count strtoul\n");
-        return retval;
-    }
-
-    if (val[0] != '\0') {
-        retval = kstrtoul(val, 16, &reg_val);
-        if (retval) {
-            LOG(LOG_ERR, "Error to val strtoul\n");
-            return retval;
+    if (!strcmp(parm[0], "ds1")
+        || !strcmp(parm[0], "fr")) {
+        if (parm[3] != NULL) {
+            if (kstrtol(parm[2], 16, &val) == 0)
+                buff_size = val;
+            if (kstrtol(parm[3], 16, &val) == 0)
+                buff_offset = val;
+        } else if (parm[2] != NULL) {
+            if (kstrtol(parm[2], 16, &val) == 0)
+                buff_size = val;
+            buff_offset = 0;
+        } else {
+            buff_offset = 0;
+            buff_size = 0x7e9000;
         }
     }
 
-    if (reg_count < 1) {
-        system_hw_write_32(reg_addr, reg_val);
-        pr_err("Write reg 0x%08lx : 0x%08lx\n", reg_addr, reg_val);
-        return size;
-    }
+    if (!strcmp(parm[0], "ds1")) {
+        if (parm[1] != NULL) {
+#if ISP_HAS_DS1
+            config_ds_setting();
+            mdelay(200);
+            write_to_file(parm[1], ds1_isp_kaddr + buff_offset, buff_size);
+#else
+            pr_info("dump DS1 is not supported\n");
+#endif
+        }
+    } else if (!strcmp(parm[0], "fr")) {
+        if (parm[1] != NULL)
+            write_to_file(parm[1], isp_kaddr + buff_offset, buff_size);
+    } else
+        pr_info("unsupprt cmd!\n");
 
-    for (i = 0; i < reg_count; i++) {
-        tmp_addr = reg_addr + (i * 4);
-        data = system_hw_read_32(tmp_addr);
-        pr_err("Reg 0x%08lx : 0x%08x\n", tmp_addr, data);
-    }
-
-    return size;
+    kfree(buf_orig);
+    return ret;
 }
+
+static DEVICE_ATTR(dump_frame, S_IRUGO | S_IWUSR, dump_frame_read, dump_frame_write);
 
 uint32_t write_reg(uint32_t val, unsigned long addr)
 {
@@ -382,8 +469,6 @@ uint32_t isp_power_on(void)
     write_reg(0x803f4321, HHI_CSI_PHY_CNTL1);		//HHI_CSI_PHY_CNTL1
     return 0;
 }
-
-static DEVICE_ATTR(isp_reg, S_IRUGO | S_IWUSR, isp_reg_read, isp_reg_write);
 
 static void hw_reset(bool reset)
 {
@@ -519,7 +604,9 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
 
     rc = v4l2_async_notifier_register( &v4l2_dev, &g_subdevs.notifier );
 
-    device_create_file(&pdev->dev, &dev_attr_isp_reg);
+    device_create_file(&pdev->dev, &dev_attr_reg);
+    device_create_file(&pdev->dev, &dev_attr_dump_frame);
+
     LOG( LOG_ERR, "Init finished. async register notifier result %d. Waiting for subdevices", rc );
 #else
     // no subdevice is used

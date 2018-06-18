@@ -1295,13 +1295,13 @@ acam_reg_t setting_3840_2160_4lane_1440m_60fps[] = {
 
 static const acam_reg_t *seq_table[] = {
     init,
-	setting_1280_720_2lane_250m_5fps,
-	setting_1920_1080_4lane_800m_30fps,
-	setting_1920_1080_4lane_1440m_60fps,
-	setting_3840_2160_4lane_800m_30fps,
-	setting_3840_2160_4lane_1440m_60fps,
-	setting_1280_720_2lane_688m_5fps,
-	setting_1280_720_4lane_688m_5fps,
+    setting_1280_720_2lane_250m_5fps,
+    setting_1920_1080_4lane_800m_30fps,
+    setting_1920_1080_4lane_1440m_60fps,
+    setting_3840_2160_4lane_800m_30fps,
+    setting_3840_2160_4lane_1440m_60fps,
+    setting_1280_720_2lane_688m_5fps,
+    setting_1280_720_4lane_688m_5fps,
 };
 
 #define SENSOR__OV08A10_SEQUENCE_DEFAULT seq_table

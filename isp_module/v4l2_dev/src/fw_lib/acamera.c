@@ -90,6 +90,15 @@ void *acamera_get_api_ctx_ptr( void )
     return &( g_firmware.fw_ctx[acamera_get_api_context()] );
 }
 
+uintptr_t acamera_get_isp_sw_setting_base( void )
+{
+    acamera_context_t *p_ctx = (acamera_context_t *)(&g_firmware.fw_ctx[0]);
+    if (p_ctx->settings.isp_base)
+        return p_ctx->settings.isp_base;
+    else
+        return 0;
+}
+
 void acamera_notify_evt_data_avail( void )
 {
     system_semaphore_raise( g_firmware.sem_evt_avail );

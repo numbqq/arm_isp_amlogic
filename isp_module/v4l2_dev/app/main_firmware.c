@@ -240,7 +240,6 @@ void isp_update_setting(void)
         paddr = aframe[i].address + aframe[i].size;
     }
     settings[0].temper_frames_number = 1;
-
 }
 
 int isp_fw_init( void )

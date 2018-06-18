@@ -114,7 +114,8 @@ int  write_to_file (char *buf, int size)
 	}
 
 exit:
-		return ret;
+	set_fs(old_fs);
+	return ret;
 }
 
 static ssize_t adapt_frame_read(struct device *dev,
