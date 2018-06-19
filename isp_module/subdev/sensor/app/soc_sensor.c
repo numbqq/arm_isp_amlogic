@@ -301,7 +301,7 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
     struct clk *clk_mclk_0;
-    u32 isp_clk_rate = 0;
+    u32 mclk_rate = 0;
 
     v4l2_subdev_init( &soc_sensor, &camera_ops );
 
@@ -311,14 +311,14 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
 
     clk_mclk_0 = devm_clk_get(&pdev->dev, "g12a_24m");
     if (IS_ERR(clk_mclk_0)) {
-        pr_err("cannot get clock\n");
+        pr_err("cannot get mclk\n");
         clk_mclk_0 = NULL;
         return -1;
     }
 
     clk_prepare_enable(clk_mclk_0);
-    isp_clk_rate = clk_get_rate(clk_mclk_0);
-    pr_err("isp init clock is %d MHZ\n",isp_clk_rate/1000000);
+    mclk_rate = clk_get_rate(clk_mclk_0);
+    pr_err("sensor init clock is %d MHZ\n",mclk_rate/1000000);
 
     soc_sensor.dev = &pdev->dev;
     rc = v4l2_async_register_subdev( &soc_sensor );
@@ -346,7 +346,7 @@ static struct platform_driver soc_sensor_driver = {
     .probe = soc_sensor_probe,
     .remove = soc_sensor_remove,
     .driver = {
-        .name = "soc_sensor_v4l2",
+        .name = "soc_sensor",
         .owner = THIS_MODULE,
         .of_match_table = sensor_dt_match,
     },
