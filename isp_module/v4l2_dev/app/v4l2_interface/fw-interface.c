@@ -262,6 +262,7 @@ int fw_intf_isp_set_sensor_preset( uint32_t preset )
 int fw_intf_stream_start( isp_v4l2_stream_type_t streamType )
 {
     LOG( LOG_DEBUG, "Starting stream type %d", streamType );
+    uint32_t rc = 0;
 
 #if ISP_DMA_RAW_CAPTURE && ISP_HAS_RAW_CB
     if ( streamType == V4L2_STREAM_TYPE_RAW ) {
@@ -273,12 +274,15 @@ int fw_intf_stream_start( isp_v4l2_stream_type_t streamType )
 #endif
     }
 #endif
+    if (streamType == V4L2_STREAM_TYPE_FR)
+        acamera_command( TSENSOR, SENSOR_STREAMING, ON, COMMAND_SET, &rc );
 
     return 0;
 }
 
 void fw_intf_stream_stop( isp_v4l2_stream_type_t streamType )
 {
+    uint32_t rc = 0;
     LOG( LOG_DEBUG, "Stopping stream type %d", streamType );
 #if ISP_DMA_RAW_CAPTURE && ISP_HAS_RAW_CB
     if ( streamType == V4L2_STREAM_TYPE_RAW ) {
@@ -290,6 +294,15 @@ void fw_intf_stream_stop( isp_v4l2_stream_type_t streamType )
 #endif
     }
 #endif
+
+    if (streamType == V4L2_STREAM_TYPE_FR) {
+        acamera_command( TSENSOR, SENSOR_STREAMING, OFF, COMMAND_SET, &rc );
+        acamera_api_dma_buff_queue_reset(dma_fr);
+    } else if (streamType == V4L2_STREAM_TYPE_DS1) {
+        acamera_api_dma_buff_queue_reset(dma_ds1);
+    }
+
+    LOG( LOG_CRIT, "Stream off %d\n",  streamType);
 }
 
 void fw_intf_stream_pause( isp_v4l2_stream_type_t streamType, uint8_t bPause )
@@ -427,6 +440,52 @@ int fw_intf_stream_set_resolution( const isp_v4l2_sensor_info *sensor_info,
         }
 #endif
     }
+#if ISP_HAS_DS1
+    else if ( streamType == V4L2_STREAM_TYPE_DS1 ) {
+
+        int result;
+        uint32_t ret_val;
+        uint32_t w, h;
+
+        w = *width;
+        h = *height;
+
+        uint32_t width_cur, height_cur;
+        //check if we need to change sensor preset
+        acamera_command( TSENSOR, SENSOR_WIDTH, 0, COMMAND_GET, &width_cur );
+        acamera_command( TSENSOR, SENSOR_HEIGHT, 0, COMMAND_GET, &height_cur );
+        LOG( LOG_INFO, "target (width = %d, height = %d) current (w=%d h=%d)", w, h, width_cur, height_cur );
+        if ( w > width_cur || h > height_cur ) {
+            LOG( LOG_ERR, "Invalid target size: (width = %d, height = %d), current (w=%d h=%d)", w, h, width_cur, height_cur );
+            return -EINVAL;
+        }
+
+#if defined( TIMAGE ) && defined( IMAGE_RESIZE_TYPE_ID ) && defined( IMAGE_RESIZE_WIDTH_ID )
+        {
+            result = acamera_command( TIMAGE, IMAGE_RESIZE_WIDTH_ID, w, COMMAND_SET, &ret_val );
+            if ( result ) {
+                LOG( LOG_CRIT, "Failed to set resize_width, ret_value: %d.", result );
+                return result;
+            }
+            acamera_command( TIMAGE, IMAGE_RESIZE_HEIGHT_ID, h, COMMAND_SET, &ret_val );
+            if ( result ) {
+                LOG( LOG_CRIT, "Failed to set resize_height, ret_value: %d.", result );
+                return result;
+            }
+            acamera_command( TIMAGE, IMAGE_RESIZE_TYPE_ID, SCALER, COMMAND_SET, &ret_val );
+            if ( result ) {
+                LOG( LOG_CRIT, "Failed to set resize_type, ret_value: %d.", result );
+                return result;
+            }
+            acamera_command( TIMAGE, IMAGE_RESIZE_ENABLE_ID, RUN, COMMAND_SET, &ret_val );
+            if ( result ) {
+                LOG( LOG_CRIT, "Failed to set resize_enable, ret_value: %d.", result );
+                return result;
+            }
+        }
+#endif
+    }
+#endif
 
     return 0;
 }
@@ -469,6 +528,11 @@ int fw_intf_stream_set_output_format( isp_v4l2_stream_type_t streamType, uint32_
         value = RAW16;
         break;
 #endif
+#ifdef DMA_FORMAT_DISABLE
+    case ISP_V4L2_PIX_FMT_NULL:
+        value = DMA_DISABLE;
+        break;
+#endif
     case ISP_V4L2_PIX_FMT_META:
         LOG( LOG_INFO, "Meta format 0x%x doesn't need to be set to firmware", format );
         return 0;
@@ -490,6 +554,20 @@ int fw_intf_stream_set_output_format( isp_v4l2_stream_type_t streamType, uint32_
             LOG( LOG_ERR, "TIMAGE - FR_FORMAT_BASE_PLANE_ID failed (value = 0x%x, result = %d)", value, result );
         }
     }
+#if ISP_HAS_DS1
+    else if ( streamType == V4L2_STREAM_TYPE_DS1 ) {
+
+        uint8_t result;
+        uint32_t ret_val;
+
+        result = acamera_command( TIMAGE, DS1_FORMAT_BASE_PLANE_ID, value, COMMAND_SET, &ret_val );
+        LOG( LOG_INFO, "set format for stream %d to %d (0x%x)", streamType, value, format );
+        if ( result ) {
+            LOG( LOG_ERR, "TIMAGE - DS1_FORMAT_BASE_PLANE_ID failed (value = 0x%x, result = %d)", value, result );
+        }
+    }
+#endif
+
 #else
     LOG( LOG_ERR, "cannot find proper API for fr base mode ID" );
 #endif
@@ -564,6 +642,22 @@ static int isp_fw_do_set_af_refocus( int val )
     u32 ret_val;
 
     result = acamera_command( TALGORITHMS, AF_MODE_ID, AF_AUTO_SINGLE, COMMAND_SET, &ret_val );
+    if ( result ) {
+        LOG( LOG_ERR, "Failed to set AF_MODE_ID to AF_AUTO_SINGLE, ret_value: %u.", ret_val );
+        return result;
+    }
+#endif
+
+    return 0;
+}
+
+static int isp_fw_do_set_af_roi( int val )
+{
+#if defined( TALGORITHMS ) && defined( AF_ROI_ID )
+    int result;
+    u32 ret_val;
+
+    result = acamera_command( TALGORITHMS, AF_ROI_ID, (uint32_t)val, COMMAND_SET, &ret_val );
     if ( result ) {
         LOG( LOG_ERR, "Failed to set AF_MODE_ID to AF_AUTO_SINGLE, ret_value: %u.", ret_val );
         return result;
@@ -1143,6 +1237,11 @@ int fw_intf_set_af_refocus( int val )
     return isp_fw_do_set_af_refocus( val );
 }
 
+int fw_intf_set_af_roi( int val )
+{
+    return isp_fw_do_set_af_roi( val );
+}
+
 int fw_intf_set_brightness( int val )
 {
     return isp_fw_do_set_brightness( val );
@@ -1272,4 +1371,18 @@ int fw_intf_set_focus_auto( int val )
 int fw_intf_set_focus( int val )
 {
     return isp_fw_do_set_focus( val );
+}
+
+int fw_intf_set_output_fr_on_off( uint32_t ctrl_val )
+{
+    return fw_intf_stream_set_output_format( V4L2_STREAM_TYPE_FR, ctrl_val );
+}
+
+int fw_intf_set_output_ds1_on_off( uint32_t ctrl_val )
+{
+#if ISP_HAS_DS1
+    return fw_intf_stream_set_output_format( V4L2_STREAM_TYPE_DS1, ctrl_val );
+#else
+    return 0;
+#endif
 }

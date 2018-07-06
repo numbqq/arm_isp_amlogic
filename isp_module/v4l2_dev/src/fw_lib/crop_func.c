@@ -213,8 +213,6 @@ void _update_fr( crop_fsm_ptr_t p_fsm, int isr )
     if ( !isr )
         LOG( LOG_NOTICE, "FR update: Crop: e %d x %d, y %d, w %d, h %d", p_fsm->crop_fr.enable, p_fsm->crop_fr.xoffset, p_fsm->crop_fr.yoffset, p_fsm->crop_fr.xsize, p_fsm->crop_fr.ysize );
 
-    acamera_isp_metering_af_active_width_write( p_fsm->cmn.isp_base, width );
-    acamera_isp_metering_af_active_height_write( p_fsm->cmn.isp_base, height );
 }
 
 void crop_fsm_process_interrupt( crop_fsm_const_ptr_t p_fsm, uint8_t irq_event )
@@ -309,7 +307,7 @@ void crop_initialize( crop_fsm_ptr_t p_fsm )
     p_fsm->height_fr = height;
     p_fsm->crop_fr.xsize = width;
     p_fsm->crop_fr.ysize = height;
-#if ISP_HAS_DS1
+#if 0  //ISP_HAS_DS1, avoid to cover these ds value
     p_fsm->width_ds = width;
     p_fsm->height_ds = height;
     p_fsm->crop_ds.xsize = width;

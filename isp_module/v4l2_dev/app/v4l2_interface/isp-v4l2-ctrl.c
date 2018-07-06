@@ -111,6 +111,9 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
          ctrl->id, ctrl->val, ctrl->is_int, ctrl->minimum, ctrl->maximum );
 
     if ( isp_v4l2_ctrl_check_valid( ctrl ) < 0 ) {
+        LOG( LOG_ERR, "Invalid param: id:0x%x, val:0x%x, is_int:%d, min:0x%x, max:0x%x.\n",
+             ctrl->id, ctrl->val, ctrl->is_int, ctrl->minimum, ctrl->maximum );
+
         return -EINVAL;
     }
 
@@ -130,6 +133,19 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
     case ISP_V4L2_CID_SENSOR_PRESET:
         LOG( LOG_INFO, "new sensor preset: %d.\n", ctrl->val );
         ret = fw_intf_isp_set_sensor_preset( ctrl->val );
+        break;
+    case ISP_V4L2_CID_AF_ROI:
+        // map [0,127] to [0, 254] due to limitaton of V4L2_CTRL_TYPE_INTEGER.
+        LOG( LOG_INFO, "new af roi: 0x%x.\n", ctrl->val * 2 );
+        ret = fw_intf_set_af_roi( ctrl->val * 2 );
+        break;
+    case ISP_V4L2_CID_OUTPUT_FR_ON_OFF:
+        LOG( LOG_INFO, "output FR on/off: 0x%x.\n", ctrl->val );
+        ret = fw_intf_set_output_fr_on_off( ctrl->val );
+        break;
+    case ISP_V4L2_CID_OUTPUT_DS1_ON_OFF:
+        LOG( LOG_INFO, "output DS1 on/off: 0x%x.\n", ctrl->val );
+        ret = fw_intf_set_output_ds1_on_off( ctrl->val );
         break;
     }
 
@@ -180,6 +196,42 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_preset = {
     .type = V4L2_CTRL_TYPE_INTEGER,
     .min = 0,
     .max = 5,
+    .step = 1,
+    .def = 0,
+};
+
+
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_af_roi = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_AF_ROI,
+    .name = "ISP AF ROI",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 0,
+    .max = 0x7F7F7F7F,
+    .step = 1,
+    .def = 0x20206060,
+};
+
+
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_output_fr_on_off = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_OUTPUT_FR_ON_OFF,
+    .name = "ISP FR ON/OFF",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 0,
+    .max = 0x7FFFFFFF,
+    .step = 1,
+    .def = 0,
+};
+
+
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_output_ds1_on_off = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_OUTPUT_DS1_ON_OFF,
+    .name = "ISP DS1 ON/OFF",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 0,
+    .max = 0x7FFFFFFF,
     .step = 1,
     .def = 0,
 };
@@ -269,6 +321,12 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_af_refocus, NULL );
     ADD_CTRL_CST( ISP_V4L2_CID_SENSOR_PRESET,
                   &isp_v4l2_ctrl_sensor_preset, NULL );
+    ADD_CTRL_CST( ISP_V4L2_CID_AF_ROI,
+                  &isp_v4l2_ctrl_af_roi, NULL );
+    ADD_CTRL_CST( ISP_V4L2_CID_OUTPUT_FR_ON_OFF,
+                  &isp_v4l2_ctrl_output_fr_on_off, NULL );
+    ADD_CTRL_CST( ISP_V4L2_CID_OUTPUT_DS1_ON_OFF,
+                  &isp_v4l2_ctrl_output_ds1_on_off, NULL );
 
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );

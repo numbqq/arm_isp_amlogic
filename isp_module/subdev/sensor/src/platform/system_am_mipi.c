@@ -171,9 +171,13 @@ static int am_mipi_phy_init(void *info)
 	settle = (85 + 145 + (16 * m_info->ui_val))/2;
 	settle = settle/cycle_time;
 
-	pr_err("%s:LIKE: settle:0x%08x\n", __func__, settle);
+	pr_err("%s:Settle:0x%08x\n", __func__, settle);
 
-	mipi_aphy_reg_wr(HI_CSI_PHY_CNTL0, 0x0b440581);
+	if (m_info->ui_val <= 1)
+		mipi_aphy_reg_wr(HI_CSI_PHY_CNTL0, 0x0b440585);
+	else
+		mipi_aphy_reg_wr(HI_CSI_PHY_CNTL0, 0x0b440581);
+
 	mipi_aphy_reg_wr(HI_CSI_PHY_CNTL1, 0x803f0000);
 	mipi_aphy_reg_wr(HI_CSI_PHY_CNTL3, 0x02);
 

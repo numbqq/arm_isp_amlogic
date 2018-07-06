@@ -97,6 +97,7 @@ typedef struct _aframe_t {
 typedef struct _tframe_t {
     aframe_t primary;        //primary frames
     aframe_t secondary ;        //secondary frames
+    void *list;
 } tframe_t ;
 
 

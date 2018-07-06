@@ -106,19 +106,13 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
 			.is_yuv = true,
 			.planes = 2,
 		},
-/* NOTE: Linux kernel 3.19 doesn't support RAW colorspace,
-             V4L2_COLORSPACE_RAW is added in Linux 4.2, we support
-             RAW format here just for internal debugging. */
-#if ISP_HAS_RAW_CB
         {
             .name = "RAW 16",
             .fourcc = V4L2_PIX_FMT_SBGGR16,
             .depth = 16,
             .is_yuv = false,
-            //.planes   = 1,
-            .planes = 3,
+            .planes = 1,
         },
-#endif
 #if ISP_HAS_META_CB
         {
             .name = "META",
@@ -138,6 +132,7 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
 #define SYNC_FLAG_META ( 1 << 0 )
 #define SYNC_FLAG_RAW ( 1 << 1 )
 #define SYNC_FLAG_FR ( 1 << 2 )
+#define SYNC_FLAG_DS1 ( 1 << 3 )
 static spinlock_t sync_slock;
 static uint32_t sync_started = 0;
 static uint32_t sync_flag = 0;
@@ -466,6 +461,71 @@ void callback_fr( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadata
 // Callback from DS1 output pipe
 void callback_ds1( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadata )
 {
+#if ISP_HAS_DS1
+    isp_v4l2_stream_t *pstream = NULL;
+    struct isp_fw_frame_mgr *frame_mgr;
+    unsigned long flags;
+    int rc;
+
+    if ( !metadata ) {
+        LOG( LOG_ERR, "callback_ds1: metadata is NULL" );
+        return;
+    }
+
+    /* find stream pointer */
+    rc = isp_v4l2_find_stream( &pstream, ctx_num, V4L2_STREAM_TYPE_DS1 );
+    if ( rc < 0 ) {
+        LOG( LOG_DEBUG, "can't find stream on ctx %d (errno = %d)", ctx_num, rc );
+        return;
+    }
+
+    /* check if stream is on */
+    if ( !pstream->stream_started ) {
+        LOG( LOG_DEBUG, "[Stream#%d] stream DS1 is not started yet on ctx %d", pstream->stream_id, ctx_num );
+        return;
+    }
+
+    /* filter redundant frame id */
+    if ( pstream->last_frame_id == metadata->frame_id ) {
+        LOG( LOG_ERR, "[Stream#%d] Redundant frame ID %d on ctx#%d", pstream->stream_id, metadata->frame_id, ctx_num );
+        return;
+    }
+    pstream->last_frame_id = metadata->frame_id;
+
+#if V4L2_FRAME_ID_SYNC
+    if ( sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_DS1 ) < 0 )
+        return;
+#endif
+
+    frame_mgr = &pstream->frame_mgr;
+    int wake_up = 0;
+
+    spin_lock_irqsave( &frame_mgr->frame_slock, flags );
+    if ( ISP_FW_FRAME_BUF_INVALID == frame_mgr->frame_buffer.state ) {
+        /* lock buffer from firmware */
+        tframe->primary.status = dma_buf_purge;
+        tframe->secondary.status = dma_buf_purge;
+        /* save current frame  */
+        //only 2 planes are possible
+        frame_mgr->frame_buffer.addr[0] = tframe->primary.address;
+        frame_mgr->frame_buffer.addr[1] = tframe->secondary.address;
+        frame_mgr->frame_buffer.meta = *metadata;
+        frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
+        frame_mgr->frame_buffer.tframe = tframe;
+
+        /* wake up thread */
+        wake_up = 1;
+    }
+    spin_unlock_irqrestore( &frame_mgr->frame_slock, flags );
+
+    /* wake up the kernel thread to copy the frame data  */
+    if ( wake_up )
+        wake_up_interruptible( &frame_mgr->frame_wq );
+
+    if ( metadata )
+        LOG( LOG_DEBUG, "metadata: width: %u, height: %u, line_size: %u, frame_number: %u.",
+             metadata->width, metadata->height, metadata->line_size, metadata->frame_number );
+#endif
 }
 
 // Callback from DS2 output pipe
@@ -630,7 +690,7 @@ void isp_v4l2_stream_deinit( isp_v4l2_stream_t *pstream )
     }
 }
 
-static void isp_v4l2_stream_fill_buf( isp_v4l2_stream_t *pstream, isp_v4l2_buffer_t *buf, uint32_t *hw_buf_offset )
+void isp_v4l2_stream_fill_buf( isp_v4l2_stream_t *pstream, isp_v4l2_buffer_t *buf, uint32_t *hw_buf_offset )
 {
     unsigned int img_frame_size;
     struct timeval begin, end;
@@ -734,7 +794,6 @@ static int isp_v4l2_stream_copy_thread( void *data )
     isp_v4l2_stream_t *pstream = data;
     isp_fw_frame_mgr_t *frame_mgr;
     unsigned long flags;
-    unsigned int addr[VIDEO_MAX_PLANES]; //multiplanar addresses
 
     metadata_t meta;
     tframe_t *tframe = NULL;
@@ -745,6 +804,8 @@ static int isp_v4l2_stream_copy_thread( void *data )
 #endif
     struct vb2_buffer *vb;
     unsigned int buf_index;
+    void *s_list = NULL;
+    void *t_list = NULL;
 
     if ( !pstream ) {
         LOG( LOG_ERR, "Null stream passed" );
@@ -772,8 +833,6 @@ static int isp_v4l2_stream_copy_thread( void *data )
         spin_lock_irqsave( &frame_mgr->frame_slock, flags );
         /* get current frame only its state is VALID */
         if ( ISP_FW_FRAME_BUF_VALID == frame_mgr->frame_buffer.state ) {
-
-            memcpy( &addr, &( frame_mgr->frame_buffer.addr ), sizeof( addr ) );
             meta = frame_mgr->frame_buffer.meta;
             tframe = frame_mgr->frame_buffer.tframe;
             frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_INVALID;
@@ -786,59 +845,37 @@ static int isp_v4l2_stream_copy_thread( void *data )
         /* try to get an active buffer from vb2 queue  */
         pbuf = NULL;
         spin_lock( &pstream->slock );
-        if ( !list_empty( &pstream->stream_buffer_list ) ) {
-            pbuf = list_entry( pstream->stream_buffer_list.next, isp_v4l2_buffer_t, list );
-            list_del( &pbuf->list );
+        t_list = (frame_mgr->frame_buffer.tframe)->list;
+
+        list_for_each_entry(pbuf, &pstream->stream_buffer_list, list) {
+            s_list = (void *)&pbuf->list;
+
+            if (s_list == t_list) {
+                list_del_init(s_list);
+                break;
+            }
+        }
+
+        if ((s_list != t_list) || (t_list == NULL) || (s_list == NULL)) {
+            LOG(LOG_ERR, "Failed to find vb2 buffer on stream buffer list\n");
+            spin_unlock( &pstream->slock );
+            continue;
         }
         spin_unlock( &pstream->slock );
 
-        if ( !pbuf ) {
-            frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
-            LOG( LOG_INFO, "[Stream#%d] No active buffer to fill, continue.", pstream->stream_id );
-            continue;
-        }
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
         vvb = &pbuf->vvb;
         vb = &vvb->vb2_buf;
 
         buf_index = vb->index;
 
         vvb->sequence = meta.frame_id;
-#else
-        vb = &pbuf->vb;
-
-        buf_index = vb->v4l2_buf.index;
-
-        vb->v4l2_buf.sequence = meta.frame_id;
-#endif
+        vvb->field = V4L2_FIELD_NONE;
+        vb->timestamp = ktime_get_ns();
+        pstream->fw_frame_seq_count++;
 
         /* Fill buffer */
         LOG( LOG_DEBUG, "[Stream#%d] filled buffer %d with frame_buf_idx: %d.",
              pstream->stream_id, buf_index, idx_tmp );
-
-#if V4L2_RUNNING_ON_JUNO
-
-#if ISP_HAS_RAW_CB
-#if JUNO_DIRECT_DDR_ACCESS
-        if ( pstream->stream_type != V4L2_STREAM_TYPE_RAW ) {
-
-            if ( pstream->cur_v4l2_fmt.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ) {
-                for ( i = 0; i < pstream->cur_v4l2_fmt.fmt.pix_mp.num_planes; i++ ) {
-                    addr[i] = addr[i] - JUNO_DDR_ADDR_BASE;
-                }
-            } else if ( pstream->cur_v4l2_fmt.type == V4L2_BUF_TYPE_VIDEO_CAPTURE ) {
-                addr[0] = addr[0] - JUNO_DDR_ADDR_BASE;
-            } else {
-                LOG( LOG_ERR, "v4l2 bufer format not supported" );
-            }
-        }
-#endif
-#endif
-#else
-/* This probably is on linux PCIE */
-#endif
-        isp_v4l2_stream_fill_buf( pstream, pbuf, addr );
 
         /* Put buffer back to vb2 queue */
         vb2_buffer_done( vb, VB2_BUF_STATE_DONE );
@@ -859,6 +896,12 @@ static int isp_v4l2_stream_copy_thread( void *data )
                 sync_flag &= ~SYNC_FLAG_RAW;
             } else
 #endif
+#if ISP_HAS_DS1
+                if ( pstream->stream_type == V4L2_STREAM_TYPE_DS1 ) {
+                LOG( LOG_DEBUG, "[Stream#%d] releasing DS1 sync flag", pstream->stream_id );
+                sync_flag &= ~SYNC_FLAG_DS1;
+            } else
+#endif
             {
                 LOG( LOG_DEBUG, "[Stream#%d] releasing FR  sync flag", pstream->stream_id );
                 sync_flag &= ~SYNC_FLAG_FR;
@@ -867,23 +910,6 @@ static int isp_v4l2_stream_copy_thread( void *data )
         }
 #endif
 
-        /* return buffer to firmware */
-        uint32_t ret_value;
-        switch ( pstream->stream_type ) {
-        case V4L2_STREAM_TYPE_FR:
-            acamera_api_dma_buffer( dma_fr, tframe, 1, &ret_value );
-            break;
-#if ISP_HAS_RAW_CB
-        case V4L2_STREAM_TYPE_RAW:
-            /* Not practically work, but for future purpose. */
-            tframe->primary.status = dma_buf_empty;
-            break;
-#endif
-        default:
-            LOG( LOG_ERR, "[Stream#%d] invalid stream type %d", pstream->stream_id, pstream->stream_type );
-            break;
-        }
-        tframe = NULL;
     }
 
     /* Notify stream off */
@@ -1218,13 +1244,9 @@ int isp_v4l2_stream_set_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
         case ISP_V4L2_PIX_FMT_ARGB2101010:
         case V4L2_PIX_FMT_RGB24:
         case V4L2_PIX_FMT_NV12:
-            pstream->stream_type = V4L2_STREAM_TYPE_FR;
-            break;
-#if ISP_HAS_RAW_CB
         case V4L2_PIX_FMT_SBGGR16:
-            pstream->stream_type = V4L2_STREAM_TYPE_RAW;
+            pstream->stream_type = pstream->stream_id;
             break;
-#endif
 #if ISP_HAS_META_CB
         case ISP_V4L2_PIX_FMT_META:
             pstream->stream_type = V4L2_STREAM_TYPE_META;

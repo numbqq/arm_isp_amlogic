@@ -63,7 +63,7 @@ typedef struct _isp_v4l2_sensor_info {
 /* custom v4l2 formats */
 #define ISP_V4L2_PIX_FMT_META v4l2_fourcc( 'M', 'E', 'T', 'A' )        /* META */
 #define ISP_V4L2_PIX_FMT_ARGB2101010 v4l2_fourcc( 'B', 'A', '3', '0' ) /* ARGB2101010 */
-
+#define ISP_V4L2_PIX_FMT_NULL v4l2_fourcc( 'N', 'U', 'L', 'L' )        /* format NULL to disable */
 
 /* custom v4l2 events */
 #define V4L2_EVENT_ACAMERA_CLASS ( V4L2_EVENT_PRIVATE_START + 0xA * 1000 )
@@ -77,12 +77,19 @@ typedef struct _isp_v4l2_sensor_info {
 #define ISP_V4L2_CID_TEST_PATTERN_TYPE ( ISP_V4L2_CID_BASE + 1 )
 #define ISP_V4L2_CID_AF_REFOCUS ( ISP_V4L2_CID_BASE + 2 )
 #define ISP_V4L2_CID_SENSOR_PRESET ( ISP_V4L2_CID_BASE + 3 )
+#define ISP_V4L2_CID_AF_ROI ( ISP_V4L2_CID_BASE + 4 )
+#define ISP_V4L2_CID_OUTPUT_FR_ON_OFF ( ISP_V4L2_CID_BASE + 5 )
+#define ISP_V4L2_CID_OUTPUT_DS1_ON_OFF ( ISP_V4L2_CID_BASE + 6 )
+
 
 /* type of stream */
 typedef enum {
     V4L2_STREAM_TYPE_FR = 0,
 #if ISP_HAS_META_CB
     V4L2_STREAM_TYPE_META,
+#endif
+#if ISP_HAS_DS1
+    V4L2_STREAM_TYPE_DS1,
 #endif
 #if ISP_HAS_RAW_CB
     V4L2_STREAM_TYPE_RAW,

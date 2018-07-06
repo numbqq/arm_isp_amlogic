@@ -181,6 +181,9 @@ dma_error dma_writer_reset( void *handle, dma_type type )
         pipe->state.buf_num_wri = 0;
         pipe->state.buf_num_size = 0;
         dma_writer_init_frame_queue( pipe );
+        pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
+        pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
+        pipe->settings.enabled = 0;
     } else {
         result = edma_fail;
     }
@@ -429,10 +432,9 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
 
             } else {
                 //no empty frames
-                LOG( LOG_CRIT, "NO EMPTY FRAMES on dma_pipe_type: %d\n", (int)pipe->type );
+                //LOG( LOG_CRIT, "NO EMPTY FRAMES on dma_pipe_type: %d\n", (int)pipe->type );
                 pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
                 pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
-                pipe->settings.enabled = 0;
             }
         }
     } else {

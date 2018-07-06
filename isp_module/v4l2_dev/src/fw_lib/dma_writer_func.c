@@ -446,6 +446,16 @@ uint16_t frame_buffer_reconfigure( dma_writer_fsm_ptr_t p_fsm, dma_type dma_outp
     return buf_written;
 }
 
+void frame_buffer_queue_reset(dma_writer_fsm_ptr_t p_fsm, dma_type type)
+{
+    if (p_fsm == NULL || p_fsm->handle == NULL) {
+        LOG(LOG_ERR, "Error input param\n");
+        return;
+    }
+
+    dma_writer_reset( p_fsm->handle, type);
+}
+
 void dma_writer_update_address_interrupt( dma_writer_fsm_const_ptr_t p_fsm, uint8_t irq_event )
 {
     if ( acamera_fsm_util_is_irq_event_ignored( (fsm_irq_mask_t *)( &p_fsm->mask ), irq_event ) )

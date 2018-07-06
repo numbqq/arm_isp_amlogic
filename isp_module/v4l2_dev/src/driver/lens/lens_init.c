@@ -125,14 +125,22 @@ int32_t lens_init( void **ctx, lens_control_t *ctrl )
         return 0;
     }
 #endif
+#if ISP_SENSOR_DRIVER_MODEL
+    if (lens_model_test(lens_bus)) {
+        lens_model_init(ctx, ctrl, lens_bus);
+        LOG(LOG_NOTICE, "Lens VCM driver is Model");
+        return 0;
+    }
+#endif
 #if ISP_SENSOR_DRIVER_NULL
     // Null should always be tested last
     if ( lens_null_test( lens_bus ) ) {
         lens_null_init( ctx, ctrl, lens_bus );
-        LOG( LOG_ERR, "Lens VCM driver is NULL" );
+        LOG( LOG_NOTICE, "Lens VCM driver is NULL" );
         return 0;
     }
 #endif
+
     LOG( LOG_ERR, "NO VALID SENSOR DRIVER FOUND bus:0x%x", lens_bus );
     return -1;
 }

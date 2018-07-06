@@ -230,10 +230,10 @@ static __inline uint16_t acamera_isp_isp_global_flush_hblank_read(uintptr_t base
 #define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_DATASIZE (3)
 #define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_OFFSET (0x14)
 #define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_MASK (0x70000)
-#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_LINEARISED_DATA_AFTER_LINEARISED_CLUSTER_MSB_ALIGNED (0)
-#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_STATIC_DPC_OUTPUT_MSB_ALIGNED (1)
-#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_OUTPUT_OF_CA_CORRECTION_MSB_ALIGNED (2)
-#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_CNR_OUTPUT (3)
+#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_LINEARISED_DATA_AFTER_LINEARISED_CLUSTER_MSB_ALIGNED_DATA190_16D0 (0)
+#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_STATIC_DPC_OUTPUT_MSB_ALIGNED_DATA150_20D0 (1)
+#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_OUTPUT_OF_CA_CORRECTION_MSB_ALIGNED_DATA150_20D0 (2)
+#define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_CNR_OUTPUT_B110_G110_R110 (3)
 #define ACAMERA_ISP_ISP_GLOBAL_ISP_MONITOR_SELECT_OUTPUT_FORCES_TO_0 (4)
 
 // args: data (3-bit)
@@ -1740,14 +1740,16 @@ static __inline uint8_t acamera_isp_isp_global_chicken_bit_soft_rst_apply_immedi
 
 // ------------------------------------------------------------------------------ //
 // 
-//        0=timeout is default enabled. At the end of the frame, if the last data is not drained out from DMA writer within 4000
-//          AXI clock, cycle, DMA will flush the FIFO and ignore the remainign data. 
+//        0=timeout enabled. At the end of the frame, if the last data is not drained out from DMA writer within 4000
+//          AXI clock, cycle, DMA will flush the FIFO and ignore the remainign data.
+//
 //        1=timeout is disabled. If the last data is not drained out and the next frame starts coming in, DMA will drop the next frame and
 //          give an interrupt.
+//          If the timeout is disabled, its S/W responsibility to cancel the frame in all dma engines if frame drop interrupt comes.
 //        
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_ISP_ISP_GLOBAL_CHICKEN_BIT_DMA_WRITER_TIMEOUT_DISABLE_DEFAULT (1)
+#define ACAMERA_ISP_ISP_GLOBAL_CHICKEN_BIT_DMA_WRITER_TIMEOUT_DISABLE_DEFAULT (0)
 #define ACAMERA_ISP_ISP_GLOBAL_CHICKEN_BIT_DMA_WRITER_TIMEOUT_DISABLE_DATASIZE (1)
 #define ACAMERA_ISP_ISP_GLOBAL_CHICKEN_BIT_DMA_WRITER_TIMEOUT_DISABLE_OFFSET (0x64)
 #define ACAMERA_ISP_ISP_GLOBAL_CHICKEN_BIT_DMA_WRITER_TIMEOUT_DISABLE_MASK (0x20)

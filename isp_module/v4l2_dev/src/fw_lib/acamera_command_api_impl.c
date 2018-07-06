@@ -248,16 +248,13 @@ uint8_t sensor_streaming( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t d
         acamera_fsm_mgr_get_param( instance, FSM_PARAM_GET_SENSOR_STREAMING, NULL, 0, &is_streaming, sizeof( is_streaming ) );
 
         if ( ( value == OFF ) && is_streaming ) {
-            isp_safe_stop( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base );
-
             uint32_t streaming = 0;
             acamera_fsm_mgr_set_param( instance, FSM_PARAM_SET_SENSOR_STREAMING, &streaming, sizeof( streaming ) );
+            isp_safe_stop( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base );
         } else if ( ( value == ON ) && !is_streaming ) {
-
             uint32_t streaming = 1;
-            acamera_fsm_mgr_set_param( instance, FSM_PARAM_SET_SENSOR_STREAMING, &streaming, sizeof( streaming ) );
-
             isp_safe_start( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base );
+            acamera_fsm_mgr_set_param( instance, FSM_PARAM_SET_SENSOR_STREAMING, &streaming, sizeof( streaming ) );
         } else {
             result = NOT_SUPPORTED;
         }
@@ -3396,12 +3393,13 @@ uint8_t fr_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint8
             break;
         }
 
+        if (base == DMA_FORMAT_RAW16) {
+            acamera_isp_top_isp_processing_fr_bypass_mode_write(ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, 1);
+        }
+
         acamera_isp_fr_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base );
         acamera_isp_fr_uv_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base_uv );
-#if ISP_HAS_DS1
-        acamera_isp_ds1_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base );
-        acamera_isp_ds1_uv_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base_uv );
-#endif
+
         acamera_fsm_mgr_set_param( instance, FSM_PARAM_SET_MATRIX_YUV_FR_OUT_FMT, &pipe_output_format, sizeof( pipe_output_format ) );
         result = SUCCESS;
     }
@@ -3478,7 +3476,7 @@ uint8_t ds1_output_mode( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t di
 //
 //FORMAT = PLANE_SELECT<<6 | BASE
 // ------------------------------------------------------------------------------ //
-#if defined( DS1_FORMAT_BASE_PLANE_ID ) && ( ISP_HAS_FPGA_WRAPPER ) && ( ISP_HAS_DS1 )
+#if defined( DS1_FORMAT_BASE_PLANE_ID ) && ( ISP_HAS_DS1 )
 uint8_t ds1_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
 {
     uint32_t result = NOT_SUPPORTED;
@@ -3627,6 +3625,9 @@ uint8_t ds1_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint
             pipe_output_format = PIPE_OUT_YUV420;
             break;
         }
+
+        if (base == DMA_FORMAT_RAW16)
+            return result;
 
         acamera_isp_ds1_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base );
         acamera_isp_ds1_uv_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base_uv );
@@ -4360,6 +4361,17 @@ uint8_t acamera_api_dma_buffer( uint8_t type, void *data, uint32_t data_size, ui
     result = NOT_SUPPORTED;
 
     return result;
+}
+
+void acamera_api_dma_buff_queue_reset(uint8_t type)
+{
+    uint8_t d_type = 0xff;
+
+    acamera_fsm_mgr_t *instance = &( ( (acamera_context_t *)acamera_get_api_ctx_ptr() )->fsm_mgr );
+
+    d_type = type;
+
+    acamera_fsm_mgr_set_param(instance, FSM_PARAM_SET_DMA_QUEUE_RESET, &d_type, sizeof(d_type));
 }
 
 #ifdef MON_ERROR_CALIBRATION_LUT_NULL

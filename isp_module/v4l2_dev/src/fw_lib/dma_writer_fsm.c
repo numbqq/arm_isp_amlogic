@@ -57,6 +57,7 @@ int dma_writer_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_
 {
     int rc = 0;
     dma_writer_fsm_t *p_fsm = (dma_writer_fsm_t *)fsm;
+    uint8_t d_type = 0xff;
 
     switch ( param_id ) {
     case FSM_PARAM_SET_DMA_PIPE_SETTING: {
@@ -103,7 +104,16 @@ int dma_writer_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_
         acamera_frame_buffer_update( p_fsm );
 
         break;
+    case FSM_PARAM_SET_DMA_QUEUE_RESET:
+        if ( !input || input_size != sizeof( uint8_t ) ) {
+            LOG( LOG_ERR, "Size mismatch, param_id: %d.", param_id );
+            rc = -1;
+            break;
+        }
 
+        d_type = *(uint8_t *)input;
+        frame_buffer_queue_reset(p_fsm, d_type);
+        break;
     default:
         rc = -1;
         break;

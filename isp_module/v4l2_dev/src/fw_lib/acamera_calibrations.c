@@ -63,37 +63,37 @@ const void *_GET_LUT_PTR( void *p_ctx, uint32_t idx )
 }
 
 // use fast version of lut access routines
-inline uint8_t *_GET_UCHAR_PTR( void *p_ctx, uint32_t idx )
+uint8_t *_GET_UCHAR_PTR( void *p_ctx, uint32_t idx )
 {
     uint8_t *result = (uint8_t *)_GET_LUT_PTR( p_ctx, idx );
     return result;
 }
 
-inline uint16_t *_GET_USHORT_PTR( void *p_ctx, uint32_t idx )
+uint16_t *_GET_USHORT_PTR( void *p_ctx, uint32_t idx )
 {
     uint16_t *result = (uint16_t *)_GET_LUT_PTR( p_ctx, idx );
     return result;
 }
 
-inline uint32_t *_GET_UINT_PTR( void *p_ctx, uint32_t idx )
+uint32_t *_GET_UINT_PTR( void *p_ctx, uint32_t idx )
 {
     uint32_t *result = (uint32_t *)_GET_LUT_PTR( p_ctx, idx );
     return result;
 }
 
-inline modulation_entry_t *_GET_MOD_ENTRY16_PTR( void *p_ctx, uint32_t idx )
+modulation_entry_t *_GET_MOD_ENTRY16_PTR( void *p_ctx, uint32_t idx )
 {
     modulation_entry_t *result = (modulation_entry_t *)_GET_LUT_PTR( p_ctx, idx );
     return result;
 }
 
-inline modulation_entry_32_t *_GET_MOD_ENTRY32_PTR( void *p_ctx, uint32_t idx )
+modulation_entry_32_t *_GET_MOD_ENTRY32_PTR( void *p_ctx, uint32_t idx )
 {
     modulation_entry_32_t *result = (modulation_entry_32_t *)_GET_LUT_PTR( p_ctx, idx );
     return result;
 }
 
-inline uint32_t _GET_ROWS( void *p_ctx, uint32_t idx )
+uint32_t _GET_ROWS( void *p_ctx, uint32_t idx )
 {
     uint32_t result = 0;
     LookupTable *lut = _GET_LOOKUP_PTR( p_ctx, idx );
@@ -103,7 +103,7 @@ inline uint32_t _GET_ROWS( void *p_ctx, uint32_t idx )
     return result;
 }
 
-inline uint32_t _GET_COLS( void *p_ctx, uint32_t idx )
+uint32_t _GET_COLS( void *p_ctx, uint32_t idx )
 {
     uint32_t result = 0;
     LookupTable *lut = _GET_LOOKUP_PTR( p_ctx, idx );
@@ -113,7 +113,7 @@ inline uint32_t _GET_COLS( void *p_ctx, uint32_t idx )
     return result;
 }
 
-inline uint32_t _GET_LEN( void *p_ctx, uint32_t idx )
+uint32_t _GET_LEN( void *p_ctx, uint32_t idx )
 {
     uint32_t result = 0;
     LookupTable *lut = _GET_LOOKUP_PTR( p_ctx, idx );
@@ -123,7 +123,7 @@ inline uint32_t _GET_LEN( void *p_ctx, uint32_t idx )
     return result;
 }
 
-inline uint32_t _GET_WIDTH( void *p_ctx, uint32_t idx )
+uint32_t _GET_WIDTH( void *p_ctx, uint32_t idx )
 {
     uint32_t result = 0;
     LookupTable *lut = _GET_LOOKUP_PTR( p_ctx, idx );
@@ -133,7 +133,7 @@ inline uint32_t _GET_WIDTH( void *p_ctx, uint32_t idx )
     return result;
 }
 
-inline uint32_t _GET_SIZE( void *p_ctx, uint32_t idx )
+uint32_t _GET_SIZE( void *p_ctx, uint32_t idx )
 {
     uint32_t result = 0;
     LookupTable *lut = _GET_LOOKUP_PTR( p_ctx, idx );

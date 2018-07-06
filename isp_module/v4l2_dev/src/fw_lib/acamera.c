@@ -354,22 +354,17 @@ int32_t acamera_init( acamera_settings *settings, uint32_t ctx_num )
                             system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PING, SYS_DMA_TO_DEVICE, 0 );
                             system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PONG, SYS_DMA_TO_DEVICE, 0 );
                             if ( result == 0 ) {
-                                // driver is initialized. we can start processing interrupts
-                                // wait until irq mask is cleared and start processing
+                                #if ISP_SENSOR_DRIVER_MODEL != 1
+                                // avoid interrupt status check against the model
                                 while ( acamera_isp_isp_global_interrupt_status_vector_read( 0 ) != 0 ) {
+                                    // driver is initialized. we can start processing interrupts
+                                    // wait until irq mask is cleared and start processing
                                     acamera_isp_isp_global_interrupt_clear_write( 0, 0 );
                                     acamera_isp_isp_global_interrupt_clear_write( 0, 1 );
                                 }
-
-                                if ( acamera_isp_isp_global_interrupt_status_vector_read( 0 ) == 0 ) {
-                                    acamera_isp_isp_global_interrupt_mask_vector_write( 0, ISP_IRQ_MASK_VECTOR );
-                                    g_firmware.initialized = 1;
-                                } else {
-                                    // something is wrong and we could not clear the status vector properly.
-                                    LOG( LOG_CRIT, "Failed to initialize the IRQ block. " );
-                                    g_firmware.initialized = 0;
-                                    break;
-                                }
+                                #endif // #if ISP_SENSOR_DRIVER_MODEL != 1
+                                acamera_isp_isp_global_interrupt_mask_vector_write( 0, ISP_IRQ_MASK_VECTOR );
+                                g_firmware.initialized = 1;
                             } else {
                                 LOG( LOG_CRIT, "One or more contexts were not initialized properly. " );
                                 g_firmware.initialized = 0;
@@ -558,6 +553,7 @@ int32_t acamera_interrupt_handler()
                         g_firmware.dma_flag_isp_config_completed = 0;
                         g_firmware.dma_flag_isp_metering_completed = 0;
 
+                        //if (!acamera_isp_isp_global_mcu_ping_pong_config_select_read(0)) { // cmodel compatibility
                         if ( acamera_isp_isp_global_ping_pong_config_select_read( 0 ) == ISP_CONFIG_PONG ) {
                             LOG( LOG_INFO, "Current config is pong" );
                             //            |^^^^^^^^^|

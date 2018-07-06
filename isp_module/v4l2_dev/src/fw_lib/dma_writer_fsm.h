@@ -62,6 +62,7 @@ void frame_buffer_prepare_metadata( dma_writer_fsm_ptr_t p_fsm );
 void frame_buffer_fr_finished( dma_writer_fsm_ptr_t p_fsm );
 void frame_buffer_ds_finished( dma_writer_fsm_ptr_t p_fsm );
 void frame_buffer_check_and_run( dma_writer_fsm_ptr_t p_fsm );
+void frame_buffer_queue_reset(dma_writer_fsm_ptr_t p_fsm, dma_type type);
 
 uint16_t frame_buffer_configure( dma_writer_fsm_ptr_t p_fsm, dma_type dma_output, tframe_t *frame_buf_array, uint32_t frame_buf_len );
 uint16_t frame_buffer_reconfigure( dma_writer_fsm_ptr_t p_fsm, dma_type dma_output, tframe_t *frame_buf_array, uint16_t frame_buf_len );

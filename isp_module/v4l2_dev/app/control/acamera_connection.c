@@ -34,8 +34,7 @@
 #elif ISP_HAS_CONNECTION_SOCKET
 #define ALIGNMENT_MASK 0
 #include "acamera_socket.h"
-#include "acamera_socket_inet_strategy.h"
-#include "acamera_socket_unix_strategy.h"
+#include "acamera_socket_strategy.h"
 #elif ISP_HAS_CONNECTION_CHARDEV
 #define ALIGNMENT_MASK 0
 #include "acamera_chardev.h"
@@ -45,13 +44,20 @@
 #include "acamera_command_api.h"
 #include "application_command_api.h"
 #include "acamera_isp_core_nomem_settings.h"
-
 #include "acamera_fw.h"
+
+
+
 
 #if ISP_HAS_CONNECTION_BUFFER
 static acamera_buffer_manager_t buff_mgr;
 #elif ISP_HAS_CONNECTION_UART
 static acamera_uart_t uart;
+#endif
+
+
+#if ISP_HAS_CONNECTION_SOCKET
+extern struct acamera_socket_strategy acamera_socket_init_strategy();
 #endif
 
 //#define TRACE
@@ -130,19 +136,17 @@ static int acamera_socket_do_init( connection_t *con )
     struct acamera_socket *socket;
     int rc;
 
-    assert( con );
 
-    f = acamera_socket_f_impl();
+   /* f = acamera_socket_f_impl();
     if ( !f ) {
         LOG( LOG_ERR, "Please double check your platform provide TCP/IP socket routines" );
         return -1;
     }
-
+*/
     socket = acamera_socket_instance();
 
-    assert( socket );
 
-    rc = acamera_socket_init( socket, acamera_socket_inet_strategy( *f ) );
+    rc = acamera_socket_init( socket, acamera_socket_init_strategy() );
     if ( rc )
         return rc;
 

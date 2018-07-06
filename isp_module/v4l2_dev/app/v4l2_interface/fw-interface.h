@@ -55,6 +55,7 @@ bool fw_intf_validate_control( uint32_t id );
 int fw_intf_set_test_pattern( int val );
 int fw_intf_set_test_pattern_type( int val );
 int fw_intf_set_af_refocus( int val );
+int fw_intf_set_af_roi( int val );
 int fw_intf_set_brightness( int val );
 int fw_intf_set_contrast( int val );
 int fw_intf_set_saturation( int val );
@@ -72,5 +73,7 @@ int fw_intf_set_white_balance_auto( int val );
 int fw_intf_set_white_balance( int val );
 int fw_intf_set_focus_auto( int val );
 int fw_intf_set_focus( int val );
+int fw_intf_set_output_fr_on_off( uint32_t ctrl_val );
+int fw_intf_set_output_ds1_on_off( uint32_t ctrl_val );
 
 #endif

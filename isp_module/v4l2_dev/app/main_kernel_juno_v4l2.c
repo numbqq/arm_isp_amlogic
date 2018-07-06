@@ -37,11 +37,11 @@
 #include "acamera_logger.h"
 #include "system_hw_io.h"
 #include "system_sw_io.h"
+#include "system_am_sc.h"
 #include <linux/fs.h>
 #include <asm/uaccess.h>
 #include <asm/unaligned.h>
 #include <linux/delay.h>
-
 
 #define LOG_CONTEXT "[ ACamera ]"
 
@@ -353,11 +353,6 @@ static const char *isp_dump_usage_str = {
     "echo <port:fr/ds1> <dst_path> buff_size(H)  offset(H) > /sys/devices/platform/ff140000.isp/dump_frame; dump specific buffers\n"
 };
 
-#if ISP_HAS_DS1
-extern uint8_t *ds1_isp_kaddr;
-extern void config_ds_setting(void);
-#endif
-
 static ssize_t dump_frame_read(
     struct device *dev,
     struct device_attribute *attr,
@@ -403,13 +398,7 @@ static ssize_t dump_frame_write(
 
     if (!strcmp(parm[0], "ds1")) {
         if (parm[1] != NULL) {
-#if ISP_HAS_DS1
-            config_ds_setting();
-            mdelay(200);
-            write_to_file(parm[1], ds1_isp_kaddr + buff_offset, buff_size);
-#else
-            pr_info("dump DS1 is not supported\n");
-#endif
+            pr_info("use v4l2 test app dump DS1\n");
         }
     } else if (!strcmp(parm[0], "fr")) {
         if (parm[1] != NULL)
@@ -510,6 +499,7 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
     struct clk* clk_mipi_0;
     u32 isp_clk_rate = 666666667;
     u32 isp_mipi_rate = 200000000;
+    struct device_node *link_node;
 
     // Initialize irq
     isp_res = platform_get_resource_byname( pdev,
@@ -538,6 +528,26 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
 
     of_reserved_mem_device_init(&(pdev->dev));
 
+    link_node = of_parse_phandle(pdev->dev.of_node, "link-device", 0);
+
+    if (link_node == NULL) {
+        pr_err("%s:Failed to get link device\n", __func__);
+    } else {
+        pr_info("%s:Success to get link device: %s\n", __func__,
+            link_node->name);
+        am_sc_parse_dt(link_node);
+        am_sc_system_init();
+#if 0 // TODO: config isp sc at the right place
+        struct am_sc_info sc_info;
+        memset(&sc_info, 0, sizeof(sc_info));
+        sc_info.out_w = 1280;
+        sc_info.out_h = 720;
+        sc_info.src_w = 1920;
+        sc_info.src_h = 1080;
+        am_sc_hw_init(&sc_info);
+        am_sc_start();
+#endif
+    }
 
     clk_isp_0 = devm_clk_get(&pdev->dev, "cts_mipi_isp_clk_composite");
     if (IS_ERR(clk_isp_0)) {

@@ -171,6 +171,12 @@ void sensor_sw_init( sensor_fsm_ptr_t p_fsm )
     acamera_isp_top_active_width_write( p_fsm->cmn.isp_base, param->active.width );
     acamera_isp_top_active_height_write( p_fsm->cmn.isp_base, param->active.height );
 
+    acamera_isp_metering_af_active_width_write(p_fsm->cmn.isp_base, param->active.width);
+    acamera_isp_metering_af_active_height_write(p_fsm->cmn.isp_base, param->active.height);
+
+    acamera_isp_lumvar_active_width_write(p_fsm->cmn.isp_base, param->active.width);
+    acamera_isp_lumvar_active_height_write(p_fsm->cmn.isp_base, param->active.height);
+
     acamera_isp_input_port_hc_size0_write( p_fsm->cmn.isp_base, param->active.width );
     acamera_isp_input_port_hc_size1_write( p_fsm->cmn.isp_base, param->active.width );
     acamera_isp_input_port_vc_size_write( p_fsm->cmn.isp_base, param->active.height );

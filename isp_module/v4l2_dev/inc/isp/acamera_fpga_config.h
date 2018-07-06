@@ -41,27 +41,6 @@
 // ------------------------------------------------------------------------------ //
 
 // ------------------------------------------------------------------------------ //
-// Register: gdc_axi_read_raddr_39_32
-// ------------------------------------------------------------------------------ //
-
-// ------------------------------------------------------------------------------ //
-//  Higher part [39:32] of address bus read part of GDC out AXI
-// ------------------------------------------------------------------------------ //
-
-#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_DEFAULT (0x01)
-#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_DATASIZE (8)
-#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_OFFSET (0x0)
-#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_MASK (0xff)
-
-// args: data (8-bit)
-static __inline void acamera_fpga_fpga_gdc_axi_read_raddr_39_32_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x209000L);
-    system_hw_write_32(0x209000L, (((uint32_t) (data & 0xff)) << 0) | (curr & 0xffffff00));
-}
-static __inline uint8_t acamera_fpga_fpga_gdc_axi_read_raddr_39_32_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x209000L) & 0xff) >> 0);
-}
-// ------------------------------------------------------------------------------ //
 // Register: gdc_axi_write_waddr_39_32
 // ------------------------------------------------------------------------------ //
 
@@ -69,7 +48,7 @@ static __inline uint8_t acamera_fpga_fpga_gdc_axi_read_raddr_39_32_read(uintptr_
 //  Higher part [39:32] of address bus write part of GDC out AXI
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_GDC_AXI_WRITE_WADDR_39_32_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_GDC_AXI_WRITE_WADDR_39_32_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_GDC_AXI_WRITE_WADDR_39_32_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_GDC_AXI_WRITE_WADDR_39_32_OFFSET (0x4)
 #define ACAMERA_FPGA_FPGA_GDC_AXI_WRITE_WADDR_39_32_MASK (0xff)
@@ -83,6 +62,27 @@ static __inline uint8_t acamera_fpga_fpga_gdc_axi_write_waddr_39_32_read(uintptr
     return (uint8_t)((system_hw_read_32(0x209004L) & 0xff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
+// Register: gdc_axi_read_raddr_39_32
+// ------------------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------------------ //
+//  Higher part [39:32] of address bus read part of GDC out AXI
+// ------------------------------------------------------------------------------ //
+
+#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_DEFAULT (0x00)
+#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_DATASIZE (8)
+#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_OFFSET (0x4)
+#define ACAMERA_FPGA_FPGA_GDC_AXI_READ_RADDR_39_32_MASK (0xff00)
+
+// args: data (8-bit)
+static __inline void acamera_fpga_fpga_gdc_axi_read_raddr_39_32_write(uintptr_t base, uint8_t data) {
+    uint32_t curr = system_hw_read_32(0x209004L);
+    system_hw_write_32(0x209004L, (((uint32_t) (data & 0xff)) << 8) | (curr & 0xffff00ff));
+}
+static __inline uint8_t acamera_fpga_fpga_gdc_axi_read_raddr_39_32_read(uintptr_t base) {
+    return (uint8_t)((system_hw_read_32(0x209004L) & 0xff00) >> 8);
+}
+// ------------------------------------------------------------------------------ //
 // Register: frame_reader_raddr_39_32
 // ------------------------------------------------------------------------------ //
 
@@ -90,7 +90,7 @@ static __inline uint8_t acamera_fpga_fpga_gdc_axi_write_waddr_39_32_read(uintptr
 //  Higher part [39:32] of address bus read part of FPGA Frame Reader AXI
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_FRAME_READER_RADDR_39_32_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_FRAME_READER_RADDR_39_32_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_FRAME_READER_RADDR_39_32_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_FRAME_READER_RADDR_39_32_OFFSET (0x8)
 #define ACAMERA_FPGA_FPGA_FRAME_READER_RADDR_39_32_MASK (0xff)
@@ -107,7 +107,7 @@ static __inline uint8_t acamera_fpga_fpga_frame_reader_raddr_39_32_read(uintptr_
 // Register: dma_wdr_frame_buffer1_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WDR_FRAME_BUFFER1_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WDR_FRAME_BUFFER1_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WDR_FRAME_BUFFER1_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WDR_FRAME_BUFFER1_HIGHADDR_OFFSET (0xc)
 #define ACAMERA_FPGA_FPGA_DMA_WDR_FRAME_BUFFER1_HIGHADDR_MASK (0xff)
@@ -124,7 +124,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_wdr_frame_buffer1_highaddr_read(ui
 // Register: dma_writer1_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER1_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER1_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER1_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER1_HIGHADDR_OFFSET (0x10)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER1_HIGHADDR_MASK (0xff)
@@ -141,7 +141,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer1_highaddr_read(uintptr_t ba
 // Register: dma_writer2_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER2_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER2_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER2_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER2_HIGHADDR_OFFSET (0x14)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER2_HIGHADDR_MASK (0xff)
@@ -158,7 +158,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer2_highaddr_read(uintptr_t ba
 // Register: dma_writer3_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER3_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER3_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER3_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER3_HIGHADDR_OFFSET (0x18)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER3_HIGHADDR_MASK (0xff)
@@ -175,7 +175,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer3_highaddr_read(uintptr_t ba
 // Register: dma_writer4_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER4_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER4_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER4_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER4_HIGHADDR_OFFSET (0x1c)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER4_HIGHADDR_MASK (0xff)
@@ -192,7 +192,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer4_highaddr_read(uintptr_t ba
 // Register: dma_input_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_INPUT_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_INPUT_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_INPUT_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_INPUT_HIGHADDR_OFFSET (0x20)
 #define ACAMERA_FPGA_FPGA_DMA_INPUT_HIGHADDR_MASK (0xff)
@@ -209,7 +209,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_input_highaddr_read(uintptr_t base
 // Register: dma_writer_fr_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_HIGHADDR_OFFSET (0x24)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_HIGHADDR_MASK (0xff)
@@ -226,7 +226,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer_fr_highaddr_read(uintptr_t 
 // Register: dma_writer_fr_uv_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_UV_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_UV_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_UV_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_UV_HIGHADDR_OFFSET (0x28)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_FR_UV_HIGHADDR_MASK (0xff)
@@ -243,7 +243,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer_fr_uv_highaddr_read(uintptr
 // Register: dma_writer_capture1_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE1_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE1_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE1_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE1_HIGHADDR_OFFSET (0x2c)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE1_HIGHADDR_MASK (0xff)
@@ -260,7 +260,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer_capture1_highaddr_read(uint
 // Register: dma_writer_capture2_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE2_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE2_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE2_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE2_HIGHADDR_OFFSET (0x30)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE2_HIGHADDR_MASK (0xff)
@@ -277,7 +277,7 @@ static __inline uint8_t acamera_fpga_fpga_dma_writer_capture2_highaddr_read(uint
 // Register: dma_writer_capture3_highaddr
 // ------------------------------------------------------------------------------ //
 
-#define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE3_HIGHADDR_DEFAULT (0x01)
+#define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE3_HIGHADDR_DEFAULT (0x00)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE3_HIGHADDR_DATASIZE (8)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE3_HIGHADDR_OFFSET (0x34)
 #define ACAMERA_FPGA_FPGA_DMA_WRITER_CAPTURE3_HIGHADDR_MASK (0xff)
@@ -3133,7 +3133,7 @@ static __inline uint8_t acamera_fpga_video_capture1_dma_writer_bank0_restart_rea
 
 // ------------------------------------------------------------------------------ //
 // 
-//    Indicates the offset in bytes from the start of one line to the next line.  
+//    Indicates the offset in bytes from the start of one line to the next line.
 //    This value should be equal to or larger than one line of image data and should be word-aligned
 //    
 // ------------------------------------------------------------------------------ //
@@ -3416,7 +3416,7 @@ static __inline uint8_t acamera_fpga_video_capture1_dma_writer_max_burst_length_
 // 
 //    At end of frame an optional timeout is applied to wait for AXI writes to completed/accepted befotre caneclling and flushing.
 //    0= Timeout Enabled, timeout count can decrement.
-//    1 = Disable timeout, timeout count can't decrement. 
+//    1 = Disable timeout, timeout count can't decrement.
 //    
 // ------------------------------------------------------------------------------ //
 
@@ -3921,16 +3921,16 @@ static __inline uint32_t acamera_fpga_sensor_calib_maxwait4567_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_PRESET_DEFAULT (2)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_PRESET_DATASIZE (4)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_PRESET_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_PRESET_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_PRESET_MASK (0xf)
 
 // args: data (4-bit)
 static __inline void acamera_fpga_fpga_input_port_preset_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0xf)) << 0) | (curr & 0xfffffff0));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0xf)) << 0) | (curr & 0xfffffff0));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_preset_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0xf) >> 0);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0xf) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vs_use field
@@ -3938,18 +3938,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_preset_read(uintptr_t base)
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_USE_FIELD_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_USE_FIELD_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_USE_FIELD_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_USE_FIELD_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_USE_FIELD_MASK (0x100)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_USE_FIELD_USE_VSYNC_I_PORT_FOR_VERTICAL_SYNC (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_USE_FIELD_USE_FIELD_I_PORT_FOR_VERTICAL_SYNC (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_vs_use_field_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 8) | (curr & 0xfffffeff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 8) | (curr & 0xfffffeff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_vs_use_field_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x100) >> 8);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x100) >> 8);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vs toggle
@@ -3957,18 +3957,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_vs_use_field_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_TOGGLE_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_TOGGLE_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_TOGGLE_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_TOGGLE_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_TOGGLE_MASK (0x200)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_TOGGLE_VSYNC_IS_PULSETYPE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_TOGGLE_VSYNC_IS_TOGGLETYPE_FIELD_SIGNAL (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_vs_toggle_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 9) | (curr & 0xfffffdff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 9) | (curr & 0xfffffdff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_vs_toggle_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x200) >> 9);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x200) >> 9);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vs polarity
@@ -3976,18 +3976,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_vs_toggle_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_MASK (0x400)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_HORIZONTAL_COUNTER_RESET_ON_RISING_EDGE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_HORIZONTAL_COUNTER_RESET_ON_FALLING_EDGE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_vs_polarity_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 10) | (curr & 0xfffffbff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 10) | (curr & 0xfffffbff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_vs_polarity_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x400) >> 10);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x400) >> 10);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vs_polarity acl
@@ -3995,18 +3995,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_vs_polarity_read(uintptr_t 
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_ACL_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_ACL_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_ACL_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_ACL_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_ACL_MASK (0x800)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_ACL_DONT_INVERT_POLARITY_FOR_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VS_POLARITY_ACL_INVERT_POLARITY_FOR_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_vs_polarity_acl_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 11) | (curr & 0xfffff7ff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 11) | (curr & 0xfffff7ff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_vs_polarity_acl_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x800) >> 11);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x800) >> 11);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hs_use acl
@@ -4014,18 +4014,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_vs_polarity_acl_read(uintpt
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_USE_ACL_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_USE_ACL_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_USE_ACL_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_USE_ACL_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_USE_ACL_MASK (0x1000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_USE_ACL_USE_HSYNC_I_PORT_FOR_ACTIVELINE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_USE_ACL_USE_ACL_I_PORT_FOR_ACTIVELINE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hs_use_acl_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 12) | (curr & 0xffffefff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 12) | (curr & 0xffffefff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hs_use_acl_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x1000) >> 12);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x1000) >> 12);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vc_c select
@@ -4033,18 +4033,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hs_use_acl_read(uintptr_t b
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_C_SELECT_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_C_SELECT_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_C_SELECT_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_C_SELECT_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_C_SELECT_MASK (0x4000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_C_SELECT_VERTICAL_COUNTER_COUNTS_ON_HS (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_C_SELECT_VERTICAL_COUNTER_COUNTS_ON_HORIZONTAL_COUNTER_OVERFLOW_OR_RESET (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_vc_c_select_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 14) | (curr & 0xffffbfff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 14) | (curr & 0xffffbfff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_vc_c_select_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x4000) >> 14);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x4000) >> 14);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vc_r select
@@ -4052,18 +4052,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_vc_c_select_read(uintptr_t 
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_R_SELECT_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_R_SELECT_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_R_SELECT_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_R_SELECT_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_R_SELECT_MASK (0x8000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_R_SELECT_VERTICAL_COUNTER_IS_RESET_ON_EDGE_OF_VS (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_R_SELECT_VERTICAL_COUNTER_IS_RESET_AFTER_TIMEOUT_ON_HS (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_vc_r_select_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 15) | (curr & 0xffff7fff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 15) | (curr & 0xffff7fff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_vc_r_select_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x8000) >> 15);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x8000) >> 15);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hs_xor vs
@@ -4071,18 +4071,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_vc_r_select_read(uintptr_t 
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_XOR_VS_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_XOR_VS_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_XOR_VS_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_XOR_VS_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_XOR_VS_MASK (0x10000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_XOR_VS_NORMAL_MODE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_XOR_VS_HVALID__HSYNC_XOR_VSYNC (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hs_xor_vs_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 16) | (curr & 0xfffeffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 16) | (curr & 0xfffeffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hs_xor_vs_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x10000) >> 16);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x10000) >> 16);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hs polarity
@@ -4090,18 +4090,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hs_xor_vs_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_MASK (0x20000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_DONT_INVERT_POLARITY_OF_HS_FOR_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_INVERT_POLARITY_OF_HS_FOR_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hs_polarity_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 17) | (curr & 0xfffdffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 17) | (curr & 0xfffdffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x20000) >> 17);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x20000) >> 17);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hs_polarity acl
@@ -4109,18 +4109,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_read(uintptr_t 
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_ACL_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_ACL_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_ACL_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_ACL_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_ACL_MASK (0x40000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_ACL_DONT_INVERT_POLARITY_OF_HS_FOR_HS_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_ACL_INVERT_POLARITY_OF_HS_FOR_HS_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hs_polarity_acl_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 18) | (curr & 0xfffbffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 18) | (curr & 0xfffbffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_acl_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x40000) >> 18);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x40000) >> 18);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hs_polarity hs
@@ -4128,18 +4128,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_acl_read(uintpt
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_HS_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_HS_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_HS_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_HS_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_HS_MASK (0x80000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_HS_HORIZONTAL_COUNTER_IS_RESET_ON_RISING_EDGE_OF_HS (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_HS_HORIZONTAL_COUNTER_IS_RESET_ON_VSYNC_EG_WHEN_HSYNC_IS_NOT_AVAILABLE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hs_polarity_hs_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 19) | (curr & 0xfff7ffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 19) | (curr & 0xfff7ffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_hs_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x80000) >> 19);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x80000) >> 19);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hs_polarity vc
@@ -4147,18 +4147,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_hs_read(uintptr
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_VC_DEFAULT (1)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_VC_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_VC_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_VC_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_VC_MASK (0x100000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_VC_VERTICAL_COUNTER_INCREMENTS_ON_RISING_EDGE_OF_HS (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HS_POLARITY_VC_VERTICAL_COUNTER_INCREMENTS_ON_FALLING_EDGE_OF_HS (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hs_polarity_vc_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 20) | (curr & 0xffefffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 20) | (curr & 0xffefffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_vc_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x100000) >> 20);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x100000) >> 20);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hc_r select
@@ -4166,18 +4166,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hs_polarity_vc_read(uintptr
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_R_SELECT_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_R_SELECT_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_R_SELECT_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_R_SELECT_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_R_SELECT_MASK (0x800000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_R_SELECT_VERTICAL_COUNTER_IS_RESET_ON_RISING_EDGE_OF_HS (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_R_SELECT_VERTICAL_COUNTER_IS_RESET_ON_RISING_EDGE_OF_VS (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hc_r_select_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 23) | (curr & 0xff7fffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 23) | (curr & 0xff7fffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hc_r_select_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x800000) >> 23);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x800000) >> 23);
 }
 // ------------------------------------------------------------------------------ //
 // Register: acl polarity
@@ -4185,18 +4185,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hc_r_select_read(uintptr_t 
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACL_POLARITY_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACL_POLARITY_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACL_POLARITY_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACL_POLARITY_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACL_POLARITY_MASK (0x1000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACL_POLARITY_DONT_INVERT_ACL_I_FOR_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACL_POLARITY_INVERT_ACL_I_FOR_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_acl_polarity_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 24) | (curr & 0xfeffffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 24) | (curr & 0xfeffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_acl_polarity_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x1000000) >> 24);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x1000000) >> 24);
 }
 // ------------------------------------------------------------------------------ //
 // Register: sid_latch_hs_pos
@@ -4204,18 +4204,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_acl_polarity_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_POS_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_POS_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_POS_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_POS_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_POS_MASK (0x10000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_POS_DONT_LATCH_STREAM_ID_ON_RISING_EDGE_OF_HS (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_POS_LATCH_STREAM_ID_ON_RISING_EDGE_OF_HS (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_sid_latch_hs_pos_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 28) | (curr & 0xefffffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 28) | (curr & 0xefffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_hs_pos_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x10000000) >> 28);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x10000000) >> 28);
 }
 // ------------------------------------------------------------------------------ //
 // Register: sid_latch_hs_neg
@@ -4223,18 +4223,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_hs_pos_read(uintp
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_NEG_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_NEG_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_NEG_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_NEG_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_NEG_MASK (0x20000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_NEG_DONT_LATCH_STREAM_ID_ON_FALLING_EDGE_OF_HS (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_HS_NEG_LATCH_STREAM_ID_ON_FALLING_EDGE_OF_HS (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_sid_latch_hs_neg_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 29) | (curr & 0xdfffffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 29) | (curr & 0xdfffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_hs_neg_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x20000000) >> 29);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x20000000) >> 29);
 }
 // ------------------------------------------------------------------------------ //
 // Register: sid_latch_acl_pos
@@ -4242,18 +4242,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_hs_neg_read(uintp
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_POS_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_POS_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_POS_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_POS_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_POS_MASK (0x40000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_POS_DONT_LATCH_STREAM_ID_ON_RISING_EDGE_OF_ACL (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_POS_LATCH_STREAM_ID_ON_RISING_EDGE_OF_ACL (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_sid_latch_acl_pos_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 30) | (curr & 0xbfffffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 30) | (curr & 0xbfffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_acl_pos_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x40000000) >> 30);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x40000000) >> 30);
 }
 // ------------------------------------------------------------------------------ //
 // Register: sid_latch_acl_neg
@@ -4261,18 +4261,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_acl_pos_read(uint
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_NEG_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_NEG_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_NEG_OFFSET (0x4a4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_NEG_OFFSET (0x3a4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_NEG_MASK (0x80000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_NEG_DONT_LATCH_STREAM_ID_ON_FALLING_EDGE_OF_ACL (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_SID_LATCH_ACL_NEG_LATCH_STREAM_ID_ON_FALLING_EDGE_OF_ACL (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_sid_latch_acl_neg_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a4L);
-    system_hw_write_32(0x2094a4L, (((uint32_t) (data & 0x1)) << 31) | (curr & 0x7fffffff));
+    uint32_t curr = system_hw_read_32(0x2093a4L);
+    system_hw_write_32(0x2093a4L, (((uint32_t) (data & 0x1)) << 31) | (curr & 0x7fffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_acl_neg_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a4L) & 0x80000000) >> 31);
+    return (uint8_t)((system_hw_read_32(0x2093a4L) & 0x80000000) >> 31);
 }
 // ------------------------------------------------------------------------------ //
 // Register: field polarity
@@ -4280,18 +4280,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_sid_latch_acl_neg_read(uint
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_POLARITY_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_POLARITY_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_POLARITY_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_POLARITY_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_POLARITY_MASK (0x1)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_POLARITY_DONT_INVERT_FIELD_I_FOR_FIELD_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_POLARITY_INVERT_FIELD_I_FOR_FIELD_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_field_polarity_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 0) | (curr & 0xfffffffe));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 0) | (curr & 0xfffffffe));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_field_polarity_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x1) >> 0);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x1) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: field toggle
@@ -4299,18 +4299,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_field_polarity_read(uintptr
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_TOGGLE_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_TOGGLE_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_TOGGLE_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_TOGGLE_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_TOGGLE_MASK (0x2)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_TOGGLE_FIELD_IS_PULSETYPE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_TOGGLE_FIELD_IS_TOGGLETYPE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_field_toggle_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 1) | (curr & 0xfffffffd));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 1) | (curr & 0xfffffffd));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_field_toggle_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x2) >> 1);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x2) >> 1);
 }
 // ------------------------------------------------------------------------------ //
 // Register: aclg window0
@@ -4318,18 +4318,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_field_toggle_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW0_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW0_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW0_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW0_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW0_MASK (0x100)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW0_EXCLUDE_WINDOW0_SIGNAL_IN_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW0_INCLUDE_WINDOW0_SIGNAL_IN_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_aclg_window0_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 8) | (curr & 0xfffffeff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 8) | (curr & 0xfffffeff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_aclg_window0_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x100) >> 8);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x100) >> 8);
 }
 // ------------------------------------------------------------------------------ //
 // Register: aclg hsync
@@ -4337,18 +4337,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_aclg_window0_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_HSYNC_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_HSYNC_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_HSYNC_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_HSYNC_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_HSYNC_MASK (0x200)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_HSYNC_EXCLUDE_HSYNC_SIGNAL_IN_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_HSYNC_INCLUDE_HSYNC_SIGNAL_IN_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_aclg_hsync_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 9) | (curr & 0xfffffdff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 9) | (curr & 0xfffffdff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_aclg_hsync_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x200) >> 9);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x200) >> 9);
 }
 // ------------------------------------------------------------------------------ //
 // Register: aclg window2
@@ -4356,18 +4356,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_aclg_hsync_read(uintptr_t b
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW2_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW2_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW2_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW2_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW2_MASK (0x400)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW2_EXCLUDE_WINDOW2_SIGNAL_IN_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_WINDOW2_INCLUDE_WINDOW2_SIGNAL_IN_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_aclg_window2_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 10) | (curr & 0xfffffbff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 10) | (curr & 0xfffffbff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_aclg_window2_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x400) >> 10);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x400) >> 10);
 }
 // ------------------------------------------------------------------------------ //
 // Register: aclg acl
@@ -4375,18 +4375,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_aclg_window2_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_ACL_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_ACL_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_ACL_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_ACL_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_ACL_MASK (0x800)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_ACL_EXCLUDE_ACL_I_SIGNAL_IN_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_ACL_INCLUDE_ACL_I_SIGNAL_IN_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_aclg_acl_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 11) | (curr & 0xfffff7ff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 11) | (curr & 0xfffff7ff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_aclg_acl_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x800) >> 11);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x800) >> 11);
 }
 // ------------------------------------------------------------------------------ //
 // Register: aclg vsync
@@ -4394,18 +4394,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_aclg_acl_read(uintptr_t bas
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_VSYNC_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_VSYNC_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_VSYNC_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_VSYNC_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_VSYNC_MASK (0x1000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_VSYNC_EXCLUDE_VSYNC_SIGNAL_IN_ACL_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_ACLG_VSYNC_INCLUDE_VSYNC_SIGNAL_IN_ACL_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_aclg_vsync_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 12) | (curr & 0xffffefff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 12) | (curr & 0xffffefff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_aclg_vsync_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x1000) >> 12);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x1000) >> 12);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hsg window1
@@ -4413,18 +4413,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_aclg_vsync_read(uintptr_t b
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW1_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW1_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW1_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW1_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW1_MASK (0x10000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW1_EXCLUDE_WINDOW1_SIGNAL_IN_HS_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW1_INCLUDE_WINDOW1_SIGNAL_IN_HS_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hsg_window1_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 16) | (curr & 0xfffeffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 16) | (curr & 0xfffeffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hsg_window1_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x10000) >> 16);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x10000) >> 16);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hsg hsync
@@ -4432,18 +4432,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hsg_window1_read(uintptr_t 
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_HSYNC_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_HSYNC_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_HSYNC_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_HSYNC_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_HSYNC_MASK (0x20000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_HSYNC_EXCLUDE_HSYNC_SIGNAL_IN_HS_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_HSYNC_INCLUDE_HSYNC_SIGNAL_IN_HS_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hsg_hsync_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 17) | (curr & 0xfffdffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 17) | (curr & 0xfffdffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hsg_hsync_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x20000) >> 17);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x20000) >> 17);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hsg vsync
@@ -4451,18 +4451,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hsg_hsync_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_VSYNC_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_VSYNC_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_VSYNC_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_VSYNC_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_VSYNC_MASK (0x40000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_VSYNC_EXCLUDE_VSYNC_SIGNAL_IN_HS_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_VSYNC_INCLUDE_VSYNC_SIGNAL_IN_HS_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hsg_vsync_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 18) | (curr & 0xfffbffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 18) | (curr & 0xfffbffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hsg_vsync_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x40000) >> 18);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x40000) >> 18);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hsg window2
@@ -4470,18 +4470,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hsg_vsync_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW2_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW2_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW2_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW2_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW2_MASK (0x80000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW2_EXCLUDE_WINDOW2_SIGNAL_IN_HS_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HSG_WINDOW2_INCLUDE_WINDOW2_SIGNAL_IN_HS_GATE_MASK_OUT_SPURIOUS_HS_DURING_BLANK (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_hsg_window2_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 19) | (curr & 0xfff7ffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 19) | (curr & 0xfff7ffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_hsg_window2_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x80000) >> 19);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x80000) >> 19);
 }
 // ------------------------------------------------------------------------------ //
 // Register: fieldg vsync
@@ -4489,18 +4489,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_hsg_window2_read(uintptr_t 
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_VSYNC_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_VSYNC_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_VSYNC_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_VSYNC_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_VSYNC_MASK (0x1000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_VSYNC_EXCLUDE_VSYNC_SIGNAL_IN_FIELD_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_VSYNC_INCLUDE_VSYNC_SIGNAL_IN_FIELD_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_fieldg_vsync_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 24) | (curr & 0xfeffffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 24) | (curr & 0xfeffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_fieldg_vsync_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x1000000) >> 24);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x1000000) >> 24);
 }
 // ------------------------------------------------------------------------------ //
 // Register: fieldg window2
@@ -4508,18 +4508,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_fieldg_vsync_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_WINDOW2_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_WINDOW2_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_WINDOW2_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_WINDOW2_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_WINDOW2_MASK (0x2000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_WINDOW2_EXCLUDE_WINDOW2_SIGNAL_IN_FIELD_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_WINDOW2_INCLUDE_WINDOW2_SIGNAL_IN_FIELD_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_fieldg_window2_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 25) | (curr & 0xfdffffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 25) | (curr & 0xfdffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_fieldg_window2_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x2000000) >> 25);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x2000000) >> 25);
 }
 // ------------------------------------------------------------------------------ //
 // Register: fieldg field
@@ -4527,18 +4527,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_fieldg_window2_read(uintptr
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_FIELD_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_FIELD_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_FIELD_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_FIELD_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_FIELD_MASK (0x4000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_FIELD_EXCLUDE_FIELD_I_SIGNAL_IN_FIELD_GATE (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELDG_FIELD_INCLUDE_FIELD_I_SIGNAL_IN_FIELD_GATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_fieldg_field_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 26) | (curr & 0xfbffffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 26) | (curr & 0xfbffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_fieldg_field_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x4000000) >> 26);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x4000000) >> 26);
 }
 // ------------------------------------------------------------------------------ //
 // Register: field mode
@@ -4546,18 +4546,18 @@ static __inline uint8_t acamera_fpga_fpga_input_port_fieldg_field_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_MODE_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_MODE_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_MODE_OFFSET (0x4a8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_MODE_OFFSET (0x3a8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_MODE_MASK (0x8000000)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_MODE_PULSE_FIELD (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FIELD_MODE_TOGGLE_FIELD (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_field_mode_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094a8L);
-    system_hw_write_32(0x2094a8L, (((uint32_t) (data & 0x1)) << 27) | (curr & 0xf7ffffff));
+    uint32_t curr = system_hw_read_32(0x2093a8L);
+    system_hw_write_32(0x2093a8L, (((uint32_t) (data & 0x1)) << 27) | (curr & 0xf7ffffff));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_field_mode_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094a8L) & 0x8000000) >> 27);
+    return (uint8_t)((system_hw_read_32(0x2093a8L) & 0x8000000) >> 27);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hc limit
@@ -4569,16 +4569,16 @@ static __inline uint8_t acamera_fpga_fpga_input_port_field_mode_read(uintptr_t b
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_LIMIT_DEFAULT (0xFFFF)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_LIMIT_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_LIMIT_OFFSET (0x4ac)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_LIMIT_OFFSET (0x3ac)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_LIMIT_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_hc_limit_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094acL);
-    system_hw_write_32(0x2094acL, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093acL);
+    system_hw_write_32(0x2093acL, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_hc_limit_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094acL) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093acL) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hc start0
@@ -4590,16 +4590,16 @@ static __inline uint16_t acamera_fpga_fpga_input_port_hc_limit_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START0_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START0_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START0_OFFSET (0x4b0)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START0_OFFSET (0x3b0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START0_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_hc_start0_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094b0L);
-    system_hw_write_32(0x2094b0L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093b0L);
+    system_hw_write_32(0x2093b0L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_hc_start0_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094b0L) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093b0L) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hc size0
@@ -4611,16 +4611,16 @@ static __inline uint16_t acamera_fpga_fpga_input_port_hc_start0_read(uintptr_t b
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE0_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE0_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE0_OFFSET (0x4b4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE0_OFFSET (0x3b4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE0_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_hc_size0_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094b4L);
-    system_hw_write_32(0x2094b4L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093b4L);
+    system_hw_write_32(0x2093b4L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_hc_size0_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094b4L) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093b4L) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hc start1
@@ -4632,16 +4632,16 @@ static __inline uint16_t acamera_fpga_fpga_input_port_hc_size0_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START1_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START1_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START1_OFFSET (0x4b8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START1_OFFSET (0x3b8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_START1_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_hc_start1_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094b8L);
-    system_hw_write_32(0x2094b8L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093b8L);
+    system_hw_write_32(0x2093b8L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_hc_start1_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094b8L) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093b8L) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: hc size1
@@ -4653,16 +4653,16 @@ static __inline uint16_t acamera_fpga_fpga_input_port_hc_start1_read(uintptr_t b
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE1_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE1_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE1_OFFSET (0x4bc)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE1_OFFSET (0x3bc)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_HC_SIZE1_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_hc_size1_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094bcL);
-    system_hw_write_32(0x2094bcL, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093bcL);
+    system_hw_write_32(0x2093bcL, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_hc_size1_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094bcL) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093bcL) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vc limit
@@ -4674,16 +4674,16 @@ static __inline uint16_t acamera_fpga_fpga_input_port_hc_size1_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_LIMIT_DEFAULT (0xFFFF)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_LIMIT_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_LIMIT_OFFSET (0x4c0)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_LIMIT_OFFSET (0x3c0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_LIMIT_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_vc_limit_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094c0L);
-    system_hw_write_32(0x2094c0L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093c0L);
+    system_hw_write_32(0x2093c0L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_vc_limit_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094c0L) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093c0L) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vc start
@@ -4695,16 +4695,16 @@ static __inline uint16_t acamera_fpga_fpga_input_port_vc_limit_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_START_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_START_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_START_OFFSET (0x4c4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_START_OFFSET (0x3c4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_START_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_vc_start_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094c4L);
-    system_hw_write_32(0x2094c4L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093c4L);
+    system_hw_write_32(0x2093c4L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_vc_start_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094c4L) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093c4L) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: vc size
@@ -4716,16 +4716,16 @@ static __inline uint16_t acamera_fpga_fpga_input_port_vc_start_read(uintptr_t ba
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_SIZE_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_SIZE_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_SIZE_OFFSET (0x4c8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_SIZE_OFFSET (0x3c8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_VC_SIZE_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline void acamera_fpga_fpga_input_port_vc_size_write(uintptr_t base, uint16_t data) {
-    uint32_t curr = system_hw_read_32(0x2094c8L);
-    system_hw_write_32(0x2094c8L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+    uint32_t curr = system_hw_read_32(0x2093c8L);
+    system_hw_write_32(0x2093c8L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
 }
 static __inline uint16_t acamera_fpga_fpga_input_port_vc_size_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094c8L) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093c8L) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: frame width
@@ -4737,12 +4737,12 @@ static __inline uint16_t acamera_fpga_fpga_input_port_vc_size_read(uintptr_t bas
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_WIDTH_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_WIDTH_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_WIDTH_OFFSET (0x4cc)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_WIDTH_OFFSET (0x3cc)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_WIDTH_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline uint16_t acamera_fpga_fpga_input_port_frame_width_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094ccL) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093ccL) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: frame height
@@ -4754,12 +4754,12 @@ static __inline uint16_t acamera_fpga_fpga_input_port_frame_width_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_HEIGHT_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_HEIGHT_DATASIZE (16)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_HEIGHT_OFFSET (0x4d0)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_HEIGHT_OFFSET (0x3d0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FRAME_HEIGHT_MASK (0xffff)
 
 // args: data (16-bit)
 static __inline uint16_t acamera_fpga_fpga_input_port_frame_height_read(uintptr_t base) {
-    return (uint16_t)((system_hw_read_32(0x2094d0L) & 0xffff) >> 0);
+    return (uint16_t)((system_hw_read_32(0x2093d0L) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: freeze config
@@ -4767,18 +4767,18 @@ static __inline uint16_t acamera_fpga_fpga_input_port_frame_height_read(uintptr_
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FREEZE_CONFIG_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FREEZE_CONFIG_DATASIZE (1)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_FREEZE_CONFIG_OFFSET (0x4d4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_FREEZE_CONFIG_OFFSET (0x3d4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FREEZE_CONFIG_MASK (0x80)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FREEZE_CONFIG_NORMAL_OPERATION (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_FREEZE_CONFIG_HOLD_PREVIOUS_CONFIG_STATE (1)
 
 // args: data (1-bit)
 static __inline void acamera_fpga_fpga_input_port_freeze_config_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094d4L);
-    system_hw_write_32(0x2094d4L, (((uint32_t) (data & 0x1)) << 7) | (curr & 0xffffff7f));
+    uint32_t curr = system_hw_read_32(0x2093d4L);
+    system_hw_write_32(0x2093d4L, (((uint32_t) (data & 0x1)) << 7) | (curr & 0xffffff7f));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_freeze_config_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094d4L) & 0x80) >> 7);
+    return (uint8_t)((system_hw_read_32(0x2093d4L) & 0x80) >> 7);
 }
 // ------------------------------------------------------------------------------ //
 // Register: mode request
@@ -4786,7 +4786,7 @@ static __inline uint8_t acamera_fpga_fpga_input_port_freeze_config_read(uintptr_
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_REQUEST_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_REQUEST_DATASIZE (3)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_REQUEST_OFFSET (0x4d4)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_REQUEST_OFFSET (0x3d4)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_REQUEST_MASK (0x7)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_REQUEST_SAFE_STOP (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_REQUEST_SAFE_START (1)
@@ -4799,11 +4799,11 @@ static __inline uint8_t acamera_fpga_fpga_input_port_freeze_config_read(uintptr_
 
 // args: data (3-bit)
 static __inline void acamera_fpga_fpga_input_port_mode_request_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x2094d4L);
-    system_hw_write_32(0x2094d4L, (((uint32_t) (data & 0x7)) << 0) | (curr & 0xfffffff8));
+    uint32_t curr = system_hw_read_32(0x2093d4L);
+    system_hw_write_32(0x2093d4L, (((uint32_t) (data & 0x7)) << 0) | (curr & 0xfffffff8));
 }
 static __inline uint8_t acamera_fpga_fpga_input_port_mode_request_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094d4L) & 0x7) >> 0);
+    return (uint8_t)((system_hw_read_32(0x2093d4L) & 0x7) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: mode status
@@ -4815,12 +4815,12 @@ static __inline uint8_t acamera_fpga_fpga_input_port_mode_request_read(uintptr_t
 
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_STATUS_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_STATUS_DATASIZE (3)
-#define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_STATUS_OFFSET (0x4d8)
+#define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_STATUS_OFFSET (0x3d8)
 #define ACAMERA_FPGA_FPGA_INPUT_PORT_MODE_STATUS_MASK (0x7)
 
 // args: data (3-bit)
 static __inline uint8_t acamera_fpga_fpga_input_port_mode_status_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x2094d8L) & 0x7) >> 0);
+    return (uint8_t)((system_hw_read_32(0x2093d8L) & 0x7) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Group: FPGA WDR Frame Buffer1
@@ -5090,16 +5090,16 @@ static __inline uint8_t acamera_fpga_isp_frame_stitch_frame_buffer_frame_read_ca
 
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_CHANNEL_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_CHANNEL_DATASIZE (3)
-#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_CHANNEL_OFFSET (0x64c)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_CHANNEL_OFFSET (0x54c)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_CHANNEL_MASK (0x7)
 
 // args: data (3-bit)
 static __inline void acamera_fpga_fpga_wdr_multiplexor_master_channel_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x20964cL);
-    system_hw_write_32(0x20964cL, (((uint32_t) (data & 0x7)) << 0) | (curr & 0xfffffff8));
+    uint32_t curr = system_hw_read_32(0x20954cL);
+    system_hw_write_32(0x20954cL, (((uint32_t) (data & 0x7)) << 0) | (curr & 0xfffffff8));
 }
 static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_master_channel_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x20964cL) & 0x7) >> 0);
+    return (uint8_t)((system_hw_read_32(0x20954cL) & 0x7) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: Buffer1 Channel
@@ -5111,16 +5111,16 @@ static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_master_channel_read(ui
 
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_CHANNEL_DEFAULT (3)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_CHANNEL_DATASIZE (3)
-#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_CHANNEL_OFFSET (0x64c)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_CHANNEL_OFFSET (0x54c)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_CHANNEL_MASK (0x700)
 
 // args: data (3-bit)
 static __inline void acamera_fpga_fpga_wdr_multiplexor_buffer1_channel_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x20964cL);
-    system_hw_write_32(0x20964cL, (((uint32_t) (data & 0x7)) << 8) | (curr & 0xfffff8ff));
+    uint32_t curr = system_hw_read_32(0x20954cL);
+    system_hw_write_32(0x20954cL, (((uint32_t) (data & 0x7)) << 8) | (curr & 0xfffff8ff));
 }
 static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_buffer1_channel_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x20964cL) & 0x700) >> 8);
+    return (uint8_t)((system_hw_read_32(0x20954cL) & 0x700) >> 8);
 }
 // ------------------------------------------------------------------------------ //
 // Register: Buffer2 Channel
@@ -5132,16 +5132,16 @@ static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_buffer1_channel_read(u
 
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_CHANNEL_DEFAULT (3)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_CHANNEL_DATASIZE (3)
-#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_CHANNEL_OFFSET (0x64c)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_CHANNEL_OFFSET (0x54c)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_CHANNEL_MASK (0x70000)
 
 // args: data (3-bit)
 static __inline void acamera_fpga_fpga_wdr_multiplexor_buffer2_channel_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x20964cL);
-    system_hw_write_32(0x20964cL, (((uint32_t) (data & 0x7)) << 16) | (curr & 0xfff8ffff));
+    uint32_t curr = system_hw_read_32(0x20954cL);
+    system_hw_write_32(0x20954cL, (((uint32_t) (data & 0x7)) << 16) | (curr & 0xfff8ffff));
 }
 static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_buffer2_channel_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x20964cL) & 0x70000) >> 16);
+    return (uint8_t)((system_hw_read_32(0x20954cL) & 0x70000) >> 16);
 }
 // ------------------------------------------------------------------------------ //
 // Register: Buffer3 Channel
@@ -5153,16 +5153,16 @@ static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_buffer2_channel_read(u
 
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_CHANNEL_DEFAULT (3)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_CHANNEL_DATASIZE (3)
-#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_CHANNEL_OFFSET (0x650)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_CHANNEL_OFFSET (0x550)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_CHANNEL_MASK (0x70000)
 
 // args: data (3-bit)
 static __inline void acamera_fpga_fpga_wdr_multiplexor_buffer3_channel_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x209650L);
-    system_hw_write_32(0x209650L, (((uint32_t) (data & 0x7)) << 16) | (curr & 0xfff8ffff));
+    uint32_t curr = system_hw_read_32(0x209550L);
+    system_hw_write_32(0x209550L, (((uint32_t) (data & 0x7)) << 16) | (curr & 0xfff8ffff));
 }
 static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_buffer3_channel_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x209650L) & 0x70000) >> 16);
+    return (uint8_t)((system_hw_read_32(0x209550L) & 0x70000) >> 16);
 }
 // ------------------------------------------------------------------------------ //
 // Register: Current Channel
@@ -5174,16 +5174,16 @@ static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_buffer3_channel_read(u
 
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_DEFAULT (0)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_DATASIZE (3)
-#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_OFFSET (0x650)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_OFFSET (0x550)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_MASK (0x7)
 
 // args: data (3-bit)
 static __inline void acamera_fpga_fpga_wdr_multiplexor_current_channel_write(uintptr_t base, uint8_t data) {
-    uint32_t curr = system_hw_read_32(0x209650L);
-    system_hw_write_32(0x209650L, (((uint32_t) (data & 0x7)) << 0) | (curr & 0xfffffff8));
+    uint32_t curr = system_hw_read_32(0x209550L);
+    system_hw_write_32(0x209550L, (((uint32_t) (data & 0x7)) << 0) | (curr & 0xfffffff8));
 }
 static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_current_channel_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x209650L) & 0x7) >> 0);
+    return (uint8_t)((system_hw_read_32(0x209550L) & 0x7) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Register: Current Channel out
@@ -5195,12 +5195,96 @@ static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_current_channel_read(u
 
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_OUT_DEFAULT (0x0)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_OUT_DATASIZE (2)
-#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_OUT_OFFSET (0x654)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_OUT_OFFSET (0x554)
 #define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_CURRENT_CHANNEL_OUT_MASK (0x3)
 
 // args: data (2-bit)
 static __inline uint8_t acamera_fpga_fpga_wdr_multiplexor_current_channel_out_read(uintptr_t base) {
-    return (uint8_t)((system_hw_read_32(0x209654L) & 0x3) >> 0);
+    return (uint8_t)((system_hw_read_32(0x209554L) & 0x3) >> 0);
+}
+// ------------------------------------------------------------------------------ //
+// Register: Master Gain
+// ------------------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------------------ //
+// Output gain for channel, format uint8.8
+// ------------------------------------------------------------------------------ //
+
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_GAIN_DEFAULT (0x100)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_GAIN_DATASIZE (16)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_GAIN_OFFSET (0x554)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_MASTER_GAIN_MASK (0xffff0000)
+
+// args: data (16-bit)
+static __inline void acamera_fpga_fpga_wdr_multiplexor_master_gain_write(uintptr_t base, uint16_t data) {
+    uint32_t curr = system_hw_read_32(0x209554L);
+    system_hw_write_32(0x209554L, (((uint32_t) (data & 0xffff)) << 16) | (curr & 0xffff));
+}
+static __inline uint16_t acamera_fpga_fpga_wdr_multiplexor_master_gain_read(uintptr_t base) {
+    return (uint16_t)((system_hw_read_32(0x209554L) & 0xffff0000) >> 16);
+}
+// ------------------------------------------------------------------------------ //
+// Register: Buffer1 Gain
+// ------------------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------------------ //
+// Output gain for channel, format uint8.8
+// ------------------------------------------------------------------------------ //
+
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_GAIN_DEFAULT (0x100)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_GAIN_DATASIZE (16)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_GAIN_OFFSET (0x558)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER1_GAIN_MASK (0xffff)
+
+// args: data (16-bit)
+static __inline void acamera_fpga_fpga_wdr_multiplexor_buffer1_gain_write(uintptr_t base, uint16_t data) {
+    uint32_t curr = system_hw_read_32(0x209558L);
+    system_hw_write_32(0x209558L, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+}
+static __inline uint16_t acamera_fpga_fpga_wdr_multiplexor_buffer1_gain_read(uintptr_t base) {
+    return (uint16_t)((system_hw_read_32(0x209558L) & 0xffff) >> 0);
+}
+// ------------------------------------------------------------------------------ //
+// Register: Buffer2 Gain
+// ------------------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------------------ //
+// Output gain for channel, format uint8.8
+// ------------------------------------------------------------------------------ //
+
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_GAIN_DEFAULT (0x100)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_GAIN_DATASIZE (16)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_GAIN_OFFSET (0x558)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER2_GAIN_MASK (0xffff0000)
+
+// args: data (16-bit)
+static __inline void acamera_fpga_fpga_wdr_multiplexor_buffer2_gain_write(uintptr_t base, uint16_t data) {
+    uint32_t curr = system_hw_read_32(0x209558L);
+    system_hw_write_32(0x209558L, (((uint32_t) (data & 0xffff)) << 16) | (curr & 0xffff));
+}
+static __inline uint16_t acamera_fpga_fpga_wdr_multiplexor_buffer2_gain_read(uintptr_t base) {
+    return (uint16_t)((system_hw_read_32(0x209558L) & 0xffff0000) >> 16);
+}
+// ------------------------------------------------------------------------------ //
+// Register: Buffer3 Gain
+// ------------------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------------------ //
+// Output gain for channel, format uint8.8
+// ------------------------------------------------------------------------------ //
+
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_GAIN_DEFAULT (0x100)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_GAIN_DATASIZE (16)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_GAIN_OFFSET (0x55c)
+#define ACAMERA_FPGA_FPGA_WDR_MULTIPLEXOR_BUFFER3_GAIN_MASK (0xffff)
+
+// args: data (16-bit)
+static __inline void acamera_fpga_fpga_wdr_multiplexor_buffer3_gain_write(uintptr_t base, uint16_t data) {
+    uint32_t curr = system_hw_read_32(0x20955cL);
+    system_hw_write_32(0x20955cL, (((uint32_t) (data & 0xffff)) << 0) | (curr & 0xffff0000));
+}
+static __inline uint16_t acamera_fpga_fpga_wdr_multiplexor_buffer3_gain_read(uintptr_t base) {
+    return (uint16_t)((system_hw_read_32(0x20955cL) & 0xffff) >> 0);
 }
 // ------------------------------------------------------------------------------ //
 // Group: Video-Capture-2 Input port
@@ -6998,7 +7082,7 @@ static __inline uint8_t acamera_fpga_video_capture2_dma_writer_bank0_restart_rea
 
 // ------------------------------------------------------------------------------ //
 // 
-//    Indicates the offset in bytes from the start of one line to the next line.  
+//    Indicates the offset in bytes from the start of one line to the next line.
 //    This value should be equal to or larger than one line of image data and should be word-aligned
 //    
 // ------------------------------------------------------------------------------ //
@@ -7281,7 +7365,7 @@ static __inline uint8_t acamera_fpga_video_capture2_dma_writer_max_burst_length_
 // 
 //    At end of frame an optional timeout is applied to wait for AXI writes to completed/accepted befotre caneclling and flushing.
 //    0= Timeout Enabled, timeout count can decrement.
-//    1 = Disable timeout, timeout count can't decrement. 
+//    1 = Disable timeout, timeout count can't decrement.
 //    
 // ------------------------------------------------------------------------------ //
 
@@ -9364,7 +9448,7 @@ static __inline uint8_t acamera_fpga_video_capture3_dma_writer_bank0_restart_rea
 
 // ------------------------------------------------------------------------------ //
 // 
-//    Indicates the offset in bytes from the start of one line to the next line.  
+//    Indicates the offset in bytes from the start of one line to the next line.
 //    This value should be equal to or larger than one line of image data and should be word-aligned
 //    
 // ------------------------------------------------------------------------------ //
@@ -9647,7 +9731,7 @@ static __inline uint8_t acamera_fpga_video_capture3_dma_writer_max_burst_length_
 // 
 //    At end of frame an optional timeout is applied to wait for AXI writes to completed/accepted befotre caneclling and flushing.
 //    0= Timeout Enabled, timeout count can decrement.
-//    1 = Disable timeout, timeout count can't decrement. 
+//    1 = Disable timeout, timeout count can't decrement.
 //    
 // ------------------------------------------------------------------------------ //
 
@@ -11730,7 +11814,7 @@ static __inline uint8_t acamera_fpga_video_capture4_dma_writer_bank0_restart_rea
 
 // ------------------------------------------------------------------------------ //
 // 
-//    Indicates the offset in bytes from the start of one line to the next line.  
+//    Indicates the offset in bytes from the start of one line to the next line.
 //    This value should be equal to or larger than one line of image data and should be word-aligned
 //    
 // ------------------------------------------------------------------------------ //
@@ -12013,7 +12097,7 @@ static __inline uint8_t acamera_fpga_video_capture4_dma_writer_max_burst_length_
 // 
 //    At end of frame an optional timeout is applied to wait for AXI writes to completed/accepted befotre caneclling and flushing.
 //    0= Timeout Enabled, timeout count can decrement.
-//    1 = Disable timeout, timeout count can't decrement. 
+//    1 = Disable timeout, timeout count can't decrement.
 //    
 // ------------------------------------------------------------------------------ //
 
@@ -12314,7 +12398,7 @@ static __inline uint32_t acamera_fpga_video_capture4_dma_writer_blk_status_read(
 
 // ------------------------------------------------------------------------------ //
 // 
-//          Register indicating frame processing started. It shall be set when processing starts (which may be FE interrupt) and 
+//          Register indicating frame processing started. It shall be set when processing starts (which may be FE interrupt) and
 //          cleared when processing ends by software. During it is set, if an interrupt is observed from ISP, this will be reported
 //          as an error condition at the below register called vblank_processing_err
 //        

@@ -22,7 +22,7 @@
 
 
 
-extern void sensor_init_ov08a10( void** ctx, sensor_control_t*) ;
+extern void sensor_init_ov08a10( void** ctx, sensor_control_t*, void*) ;
 extern void sensor_deinit_ov08a10( void *ctx ) ;
 extern uint32_t get_calibrations_ov08a10( uint32_t ctx_num,void * sensor_arg,ACameraCalibrations *) ;
 

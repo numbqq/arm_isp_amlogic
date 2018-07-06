@@ -37,10 +37,12 @@ static void vector_vector_add( int16_t *v1, int16_t *v2, int dim1 )
         v2[i] = v1[i] + v2[i];
     }
 }
-static void matrix_vector_multiply( int16_t *m, int16_t *v, int dim1, int dim2 )
+static void matrix_vector_multiply( int16_t *m, int16_t *v )
 {
     int i, j;
-    int16_t result[dim1];
+    const int dim1 = 3;
+    const int dim2 = 3;
+    int16_t result[3];
     for ( i = 0; i < dim1; ++i ) {
         int32_t temp = 0;
         for ( j = 0; j < dim2; ++j )
@@ -50,10 +52,13 @@ static void matrix_vector_multiply( int16_t *m, int16_t *v, int dim1, int dim2 )
     for ( i = 0; i < dim1; ++i )
         v[i] = ACAMERA_MAX( -1023, ACAMERA_MIN( 1023, result[i] ) );
 }
-static void matrix_matrix_multiply( int16_t *a1, int16_t *a2, int dim1, int dim2, int dim3 )
+static void matrix_matrix_multiply( int16_t *a1, int16_t *a2 )
 {
     int i, j, k;
-    int16_t result[dim1 * dim3];
+    const int dim1 = 3;
+    const int dim2 = 3;
+    const int dim3 = 3;
+    int16_t result[3 * 3];
 
     memset( result, 0, sizeof( result ) );
 
@@ -417,8 +422,8 @@ static void matrix_compute_color_mode( uint16_t mode, int16_t *p_color_mode_matr
 }
 static void update_composite_matrix( int16_t *inp1, int16_t *res )
 {
-    matrix_matrix_multiply( inp1, res, 3, 3, 3 );
-    matrix_vector_multiply( inp1, res + 9, 3, 3 );
+    matrix_matrix_multiply( inp1, res );
+    matrix_vector_multiply( inp1, res + 9 );
 
     vector_vector_add( inp1 + 9, res + 9, 3 );
 }

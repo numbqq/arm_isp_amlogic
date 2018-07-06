@@ -38,7 +38,7 @@
 #include "acamera_sensor_api.h"
 #include "system_timer.h"
 #include "acamera_firmware_config.h"
-
+#include "sensor_bsp_common.h"
 static sensor_mode_t supported_modes[ISP_MAX_SENSOR_MODES] = {
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -172,7 +172,7 @@ void sensor_deinit_dummy( void *ctx )
 {
 }
 //--------------------Initialization------------------------------------------------------------
-void sensor_init_dummy( void **ctx, sensor_control_t *ctrl )
+void sensor_init_dummy( void **ctx, sensor_control_t *ctrl, void* sbp )
 {
     // Local sensor data structure
     static sensor_context_t s_ctx;

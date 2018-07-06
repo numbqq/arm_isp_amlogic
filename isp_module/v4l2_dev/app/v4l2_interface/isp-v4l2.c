@@ -131,7 +131,14 @@ static int isp_v4l2_fop_open( struct file *file )
     if ( sp->stream_id == 0 ) {
         // stream_id 0 is a full resolution
         dev->stream_id_index[V4L2_STREAM_TYPE_FR] = sp->stream_id;
+        acamera_api_dma_buff_queue_reset(dma_fr);
     }
+#if ISP_HAS_DS1
+    else if ( sp->stream_id == V4L2_STREAM_TYPE_DS1 ) {
+        dev->stream_id_index[V4L2_STREAM_TYPE_DS1] = sp->stream_id;
+        acamera_api_dma_buff_queue_reset(dma_ds1);
+    }
+#endif
 
     /* init vb2 queue */
 
@@ -139,6 +146,11 @@ static int isp_v4l2_fop_open( struct file *file )
     if ( rc < 0 ) {
         LOG( LOG_ERR, "Error, vb2 queue init fail (rc=%d)", rc );
         goto vb2_q_fail;
+    }
+    if (sp->stream_id == V4L2_STREAM_TYPE_FR ||
+        sp->stream_id == V4L2_STREAM_TYPE_DS1) {
+
+        sp->vb2_q.dev = g_isp_v4l2_dev->pdev;
     }
 
     /* init fh_ptr */
@@ -615,10 +627,12 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
     LOG( LOG_INFO, "V4L2 capture device registered as %s.",
          video_device_node_name( vfd ) );
 
+    dev->pdev = &pdev->dev;
+
     /* store dev pointer to destroy later and find stream */
     g_isp_v4l2_dev = dev;
 
-    isp_cma_alloc(pdev, 256);
+    isp_cma_alloc(pdev, 64);
 
     /* initialize isp */
     rc = fw_intf_isp_init();

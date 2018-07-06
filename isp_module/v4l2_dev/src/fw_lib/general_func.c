@@ -50,6 +50,10 @@
 #include "acamera_decompander1_mem_config.h"
 #endif
 
+#if defined( CALIBRATION_SHADING_RADIAL_R )
+#include "acamera_radial_shading_mem_config.h"
+#endif
+
 #ifdef LOG_MODULE
 #undef LOG_MODULE
 #define LOG_MODULE LOG_MODULE_GENERAL
@@ -66,7 +70,7 @@ static int32_t signed_bitshift( int32_t val, int32_t shift )
     int32_t out_val = 0;
     uint8_t val_sign = val < 0;
 
-    val = ACAMERA_ABS( val );
+    val = (val > 0) ? val : -val;
 
     if ( val_sign ) {
         out_val = -BIT_SHIFT( val, shift );
@@ -142,7 +146,7 @@ static void general_cac_memory_lut_reload( general_fsm_ptr_t p_fsm )
                 ca_model[term] = ( *p_calibration_ca_model )[component][term] - 65536;
         }
 
-        plane_offset_val = plane_offset * BIT_SHIFT( component, -1 );
+        plane_offset_val = plane_offset * ( component>>1 );
         vh_shift = ( component % 2 ) * 8;
 
         for ( x = 0; x < calibration_ca_mesh_width; x++ ) {
@@ -238,8 +242,8 @@ static void general_cac_memory_lut_reload( general_fsm_ptr_t p_fsm )
                 z_sign = z16 < 0;
 
                 // Round z to 4 bits precision
-                z16 = ACAMERA_ABS( z16 );
-                z16 = ( z16 % 2 ) + BIT_SHIFT( z16, -1 );
+                z16 = (z16>0) ? z16 : -z16;
+                z16 = ( z16 % 2 ) + ( z16>>1 );
 
                 // Apply ca_min_correction (clip small corrections to 0)
                 if ( z16 <= calibration_ca_min_correction ) {
@@ -266,7 +270,7 @@ static void general_cac_memory_lut_reload( general_fsm_ptr_t p_fsm )
                 lut_shift = vh_shift + ( lut_index % 2 ) * 16;
 
                 // Find location within half sized array (2 blocks per register)
-                lut_index = BIT_SHIFT( lut_index, -1 );
+                lut_index = ( lut_index>>1 );
 
                 // Clip to size of LUT (in case of error)
                 lut_index = lut_index & 4095;
@@ -391,9 +395,33 @@ void acamera_reload_isp_calibratons( general_fsm_ptr_t p_fsm )
         acamera_decompander0_mem_array_data_write( p_fsm->cmn.isp_base, i, _GET_UINT_PTR( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_DECOMPANDER0_MEM )[i] );
     }
 #endif
+
 #if defined( CALIBRATION_DECOMPANDER1_MEM )
     for ( i = 0; i < _GET_LEN( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_DECOMPANDER1_MEM ); i++ ) {
         acamera_decompander1_mem_array_data_write( p_fsm->cmn.isp_base, i, _GET_UINT_PTR( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_DECOMPANDER1_MEM )[i] );
+    }
+#endif
+
+#if defined( CALIBRATION_SHADING_RADIAL_R ) && defined( CALIBRATION_SHADING_RADIAL_G ) && defined( CALIBRATION_SHADING_RADIAL_B )
+    uint32_t len = _GET_LEN( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_RADIAL_R );
+    uint16_t * p_lut = _GET_USHORT_PTR( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_RADIAL_R );
+    uint32_t bank_offset = 0;
+    for ( i = 0; i < len; i++ ) {
+        acamera_radial_shading_mem_array_data_write( p_fsm->cmn.isp_base, bank_offset + i, p_lut[i] );
+    }
+
+    len = _GET_LEN( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_RADIAL_G );
+    p_lut = _GET_USHORT_PTR( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_RADIAL_G );
+    bank_offset += 256;
+    for ( i = 0; i < len; i++ ) {
+        acamera_radial_shading_mem_array_data_write( p_fsm->cmn.isp_base, bank_offset + i, p_lut[i] );
+    }
+
+    len = _GET_LEN( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_RADIAL_B );
+    p_lut = _GET_USHORT_PTR( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_RADIAL_B );
+    bank_offset += 256;
+    for ( i = 0; i < len; i++ ) {
+        acamera_radial_shading_mem_array_data_write( p_fsm->cmn.isp_base, bank_offset + i, p_lut[i] );
     }
 #endif
 }

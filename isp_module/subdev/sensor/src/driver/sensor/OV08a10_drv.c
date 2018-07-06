@@ -29,6 +29,7 @@
 //        DRIVER
 //-------------------------------------------------------------------------------------
 
+#include <linux/delay.h>
 #include "acamera_types.h"
 #include "sensor_init.h"
 #include "acamera_math.h"
@@ -42,6 +43,9 @@
 #include "OV08a10_config.h"
 #include "system_am_mipi.h"
 #include "system_am_adap.h"
+#include "sensor_bsp_common.h"
+
+#define NEED_CONFIG_BSP 0   //config bsp by sensor driver owner
 
 static void start_streaming( void *ctx );
 static void stop_streaming( void *ctx );
@@ -450,10 +454,30 @@ void sensor_deinit_ov08a10( void *ctx )
 	am_mipi_deinit();
 }
 //--------------------Initialization------------------------------------------------------------
-void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl )
+void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void* sbp )
 {
     // Local sensor data structure
 	static sensor_context_t s_ctx;
+	int ret;
+	sensor_bringup_t* sensor_bp = (sensor_bringup_t*) sbp;
+#if NEED_CONFIG_BSP
+	ret = pwr_am_enable(sensor_bp, "power-enable", 0);
+	if (ret < 0 )
+		pr_err("set power fail\n");
+	udelay(30);
+#endif
+
+	ret = clk_am_enable(sensor_bp, "g12a_24m");
+	if (ret < 0 )
+		pr_err("set mclk fail\n");
+	udelay(30);
+
+#if NEED_CONFIG_BSP
+	ret = reset_am_enable(sensor_bp,"reset", 1);
+	if (ret < 0 )
+		pr_err("set reset fail\n");
+#endif
+
 	*ctx = &s_ctx;
 
 	s_ctx.sbus.mask = SBUS_MASK_ADDR_16BITS |

@@ -206,6 +206,9 @@ int sensor_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_t in
         }
 
         p_fsm->preset_mode = *(uint32_t *)input;
+        sensor_hw_init( p_fsm );
+        sensor_configure_buffers( p_fsm );
+        sensor_sw_init( p_fsm );
         break;
 
     case FSM_PARAM_SET_SENSOR_INFO_PRESET_NUM:
@@ -308,13 +311,6 @@ uint8_t sensor_fsm_process_event( sensor_fsm_t *p_fsm, event_id_t event_id )
 
     case event_id_acamera_reset_sensor_hw:
         fsm_raise_event( p_fsm, event_id_sensor_not_ready );
-        uint32_t stream = 0;
-        sensor_fsm_set_param(p_fsm, FSM_PARAM_SET_SENSOR_STREAMING, &stream, sizeof(stream));
-        sensor_hw_init( p_fsm );
-        sensor_configure_buffers( p_fsm );
-        sensor_sw_init( p_fsm );
-        stream = 1;
-        sensor_fsm_set_param(p_fsm, FSM_PARAM_SET_SENSOR_STREAMING, &stream, sizeof(stream));
         fsm_raise_event( p_fsm, event_id_sensor_ready );
         b_event_processed = 1;
         break;

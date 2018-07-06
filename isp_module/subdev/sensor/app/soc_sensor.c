@@ -30,14 +30,16 @@
 #include "acamera_command_api.h"
 #include "acamera_firmware_settings.h"
 #include "runtime_initialization_settings.h"
+#include "sensor_bsp_common.h"
 
 #define ARGS_TO_PTR( arg ) ( (struct soc_sensor_ioctl_args *)arg )
 
 
-void ( *SOC_SENSOR_SENSOR_ENTRY_ARR[FIRMWARE_CONTEXT_NUMBER] )( void **ctx, sensor_control_t *ctrl ) = SENSOR_INIT_SUBDEV_FUNCTIONS;
+void ( *SOC_SENSOR_SENSOR_ENTRY_ARR[FIRMWARE_CONTEXT_NUMBER] )( void **ctx, sensor_control_t *ctrl, void* sbp ) = SENSOR_INIT_SUBDEV_FUNCTIONS;
 void ( *SOC_SENSOR_SENSOR_RESET_ARR[FIRMWARE_CONTEXT_NUMBER] )( void *ctx ) = SENSOR_DEINIT_SUBDEV_FUNCTIONS;
 
 static struct v4l2_subdev soc_sensor;
+sensor_bringup_t* sensor_bp = NULL;
 
 typedef struct _subdev_camera_ctx {
     void *camera_context;
@@ -75,7 +77,7 @@ static int camera_init( struct v4l2_subdev *sd, u32 val )
 
         s_ctx[val].camera_context = NULL;
 
-        ( SOC_SENSOR_SENSOR_ENTRY_ARR[val] )( &( s_ctx[val].camera_context ), &( s_ctx[val].camera_control ) );
+        ( SOC_SENSOR_SENSOR_ENTRY_ARR[val] )( &( s_ctx[val].camera_context ), &( s_ctx[val].camera_control ), (void*)sensor_bp );
 
         if ( s_ctx[val].camera_context == NULL ) {
             LOG( LOG_ERR, "Failed to process camera_init for ctx:%d. Sensor is not initialized yet. camera_init must be called before", val );
@@ -300,25 +302,17 @@ static const struct v4l2_subdev_ops camera_ops = {
 static int32_t soc_sensor_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
-    struct clk *clk_mclk_0;
-    u32 mclk_rate = 0;
+
+    struct device *dev = &pdev->dev;
+    //struct device_node *np = dev->of_node;
+    sensor_bp = kzalloc( sizeof( *sensor_bp ), GFP_KERNEL );
+    sensor_bp_init(sensor_bp, dev);
 
     v4l2_subdev_init( &soc_sensor, &camera_ops );
 
     soc_sensor.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 
     snprintf( soc_sensor.name, V4L2_SUBDEV_NAME_SIZE, "%s", V4L2_SOC_SENSOR_NAME );
-
-    clk_mclk_0 = devm_clk_get(&pdev->dev, "g12a_24m");
-    if (IS_ERR(clk_mclk_0)) {
-        pr_err("cannot get mclk\n");
-        clk_mclk_0 = NULL;
-        return -1;
-    }
-
-    clk_prepare_enable(clk_mclk_0);
-    mclk_rate = clk_get_rate(clk_mclk_0);
-    pr_err("sensor init clock is %d MHZ\n",mclk_rate/1000000);
 
     soc_sensor.dev = &pdev->dev;
     rc = v4l2_async_register_subdev( &soc_sensor );
@@ -331,7 +325,7 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
 static int soc_sensor_remove( struct platform_device *pdev )
 {
     v4l2_async_unregister_subdev( &soc_sensor );
-
+    kfree(sensor_bp);
     return 0;
 }
 

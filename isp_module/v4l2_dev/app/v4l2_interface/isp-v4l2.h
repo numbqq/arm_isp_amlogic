@@ -34,6 +34,7 @@ typedef struct _isp_v4l2_dev {
     /* device */
     struct v4l2_device *v4l2_dev;
     struct video_device video_dev;
+	struct device *pdev;
 
     /* lock */
     struct mutex mlock;

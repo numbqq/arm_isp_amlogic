@@ -23,13 +23,6 @@
 #include "system_stdlib.h"
 #include "acamera_ihist_stats_mem_config.h"
 #include "acamera_command_api.h"
-
-#include "acamera_fr_gamma_rgb_mem_config.h"
-
-#if ISP_HAS_DS1
-#include "acamera_ds1_gamma_rgb_mem_config.h"
-#endif
-
 #include "gamma_manual_fsm.h"
 #include "sbuf.h"
 

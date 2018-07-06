@@ -22,7 +22,7 @@
 // ------------ 3A & iridix
 static uint8_t _calibration_evtolux_probability_enable[] = {1};
 
-static uint8_t _calibration_awb_avg_coef[] = {30};
+static uint8_t _calibration_awb_avg_coef[] = {7};
 
 static uint8_t _calibration_iridix_avg_coef[] = {30};
 
@@ -321,7 +321,7 @@ static uint32_t _calibration_ae_control[] = {
     100, // control for clipping: bright percentage of pixels that should be below hi_target_prc
     99,  // control for clipping: highlights percentage (hi_target_prc): target for tail of histogram
     1,   // 1:0 enable | disable iridix global gain.
-    0,   // AE tolerance
+    10,  // AE tolerance
 };
 
 static uint16_t _calibration_ae_control_HDR_target[][2] = {
@@ -380,13 +380,13 @@ static uint16_t _calibration_fs_mc_off[] = {
 static int16_t _AWB_colour_preference[] = {7500, 6000, 4700, 2800};
 
 static uint32_t _calibration_awb_mix_light_parameters[] = {
-    0,    // 1 = enable, 0 = disable
-    900,  //lux low boundary for mix light lux range : range = {500: inf}
-    2500, // lux high boundary for mix light range : range = {500: inf}
-    800,  // contrast threshold for mix light: range = {200:2000}
+    1,    // 1 = enable, 0 = disable
+    500,  //lux low boundary for mix light lux range : range = {500: inf}
+    3000, // lux high boundary for mix light range : range = {500: inf}
+    2000, // contrast threshold for mix light: range = {200:2000}
     330,  //BG threshold {255:400}
     5,    // BG weight
-    419,  // rgHigh_LUT_max
+    260,  // rgHigh_LUT_max
     252,  // rgHigh_LUT_min
     0     // print debug
 };
