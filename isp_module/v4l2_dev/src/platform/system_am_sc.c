@@ -40,14 +40,25 @@
 
 
 #define AM_SC_NAME "amlogic, isp-sc"
-static uint8_t *sc_cma_mem = NULL;
-static struct page *sc_cma_pages = NULL;
-static resource_size_t buffer_start;
 static int buffer_id;
-static bool no_mem = true;
 
-#define CMA_ALLOC_SIZE 32
+#define ENABLE_SC_BOTTOM_HALF_TASKLET
 
+
+#ifdef ENABLE_SC_BOTTOM_HALF_TASKLET
+// tasklet structure
+struct sc_tasklet_t {
+    struct tasklet_struct tasklet_obj;
+    struct kfifo sc_fifo_out;
+};
+static int frame_id = 0;
+static struct sc_tasklet_t sc_tasklet;
+#endif
+
+static bool stop_flag = false;
+tframe_t* temp_buf = NULL;
+tframe_t* cur_frame;
+tframe_t* pre_frame;
 
 const int isp_filt_coef0[] =   //bicubic
 {
@@ -638,7 +649,7 @@ static void enable_isp_scale(
 {
 	/* don't enable mif first, and use wr done int */
 	int enable = 0;
-	int rgb_swap = 0;
+	int rgb_swap = 4;
 	int irq_sel = 0;
 	u32 val = 0;
 
@@ -701,9 +712,25 @@ static void enable_isp_scale(
 static void init_sc_mif_setting(ISP_MIF_t *mif_frame)
 {
 	u32 plane_size, frame_size;
+	unsigned long flags;
+	tframe_t *buf = NULL;
+	int retval;
 
 	if (!mif_frame)
 		return;
+
+	spin_lock_irqsave( &g_sc->sc_lock, flags );
+	if (kfifo_len(&g_sc->sc_fifo_in) > 0) {
+		retval = kfifo_out(&g_sc->sc_fifo_in, &buf, sizeof(tframe_t*));
+		if (retval == sizeof(tframe_t*)) {
+			pre_frame = buf;
+		} else {
+			pr_info("%d, fifo out failed.\n", __LINE__);
+		}
+	} else {
+		pr_info("%d, sc fifo is empty .\n", __LINE__);
+	}
+	spin_unlock_irqrestore( &g_sc->sc_lock, flags );
 
 	memset(mif_frame, 0, sizeof(ISP_MIF_t));
 	plane_size = g_sc->info.out_w * g_sc->info.out_h;
@@ -776,15 +803,14 @@ static void init_sc_mif_setting(ISP_MIF_t *mif_frame)
 		}
 	}
 	mif_frame->reg_canvas_baddr_luma =
-		buffer_start;
+		buf->primary.address;
 	mif_frame->reg_canvas_baddr_luma_other =
 		mif_frame->reg_canvas_baddr_luma
 		+ frame_size;
 
 	if (mif_frame->reg_canvas_strb_chroma) {
 		mif_frame->reg_canvas_baddr_chroma =
-			mif_frame->reg_canvas_baddr_luma
-			+ plane_size;
+			buf->secondary.address;
 		mif_frame->reg_canvas_baddr_chroma_other =
 			mif_frame->reg_canvas_baddr_luma_other
 			+ plane_size;
@@ -792,8 +818,7 @@ static void init_sc_mif_setting(ISP_MIF_t *mif_frame)
 
 	if (mif_frame->reg_canvas_strb_r) {
 		mif_frame->reg_canvas_baddr_r =
-			mif_frame->reg_canvas_baddr_chroma
-			+ plane_size;
+			buf->secondary.address;
 		mif_frame->reg_canvas_baddr_r_other =
 			mif_frame->reg_canvas_baddr_chroma_other
 			+ plane_size;
@@ -856,7 +881,7 @@ static ssize_t sc_frame_read(struct device *dev,
 	char buf1[50];
 
 	pr_info("sc-read.\n");
-	buf = (char *)sc_cma_mem;
+	//buf = (char *)sc_cma_mem;
 	write_to_file(buf, g_sc->info.out_w * g_sc->info.out_h * 3);
 	return sprintf(buf1,"buffer_id:%d", buffer_id);
 }
@@ -876,7 +901,34 @@ static ssize_t sc_frame_write(struct device *dev,
 	return size;
 }
 static DEVICE_ATTR(sc_frame, S_IRUGO | S_IWUSR, sc_frame_read, sc_frame_write);
-//#define ENABLE_DS0_OUTPUT
+
+#ifdef ENABLE_SC_BOTTOM_HALF_TASKLET
+void sc_do_tasklet( unsigned long data )
+{
+	tframe_t *f_buff;
+	metadata_t metadata;
+	memset(&metadata, 0, sizeof(metadata_t));
+
+	while (kfifo_out(&sc_tasklet.sc_fifo_out, &f_buff, sizeof(tframe_t*))) {
+		metadata.width = g_sc->info.out_w;
+		metadata.height = g_sc->info.out_h;
+		metadata.frame_id = frame_id;
+		metadata.frame_number = frame_id;
+		metadata.line_size = (((3 * g_sc->info.out_w) + 127) & (~127));
+		g_sc->callback(g_sc->ctx, f_buff, &metadata );
+		frame_id++;
+	}
+}
+#endif
+
+void sc_config_next_buffer(tframe_t* f_buf)
+{
+	isp_frame.reg_canvas_baddr_luma = f_buf->primary.address;
+	isp_frame.reg_canvas_baddr_chroma = f_buf->secondary.address;
+	isp_frame.reg_canvas_baddr_r = f_buf->secondary.address;
+	isp_mif_setting(&isp_frame);
+}
+
 static irqreturn_t isp_sc_isr(int irq, void *data)
 {
 	if (start_delay_cnt < start_delay_th) {
@@ -886,20 +938,56 @@ static irqreturn_t isp_sc_isr(int irq, void *data)
 		if (start_delay_cnt == start_delay_th) {
 			isr_count = 0;
 			/* sc_wr_reg_bits(ISP_SCWR_MIF_CTRL2, 1, 14, 1); */
-#ifdef ENABLE_DS0_OUTPUT
 			sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 1, 0, 1);
-#endif
 			start_delay_cnt++;
 		} else {
 			u32 flag = 0;
+			tframe_t *f_buf = NULL;
+			unsigned long flags;
+			int retval;
+
+			spin_lock_irqsave( &g_sc->sc_lock, flags );
+			if (kfifo_len(&g_sc->sc_fifo_in) > 0) {
+				retval = kfifo_out(&g_sc->sc_fifo_in, &f_buf, sizeof(tframe_t*));
+				if (retval != sizeof(tframe_t*))
+					pr_info("%d, fifo out failed.\n", __LINE__);
+			} else {
+				//pr_info("%d, sc fifo is empty .\n", __LINE__);
+				f_buf = pre_frame;
+				pre_frame = NULL;
+			}
+			spin_unlock_irqrestore( &g_sc->sc_lock, flags );
+
+			sc_config_next_buffer(f_buf);
+			cur_frame = f_buf;
 
 			isr_count++;
 			sc_reg_rd(ISP_SCWR_TOP_DBG0, &flag);
 			flag = (flag & (1 << 6)) ? 1 : 0;
-#ifdef ENABLE_DS0_OUTPUT
-			if (flag == last_end_frame)
-				pr_err("isp sc not wr done:%d\n", isr_count);
-#endif
+
+			if (flag == last_end_frame) {
+				if (!pre_frame) {
+					if (!kfifo_is_full(&g_sc->sc_fifo_in)) {
+						spin_lock_irqsave( &g_sc->sc_lock, flags );
+						kfifo_in(&g_sc->sc_fifo_in, &(f_buf), sizeof(tframe_t*));
+						spin_unlock_irqrestore(&g_sc->sc_lock, flags);
+					}
+				} else {
+					if (!kfifo_is_full(&g_sc->sc_fifo_in)) {
+						spin_lock_irqsave( &g_sc->sc_lock, flags );
+						kfifo_in(&g_sc->sc_fifo_in, &(pre_frame), sizeof(tframe_t*));
+						spin_unlock_irqrestore(&g_sc->sc_lock, flags);
+					}
+				}
+			} else {
+				if (pre_frame) {
+					if (!kfifo_is_full(&sc_tasklet.sc_fifo_out)) {
+						kfifo_in(&sc_tasklet.sc_fifo_out, &(pre_frame), sizeof(tframe_t*));
+					}
+					tasklet_schedule(&sc_tasklet.tasklet_obj);
+				}
+			}
+			pre_frame = cur_frame;
 			last_end_frame = flag;
 			buffer_id ^= 1;
 		}
@@ -960,7 +1048,6 @@ int am_sc_parse_dt(struct device_node *node)
 	ret = of_reserved_mem_device_init(&(t_sc->p_dev->dev));
 	if (ret != 0) {
 		pr_info("isp-sc reserved mem device init failed, need external memory.\n");
-		no_mem = true;
 	}
 
 	device_create_file(&(t_sc->p_dev->dev), &dev_attr_sc_frame);
@@ -978,24 +1065,82 @@ reg_error:
 	return -1;
 }
 
-int am_sc_alloc_mem(void)
+void am_sc_api_dma_buffer(tframe_t * data, unsigned int index)
 {
-	if (!g_sc)
-		return -1;
+	unsigned long flags;
 
-	sc_cma_pages = dma_alloc_from_contiguous(
-		&(g_sc->p_dev->dev),
-		(CMA_ALLOC_SIZE * SZ_1M) >> PAGE_SHIFT, 0);
-	if (sc_cma_pages) {
-		buffer_start = page_to_phys(sc_cma_pages);
-		pr_info("isp-sc phy addr = %llx\n", buffer_start);
+	spin_lock_irqsave(&g_sc->sc_lock, flags);
+	tframe_t *buf = temp_buf + index;
+	memcpy(buf, data, sizeof(tframe_t));
+	if (!kfifo_is_full(&g_sc->sc_fifo_in)) {
+		kfifo_in(&g_sc->sc_fifo_in, &buf, sizeof(tframe_t*));
 	} else {
-		pr_err("isp-sc alloc cma pages failed.\n");
+		pr_info("sc fifo is full .\n");
+	}
+	spin_unlock_irqrestore(&g_sc->sc_lock, flags);
+
+}
+
+uint32_t am_sc_get_width(void)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
 		return -1;
 	}
-	no_mem = false;
-	sc_cma_mem = phys_to_virt(buffer_start);
-	pr_info("sc_cma_mem = %p\n", sc_cma_mem);
+	return g_sc->info.out_w;
+}
+
+void am_sc_set_width(uint32_t src_w, uint32_t out_w)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return;
+	}
+	g_sc->info.src_w = src_w;
+	g_sc->info.out_w = out_w;
+}
+
+uint32_t am_sc_get_height(void)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return -1;
+	}
+	return g_sc->info.out_h;
+}
+
+void am_sc_set_height(uint32_t src_h, uint32_t out_h)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return;
+	}
+	g_sc->info.src_h= src_h;
+	g_sc->info.out_h= out_h;
+}
+
+void am_sc_set_output_mode(uint32_t value)
+{
+	//todo list
+}
+
+void am_sc_set_buf_num(uint32_t num)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return;
+	}
+	g_sc->req_buf_num = num;
+}
+
+int am_sc_set_callback(acamera_context_ptr_t p_ctx, buffer_callback_t ds2_callback)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return -1;
+	}
+	g_sc->callback = ds2_callback;
+	g_sc->ctx = p_ctx;
 	return 0;
 }
 
@@ -1003,10 +1148,38 @@ int am_sc_system_init(void)
 {
 	int ret = 0;
 
-	if (!g_sc)
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
 		return -1;
+	}
 
-	am_sc_alloc_mem();
+	ret = kfifo_alloc(&g_sc->sc_fifo_in, PAGE_SIZE, GFP_KERNEL);
+	if (ret) {
+		pr_info("alloc sc fifo failed.\n");
+		return ret;
+	}
+
+	spin_lock_init(&g_sc->sc_lock);
+	stop_flag = false;
+	start_delay_cnt = 0;
+	buffer_id = 0;
+
+	cur_frame = NULL;
+	pre_frame = NULL;
+
+	if (!temp_buf) {
+		temp_buf = (tframe_t*)kmalloc( sizeof(tframe_t) * (g_sc->req_buf_num), GFP_KERNEL | __GFP_NOFAIL);
+	}
+
+#ifdef ENABLE_SC_BOTTOM_HALF_TASKLET
+	ret = kfifo_alloc(&sc_tasklet.sc_fifo_out, PAGE_SIZE, GFP_KERNEL);
+	if (ret) {
+		pr_info("alloc sc_tasklet fifo failed.\n");
+		return ret;
+	}
+	tasklet_init( &sc_tasklet.tasklet_obj, sc_do_tasklet, (unsigned long)&sc_tasklet );
+	frame_id = 0;
+#endif
 
 	ret = request_irq(g_sc->irq, isp_sc_isr, IRQF_SHARED | IRQF_TRIGGER_RISING,
 		"isp-sc-irq", (void *)g_sc);
@@ -1014,12 +1187,16 @@ int am_sc_system_init(void)
 	return ret;
 }
 
-int am_sc_hw_init(struct am_sc_info* info)
+int am_sc_hw_init(void)
 {
-	if (!g_sc || !info || no_mem)
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
 		return -1;
+	}
 
-	memcpy(&g_sc->info, info, sizeof(struct am_sc_info));
+	pr_info("src_w = %d, src_h = %d, out_w = %d, out_h = %d\n",
+		g_sc->info.src_w, g_sc->info.src_h, g_sc->info.out_w, g_sc->info.out_h);
+
 	init_sc_mif_setting(&isp_frame);
 	buffer_id = 0;
 	enable_isp_scale(1,
@@ -1031,11 +1208,11 @@ int am_sc_hw_init(struct am_sc_info* info)
 
 int am_sc_start(void)
 {
-	if (!g_sc || no_mem)
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
 		return -1;
+	}
 
-	start_delay_cnt = 0;
-	buffer_id = 0;
 	/* switch int to sync reset for start and delay frame */
 	sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 1, 3, 1);
 	return 0;
@@ -1048,36 +1225,45 @@ int am_sc_reset(void)
 
 int am_sc_stop(void)
 {
-	start_delay_cnt = 0;
-	sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 0, 1, 1);
-	sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 0, 3, 1);
-	sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 0, 0, 1);
-	return 0;
-}
-
-int am_sc_free_mem(void)
-{
-	if (sc_cma_pages) {
-		dma_release_from_contiguous(
-			&(g_sc->p_dev->dev),
-			sc_cma_pages,
-			(CMA_ALLOC_SIZE * SZ_1M) >> PAGE_SHIFT);
-		sc_cma_pages = NULL;
-		buffer_start = 0;
-		no_mem = true;
-		pr_info("release isp-sc CMA buffer.");
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return -1;
 	}
+
+	if (!stop_flag) {
+		sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 0, 1, 1);
+		sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 0, 0, 1);
+		sc_wr_reg_bits(ISP_SCWR_TOP_CTRL, 0, 3, 1);
+
+		kfifo_free(&g_sc->sc_fifo_in);
+#ifdef ENABLE_SC_BOTTOM_HALF_TASKLET
+		// kill tasklet
+		kfifo_free(&sc_tasklet.sc_fifo_out);
+		tasklet_kill( &sc_tasklet.tasklet_obj );
+		frame_id = 0;
+#endif
+
+		start_delay_cnt = 0;
+		cur_frame = NULL;
+		pre_frame = NULL;
+
+		if (temp_buf != NULL) {
+			kfree(temp_buf);
+			temp_buf = NULL;
+		}
+		free_irq(g_sc->irq, (void *)g_sc);
+		stop_flag = true;
+	}
+
 	return 0;
 }
 
 int am_sc_system_deinit(void)
 {
-	if (!g_sc)
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
 		return -1;
-
-	free_irq(g_sc->irq, NULL);
-
-	am_sc_free_mem();
+	}
 
 	iounmap(g_sc->base_addr);
 	g_sc->base_addr = NULL;

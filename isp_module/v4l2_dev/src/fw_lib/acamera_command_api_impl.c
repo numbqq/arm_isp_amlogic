@@ -44,6 +44,7 @@
 #include "system_timer.h"
 #include "acamera_firmware_api.h"
 #include "acamera_firmware_config.h"
+#include "system_am_sc.h"
 
 #if ISP_HAS_CMOS_FSM
 #include "cmos_fsm.h"
@@ -3637,6 +3638,67 @@ uint8_t ds1_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint
     }
     return result;
 }
+#endif
+
+#if ISP_HAS_DS2
+uint8_t scaler_width(acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value)
+{
+    uint32_t result = SUCCESS;
+    *ret_value = 0;
+    if ( direction == COMMAND_GET ) {
+        *ret_value = am_sc_get_width();
+    } else if (direction == COMMAND_SET){
+        //first get fr width as amloigc scaler src width
+        uint32_t width_cur = acamera_isp_top_active_width_read(instance->isp_base);
+        LOG(LOG_INFO, "FR width = %d, scaler out width = %d", width_cur, value);
+        am_sc_set_width(width_cur, value);
+    } else {
+        result = NOT_SUPPORTED;
+    }
+    return result;
+}
+
+uint8_t scaler_height(acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value)
+{
+    uint32_t result = SUCCESS;
+    *ret_value = 0;
+    if ( direction == COMMAND_GET ) {
+
+    } else if (direction == COMMAND_SET) {
+        //first get fr height as amlogic scaler src height
+        uint32_t height_cur = acamera_isp_top_active_height_read(instance->isp_base);
+        LOG(LOG_INFO, "FR height = %d, scaler out height = %d", height_cur, value);
+        am_sc_set_height(height_cur, value);
+    } else {
+        result = NOT_SUPPORTED;
+    }
+    return result;
+}
+
+uint8_t scaler_output_mode( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
+{
+    uint32_t result = SUCCESS;
+    *ret_value = 0;
+    if (direction == COMMAND_SET) {
+        //todo list
+        am_sc_set_output_mode(value);
+    } else {
+        result = NOT_SUPPORTED;
+    }
+    return result;
+}
+
+void scaler_streaming_on(void)
+{
+    am_sc_hw_init();
+    am_sc_start();
+}
+
+void scaler_streaming_off(void)
+{
+    am_sc_stop();
+}
+
 #endif
 
 // ------------------------------------------------------------------------------ //

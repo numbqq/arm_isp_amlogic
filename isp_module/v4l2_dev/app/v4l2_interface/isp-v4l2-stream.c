@@ -133,6 +133,7 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
 #define SYNC_FLAG_RAW ( 1 << 1 )
 #define SYNC_FLAG_FR ( 1 << 2 )
 #define SYNC_FLAG_DS1 ( 1 << 3 )
+#define SYNC_FLAG_DS2 ( 1 << 4 )
 static spinlock_t sync_slock;
 static uint32_t sync_started = 0;
 static uint32_t sync_flag = 0;
@@ -531,6 +532,73 @@ void callback_ds1( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadat
 // Callback from DS2 output pipe
 void callback_ds2( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadata )
 {
+#if ISP_HAS_DS2
+		isp_v4l2_stream_t *pstream = NULL;
+		struct isp_fw_frame_mgr *frame_mgr;
+		unsigned long flags;
+		int rc;
+
+		if ( !metadata ) {
+			LOG( LOG_ERR, "callback_ds2: metadata is NULL" );
+			return;
+		}
+
+		/* find stream pointer */
+		rc = isp_v4l2_find_stream( &pstream, ctx_num, V4L2_STREAM_TYPE_DS2 );
+		if ( rc < 0 ) {
+			LOG( LOG_DEBUG, "can't find stream on ctx %d (errno = %d)", ctx_num, rc );
+			return;
+		}
+
+		/* check if stream is on */
+		if ( !pstream->stream_started ) {
+			LOG( LOG_DEBUG, "[Stream#%d] stream DS2 is not started yet on ctx %d", pstream->stream_id, ctx_num );
+			return;
+		}
+
+		/* filter redundant frame id */
+		if ( pstream->last_frame_id == metadata->frame_id ) {
+			LOG( LOG_ERR, "[Stream#%d] Redundant frame ID %d on ctx#%d", pstream->stream_id, metadata->frame_id, ctx_num );
+			//return;
+		}
+		pstream->last_frame_id = metadata->frame_id;
+#if 0
+#if V4L2_FRAME_ID_SYNC
+		if ( sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_DS2 ) < 0 )
+			LOG(LOG_ERR, "callback_ds2 sync frame failed");
+			return;
+#endif
+#endif
+		frame_mgr = &pstream->frame_mgr;
+		int wake_up = 0;
+
+		spin_lock_irqsave( &frame_mgr->frame_slock, flags );
+		if ( ISP_FW_FRAME_BUF_INVALID == frame_mgr->frame_buffer.state ) {
+			/* lock buffer from firmware */
+			tframe->primary.status = dma_buf_purge;
+			tframe->secondary.status = dma_buf_purge;
+			/* save current frame  */
+			//only 2 planes are possible
+			frame_mgr->frame_buffer.addr[0] = tframe->primary.address;
+			frame_mgr->frame_buffer.addr[1] = tframe->secondary.address;
+			frame_mgr->frame_buffer.meta = *metadata;
+			frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
+			frame_mgr->frame_buffer.tframe = tframe;
+
+			/* wake up thread */
+			wake_up = 1;
+		}
+		spin_unlock_irqrestore( &frame_mgr->frame_slock, flags );
+
+		/* wake up the kernel thread to copy the frame data  */
+		if ( wake_up )
+			wake_up_interruptible( &frame_mgr->frame_wq );
+
+		if ( metadata )
+			LOG( LOG_INFO, "metadata: width: %u, height: %u, line_size: %u, frame_number: %u.",
+				 metadata->width, metadata->height, metadata->line_size, metadata->frame_number );
+#endif
+
 }
 
 
@@ -902,6 +970,12 @@ static int isp_v4l2_stream_copy_thread( void *data )
                 sync_flag &= ~SYNC_FLAG_DS1;
             } else
 #endif
+#if ISP_HAS_DS2
+                if ( pstream->stream_type == V4L2_STREAM_TYPE_DS2 ) {
+                LOG( LOG_DEBUG, "[Stream#%d] releasing DS2 sync flag", pstream->stream_id );
+                sync_flag &= ~SYNC_FLAG_DS2;
+            } else
+#endif
             {
                 LOG( LOG_DEBUG, "[Stream#%d] releasing FR  sync flag", pstream->stream_id );
                 sync_flag &= ~SYNC_FLAG_FR;
@@ -938,6 +1012,18 @@ int isp_v4l2_stream_on( isp_v4l2_stream_t *pstream )
         if ( pstream->stream_type == V4L2_STREAM_TYPE_RAW ) {
             LOG( LOG_DEBUG, "[Stream#%d] releasing RAW sync flag", pstream->stream_id );
             sync_flag &= ~SYNC_FLAG_RAW;
+        } else
+#endif
+#if ISP_HAS_DS1
+		if (pstream->stream_type == V4L2_STREAM_TYPE_DS1) {
+            LOG( LOG_DEBUG, "[Stream#%d] releasing DS1 sync flag", pstream->stream_id );
+            sync_flag &= ~SYNC_FLAG_DS1;
+        } else
+#endif
+#if ISP_HAS_DS2
+		if (pstream->stream_type == V4L2_STREAM_TYPE_DS2) {
+            LOG( LOG_DEBUG, "[Stream#%d] releasing DS2 sync flag", pstream->stream_id );
+            sync_flag &= ~SYNC_FLAG_DS2;
         } else
 #endif
         {

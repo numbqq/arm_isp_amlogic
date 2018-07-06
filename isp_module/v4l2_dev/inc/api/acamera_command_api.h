@@ -190,7 +190,7 @@
 #define TALGORITHMS                                       0x00000007
 #define TSCENE_MODES                                      0x00000008
 #define TREGISTERS                                        0x00000009
-
+#define TAML_SCALER                                       0x0000000a
 
 // ------------------------------------------------------------------------------ //
 //		BUFFER TYPES
@@ -308,7 +308,11 @@
 #define REGISTERS_SIZE_ID                                 0x00000065
 #define REGISTERS_SOURCE_ID                               0x00000066
 #define REGISTERS_VALUE_ID                                0x00000067
-
+#define SCALER_WIDTH                                      0x00000068
+#define SCALER_HEIGHT                                     0x00000069
+#define SCALER_OUTPUT_MODE                                0x00000070
+#define SCALER_STREAMING_ON                               0x00000071
+#define SCALER_STREAMING_OFF                              0x00000072
 
 // ------------------------------------------------------------------------------ //
 //		VALUE LIST

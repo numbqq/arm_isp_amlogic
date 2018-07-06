@@ -30,6 +30,7 @@
 #include "isp-v4l2-common.h"
 #include "isp-v4l2-stream.h"
 #include "isp-vb2.h"
+#include "system_am_sc.h"
 
 struct vb2_vmalloc_buf {
     void *vaddr;
@@ -176,7 +177,7 @@ static int isp_vb_to_tframe(tframe_t *frame, isp_v4l2_buffer_t *buf)
     return 0;
 }
 
-static void isp_frame_buff_queue(void *stream, isp_v4l2_buffer_t *buf)
+static void isp_frame_buff_queue(void *stream, isp_v4l2_buffer_t *buf, unsigned int index)
 {
     isp_v4l2_stream_t *pstream = NULL;
     int32_t s_type = -1;
@@ -202,15 +203,36 @@ static void isp_frame_buff_queue(void *stream, isp_v4l2_buffer_t *buf)
     case V4L2_STREAM_TYPE_DS1:
         d_type = dma_ds1;
         break;
+#if ISP_HAS_DS2
+    case V4L2_STREAM_TYPE_DS2:
+        d_type = dma_ds2;
+        break;
+#endif
     default:
         return;
     }
 
-    rc = isp_vb_to_tframe(&f_buff, buf);
-    if (rc != 0)
-        return;
+    if ((s_type == V4L2_STREAM_TYPE_FR) ||
+        (s_type == V4L2_STREAM_TYPE_DS1)) {
+        rc = isp_vb_to_tframe(&f_buff, buf);
+        if (rc != 0) {
+           LOG( LOG_INFO, "isp vb to tframe is error.");
+           return;
+        }
 
-    acamera_api_dma_buffer(d_type, &f_buff, 1, &rtn);
+        acamera_api_dma_buffer(d_type, &f_buff, 1, &rtn);
+    }
+
+#if ISP_HAS_DS2
+    if (s_type == V4L2_STREAM_TYPE_DS2) {
+        rc = isp_vb_to_tframe(&f_buff, buf);
+        if (rc != 0) {
+           LOG( LOG_INFO, "isp vb to tframe is error.");
+           return;
+        }
+        am_sc_api_dma_buffer(&f_buff, index);
+    }
+#endif
 }
 
 static void isp_vb2_buf_queue( struct vb2_buffer *vb )
@@ -228,7 +250,7 @@ static void isp_vb2_buf_queue( struct vb2_buffer *vb )
 
     spin_lock( &pstream->slock );
     list_add_tail( &buf->list, &pstream->stream_buffer_list );
-    isp_frame_buff_queue(pstream, buf);
+    isp_frame_buff_queue(pstream, buf, vb->index);
     spin_unlock( &pstream->slock );
 }
 
@@ -380,7 +402,20 @@ int isp_vb2_queue_init( struct vb2_queue *q, struct mutex *mlock, isp_v4l2_strea
         isp_vb2_memops.mmap = vb2_cma_mmap;
 
         q->mem_ops = &isp_vb2_memops;
-    } else {
+    }
+#if ISP_HAS_DS2
+    else if (pstream->stream_id == V4L2_STREAM_TYPE_DS2) {
+        memset(&isp_vb2_memops, 0, sizeof(isp_vb2_memops));
+        isp_vb2_memops = vb2_vmalloc_memops;
+
+        isp_vb2_memops.alloc = vb2_cma_alloc;
+        isp_vb2_memops.put = vb2_cma_put;
+        isp_vb2_memops.mmap = vb2_cma_mmap;
+
+        q->mem_ops = &isp_vb2_memops;
+    }
+#endif
+    else {
         q->mem_ops = &vb2_vmalloc_memops;
     }
 

@@ -321,6 +321,7 @@ static inline void mipi_adap_reg_rd(int addr, adap_io_type_t io_type, uint32_t *
 			break;
 		case MISC_IO:
 			base_reg_addr = g_adap->base_addr + MISC_BASE;
+			break;
 		default:
 			pr_err("%s, adapter error io type.\n", __func__);
 			base_reg_addr = NULL;
@@ -366,6 +367,7 @@ int am_adap_get_depth(void)
 			break;
 		default:
 			pr_err("Not supported data format.\n");
+			break;
 	}
 	return depth;
 }
@@ -502,9 +504,9 @@ void am_adap_alig_start(void)
 	int width, height, alig_width, alig_height, val;
 	width = para.img.width;
 	height = para.img.height;
-	alig_width = width * 2; //hblank > 32 cycles
+	alig_width = width + 40; //hblank > 32 cycles
 	alig_height = height + 60; //vblank > 48 lines
-	val = alig_width - 100; // width < val < alig_width
+	val = width + 35; // width < val < alig_width
 	adap_wr_reg_bits(MIPI_ADAPT_ALIG_CNTL0, ALIGN_IO, alig_width, 0, 13);
 	adap_wr_reg_bits(MIPI_ADAPT_ALIG_CNTL0, ALIGN_IO, alig_height, 16, 13);
 	adap_wr_reg_bits(MIPI_ADAPT_ALIG_CNTL1, ALIGN_IO, width, 16, 13);

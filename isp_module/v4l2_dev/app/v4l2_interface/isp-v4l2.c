@@ -38,6 +38,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/of_reserved_mem.h>
 #include <linux/dma-contiguous.h>
+#include "system_am_sc.h"
 
 #define ISP_V4L2_NUM_INPUTS 1
 
@@ -139,6 +140,11 @@ static int isp_v4l2_fop_open( struct file *file )
         acamera_api_dma_buff_queue_reset(dma_ds1);
     }
 #endif
+#if ISP_HAS_DS2
+    else if (sp->stream_id == V4L2_STREAM_TYPE_DS2) {
+        dev->stream_id_index[V4L2_STREAM_TYPE_DS2] = sp->stream_id;
+    }
+#endif
 
     /* init vb2 queue */
 
@@ -152,6 +158,11 @@ static int isp_v4l2_fop_open( struct file *file )
 
         sp->vb2_q.dev = g_isp_v4l2_dev->pdev;
     }
+#if ISP_HAS_DS2
+    else if (sp->stream_id == V4L2_STREAM_TYPE_DS2) {
+        sp->vb2_q.dev = g_isp_v4l2_dev->pdev;
+    }
+#endif
 
     /* init fh_ptr */
     if ( mutex_lock_interruptible( &dev->notify_lock ) )
@@ -461,6 +472,14 @@ static int isp_v4l2_reqbufs( struct file *file, void *priv,
     rc = vb2_reqbufs( &sp->vb2_q, p );
     if ( rc == 0 )
         sp->vb2_q.owner = p->count ? file->private_data : NULL;
+
+#if ISP_HAS_DS2
+    if (sp->stream_id == V4L2_STREAM_TYPE_DS2) {
+        LOG( LOG_INFO, "request buffer count = %d\n", p->count);
+        am_sc_set_buf_num(p->count);
+        am_sc_system_init();
+    }
+#endif
 
     LOG( LOG_DEBUG, "sid:%d reqbuf p->type:%d p->memory %d p->count %d rc %d", sp->stream_id, p->type, p->memory, p->count, rc );
     return rc;

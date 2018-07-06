@@ -33,6 +33,7 @@
 #include "acamera_logger.h"
 #include "isp-v4l2-common.h"
 #include "fw-interface.h"
+#include <linux/delay.h>
 
 //use main_firmware.c routines to initialize fw
 extern int isp_fw_init( void );
@@ -274,8 +275,19 @@ int fw_intf_stream_start( isp_v4l2_stream_type_t streamType )
 #endif
     }
 #endif
-    if (streamType == V4L2_STREAM_TYPE_FR)
+    if (streamType == V4L2_STREAM_TYPE_FR) {
+        LOG( LOG_ERR, "Starting stream type %d", streamType );
         acamera_command( TSENSOR, SENSOR_STREAMING, ON, COMMAND_SET, &rc );
+    }
+
+#if ISP_HAS_DS2
+    if (streamType == V4L2_STREAM_TYPE_DS2) {
+        uint32_t ret_val;
+        mdelay(200);
+        LOG( LOG_ERR, "Starting stream type %d", streamType );
+        acamera_command( TAML_SCALER, SCALER_STREAMING_ON, ON, COMMAND_SET, &ret_val );
+    }
+#endif
 
     return 0;
 }
@@ -301,6 +313,14 @@ void fw_intf_stream_stop( isp_v4l2_stream_type_t streamType )
     } else if (streamType == V4L2_STREAM_TYPE_DS1) {
         acamera_api_dma_buff_queue_reset(dma_ds1);
     }
+
+#if ISP_HAS_DS2
+    if (streamType == V4L2_STREAM_TYPE_DS2) {
+        uint32_t ret_val;
+        LOG( LOG_ERR, "Stopping stream type %d", streamType );
+        acamera_command( TAML_SCALER, SCALER_STREAMING_OFF, OFF, COMMAND_SET, &ret_val );
+    }
+#endif
 
     LOG( LOG_CRIT, "Stream off %d\n",  streamType);
 }
@@ -487,6 +507,29 @@ int fw_intf_stream_set_resolution( const isp_v4l2_sensor_info *sensor_info,
     }
 #endif
 
+#if ISP_HAS_DS2
+    else if ( streamType == V4L2_STREAM_TYPE_DS2 ) {
+
+        uint32_t ret_val;
+        uint32_t w, h;
+
+        w = *width;
+        h = *height;
+
+        uint32_t width_cur, height_cur;
+        //check if we need to change sensor preset
+        acamera_command( TAML_SCALER, SCALER_WIDTH, 0, COMMAND_GET, &width_cur );
+        acamera_command( TAML_SCALER, SCALER_HEIGHT, 0, COMMAND_GET, &height_cur );
+        LOG( LOG_ERR, "target (width = %d, height = %d) current (w=%d h=%d)", w, h, width_cur, height_cur );
+        if ( w != width_cur || h != height_cur ) {
+            acamera_command( TAML_SCALER, SCALER_WIDTH, w, COMMAND_SET, &ret_val );
+            acamera_command( TAML_SCALER, SCALER_HEIGHT, h, COMMAND_SET, &ret_val );
+        } else {
+            LOG(LOG_ERR, "target resolution equal current resolution");
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -564,6 +607,20 @@ int fw_intf_stream_set_output_format( isp_v4l2_stream_type_t streamType, uint32_
         LOG( LOG_INFO, "set format for stream %d to %d (0x%x)", streamType, value, format );
         if ( result ) {
             LOG( LOG_ERR, "TIMAGE - DS1_FORMAT_BASE_PLANE_ID failed (value = 0x%x, result = %d)", value, result );
+        }
+    }
+#endif
+
+#if ISP_HAS_DS2
+    else if ( streamType == V4L2_STREAM_TYPE_DS2 ) {
+
+        uint8_t result;
+        uint32_t ret_val;
+
+        result = acamera_command( TAML_SCALER, SCALER_OUTPUT_MODE, value, COMMAND_SET, &ret_val );
+        LOG( LOG_ERR, "set format for stream %d to %d (0x%x)", streamType, value, format );
+        if ( result ) {
+            LOG( LOG_ERR, "TIMAGE - DS2_FORMAT_BASE_PLANE_ID failed (value = 0x%x, result = %d)", value, result );
         }
     }
 #endif

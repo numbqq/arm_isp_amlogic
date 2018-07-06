@@ -536,7 +536,7 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
         pr_info("%s:Success to get link device: %s\n", __func__,
             link_node->name);
         am_sc_parse_dt(link_node);
-        am_sc_system_init();
+        //am_sc_system_init();
 #if 0 // TODO: config isp sc at the right place
         struct am_sc_info sc_info;
         memset(&sc_info, 0, sizeof(sc_info));

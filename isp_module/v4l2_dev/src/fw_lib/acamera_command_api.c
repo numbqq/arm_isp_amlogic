@@ -386,6 +386,28 @@ case  TREGISTERS:
 			ret = register_value(instance, value, direction, ret_value);
 			break;
 	}//switch (command)
+	break;
+#if ISP_HAS_DS2
+case TAML_SCALER:
+	switch (command) {
+		case SCALER_WIDTH:
+			ret = scaler_width(instance, value, direction, ret_value);
+			break;
+		case SCALER_HEIGHT:
+			ret = scaler_height(instance, value, direction, ret_value);
+			break;
+		case SCALER_OUTPUT_MODE:
+			ret = scaler_output_mode(instance, value, direction, ret_value);
+			break;
+		case SCALER_STREAMING_ON:
+			scaler_streaming_on();
+			break;
+		case SCALER_STREAMING_OFF:
+			scaler_streaming_off();
+			break;
+	}//switch (command)
+	break;
+#endif
 }//switch (command_type)
 
 #if FW_HAS_CONTROL_CHANNEL

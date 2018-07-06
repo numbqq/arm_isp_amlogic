@@ -91,6 +91,9 @@ typedef enum {
 #if ISP_HAS_DS1
     V4L2_STREAM_TYPE_DS1,
 #endif
+#if ISP_HAS_DS2
+    V4L2_STREAM_TYPE_DS2,
+#endif
 #if ISP_HAS_RAW_CB
     V4L2_STREAM_TYPE_RAW,
 #endif

@@ -24,6 +24,11 @@
 #include <linux/of.h>
 #include <linux/slab.h>
 #include <linux/i2c.h>
+#include "acamera_command_api.h"
+#include "acamera_firmware_settings.h"
+#include "acamera.h"
+#include "acamera_fw.h"
+#include <linux/kfifo.h>
 
 #define ISP_SCWR_TOP_CTRL 			(0x30 << 2)
 #define ISP_SCWR_GCLK_CTRL 		(0x31 << 2)
@@ -107,17 +112,28 @@ struct am_sc {
 	struct resource reg;
 	void __iomem *base_addr;
 	int irq;
+	spinlock_t sc_lock;
+	struct kfifo sc_fifo_in;
+	int req_buf_num;
 	struct am_sc_info info;
+	acamera_context_ptr_t ctx;
+	buffer_callback_t callback;
 };
 
 extern int am_sc_parse_dt(struct device_node *node);
-extern int am_sc_alloc_mem(void);
+extern void am_sc_api_dma_buffer(tframe_t * data, unsigned int index);
+extern uint32_t am_sc_get_width(void);
+extern void am_sc_set_width(uint32_t src_w, uint32_t out_w);
+extern uint32_t am_sc_get_height(void);
+extern void am_sc_set_height(uint32_t src_h, uint32_t out_h);
+extern void am_sc_set_output_mode(uint32_t value);
+extern void am_sc_set_buf_num(uint32_t num);
+extern int am_sc_set_callback(acamera_context_ptr_t p_ctx, buffer_callback_t ds2_callback);
 extern int am_sc_system_init(void);
-extern int am_sc_hw_init(struct am_sc_info* info);
+extern int am_sc_hw_init(void);
 extern int am_sc_start(void);
 extern int am_sc_reset(void);
 extern int am_sc_stop(void);
-extern int am_sc_free_mem(void);
 extern int am_sc_system_deinit(void);
 extern int am_sc_hw_deinit(void);
 

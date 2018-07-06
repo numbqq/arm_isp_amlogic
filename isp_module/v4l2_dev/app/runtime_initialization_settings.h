@@ -79,5 +79,8 @@ static acamera_settings settings[ FIRMWARE_CONTEXT_NUMBER ] = {    {
         .ds1_frames = NULL,//sensor0_v4l2_ds1_frames,
         .ds1_frames_number = 0,//sizeof( sensor0_v4l2_ds1_frames ) / sizeof( tframe_t ),
         .callback_ds1 = callback_ds1,
+        .ds2_frames = NULL,
+        .ds2_frames_number = 0,
+        .callback_ds2 = callback_ds2,
     }
 } ;

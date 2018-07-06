@@ -31,6 +31,7 @@
 #include "acamera_sbus_api.h"
 #include "sensor_init.h"
 #include "isp_config_seq.h"
+#include "system_am_sc.h"
 
 #if ISP_HAS_FPGA_WRAPPER
 #include "acamera_fpga_config.h"
@@ -318,6 +319,18 @@ static void internal_callback_ds1( void *ctx, tframe_t *tframe, const metadata_t
 }
 #endif
 
+#if ISP_HAS_DS2
+// Callback from DS2 output pipe
+static void external_callback_ds2( void *ctx, tframe_t *tframe, const metadata_t *metadata )
+{
+
+    acamera_context_ptr_t p_ctx = (acamera_context_ptr_t)ctx;
+    if ( p_ctx->settings.callback_ds2 != NULL ) {
+        p_ctx->settings.callback_ds2( p_ctx->context_id, tframe, metadata );
+    }
+}
+#endif
+
 static void configure_all_frame_buffers( acamera_context_ptr_t p_ctx )
 {
 
@@ -387,6 +400,11 @@ static void configure_all_frame_buffers( acamera_context_ptr_t p_ctx )
     acamera_isp_ds1_uv_dma_writer_format_write( p_ctx->settings.isp_base, FW_OUTPUT_FORMAT_SECONDARY );
 
 #endif
+
+#if ISP_HAS_DS2
+    am_sc_set_callback(p_ctx, external_callback_ds2);
+#endif
+
 }
 
 static void init_stab( acamera_context_ptr_t p_ctx )
