@@ -23,26 +23,12 @@
 #include <media/v4l2-device.h>
 #include <media/videobuf2-memops.h>
 
-#include <linux/dma-mapping.h>
-#include <linux/dma-contiguous.h>
-
 #include "acamera_logger.h"
 #include "isp-v4l2-common.h"
 #include "isp-v4l2-stream.h"
 #include "isp-vb2.h"
 #include "system_am_sc.h"
-
-struct vb2_vmalloc_buf {
-    void *vaddr;
-    struct frame_vector	*vec;
-    enum dma_data_direction	dma_dir;
-    unsigned long size;
-    atomic_t refcount;
-    struct vb2_vmarea_handler handler;
-    struct dma_buf *dbuf;
-};
-
-static struct vb2_mem_ops isp_vb2_memops;
+#include "isp-vb2-cmalloc.h"
 
 /* ----------------------------------------------------------------
  * VB2 operations
@@ -262,122 +248,6 @@ static const struct vb2_ops isp_vb2_ops = {
     .wait_finish = vb2_ops_wait_finish,
 };
 
-static void *cma_alloc(struct device *dev, unsigned long size)
-{
-    struct page *cma_pages = NULL;
-    dma_addr_t paddr = 0;
-    void *vaddr = NULL;
-
-    cma_pages = dma_alloc_from_contiguous(dev,
-            size >> PAGE_SHIFT, 0);
-    if (cma_pages) {
-        paddr = page_to_phys(cma_pages);
-    } else {
-        LOG(LOG_ERR, "Failed to alloc cma pages.\n");
-        return NULL;
-    }
-
-    vaddr = phys_to_virt(paddr);
-
-    return vaddr;
-}
-
-static void cma_free(void *buf_priv)
-{
-    struct vb2_vmalloc_buf *buf = buf_priv;
-    struct page *cma_pages = NULL;
-    struct device *dev = NULL;
-    bool rc = -1;
-
-    dev = (void *)(buf->dbuf);
-
-    cma_pages = virt_to_page(buf->vaddr);
-
-    rc = dma_release_from_contiguous(dev, cma_pages,
-                buf->size >> PAGE_SHIFT);
-    if (rc == false) {
-        LOG(LOG_ERR, "Failed to release cma buffer\n");
-        return;
-    }
-
-    buf->vaddr = NULL;
-}
-
-static void vb2_cma_put(void *buf_priv)
-{
-    struct vb2_vmalloc_buf *buf = buf_priv;
-
-    if (atomic_dec_and_test(&buf->refcount)) {
-        cma_free(buf_priv);
-        kfree(buf);
-    }
-}
-
-static void *vb2_cma_alloc(struct device *dev, unsigned long attrs,
-                    unsigned long size, enum dma_data_direction dma_dir,
-                    gfp_t gfp_flags)
-{
-    struct vb2_vmalloc_buf *buf;
-
-    buf = kzalloc(sizeof(*buf), GFP_KERNEL | gfp_flags);
-    if (!buf)
-        return ERR_PTR(-ENOMEM);
-
-    buf->size = size;
-    buf->vaddr = cma_alloc(dev, buf->size);
-    buf->dma_dir = dma_dir;
-    buf->handler.refcount = &buf->refcount;
-    buf->handler.put = vb2_cma_put;
-    buf->handler.arg = buf;
-    buf->dbuf = (void *)dev;
-
-    if (!buf->vaddr) {
-        LOG(LOG_ERR, "vmalloc of size %ld failed\n", buf->size);
-        kfree(buf);
-        return ERR_PTR(-ENOMEM);
-    }
-
-    atomic_inc(&buf->refcount);
-    return buf;
-}
-
-static int vb2_cma_mmap(void *buf_priv, struct vm_area_struct *vma)
-{
-    struct vb2_vmalloc_buf *buf = buf_priv;
-    unsigned long pfn = 0;
-    unsigned long vsize = vma->vm_end - vma->vm_start;
-    int ret = -1;
-
-    if (!buf || !vma) {
-        LOG(LOG_ERR, "No memory to map\n");
-        return -EINVAL;
-    }
-
-    pfn = virt_to_phys(buf->vaddr) >> PAGE_SHIFT;
-    ret = remap_pfn_range(vma, vma->vm_start, pfn, vsize, vma->vm_page_prot);
-
-    if (ret) {
-        LOG(LOG_ERR, "Remapping vmalloc memory, error: %d\n", ret);
-        return ret;
-    }
-
-    /*
-    * Make sure that vm_areas for 2 buffers won't be merged together
-    */
-    vma->vm_flags |= VM_DONTEXPAND;
-
-    /*
-    * Use common vm_area operations to track buffer refcount.
-    */
-    vma->vm_private_data = &buf->handler;
-    vma->vm_ops	= &vb2_common_vm_ops;
-
-    vma->vm_ops->open(vma);
-
-    return 0;
-}
-
-
 /* ----------------------------------------------------------------
  * VB2 external interface for isp-v4l2
  */
@@ -394,25 +264,11 @@ int isp_vb2_queue_init( struct vb2_queue *q, struct mutex *mlock, isp_v4l2_strea
 
     if (pstream->stream_id == V4L2_STREAM_TYPE_FR ||
             pstream->stream_id == V4L2_STREAM_TYPE_DS1) {
-        memset(&isp_vb2_memops, 0, sizeof(isp_vb2_memops));
-        isp_vb2_memops = vb2_vmalloc_memops;
-
-        isp_vb2_memops.alloc = vb2_cma_alloc;
-        isp_vb2_memops.put = vb2_cma_put;
-        isp_vb2_memops.mmap = vb2_cma_mmap;
-
-        q->mem_ops = &isp_vb2_memops;
+        q->mem_ops = &vb2_cmalloc_memops;
     }
 #if ISP_HAS_DS2
     else if (pstream->stream_id == V4L2_STREAM_TYPE_DS2) {
-        memset(&isp_vb2_memops, 0, sizeof(isp_vb2_memops));
-        isp_vb2_memops = vb2_vmalloc_memops;
-
-        isp_vb2_memops.alloc = vb2_cma_alloc;
-        isp_vb2_memops.put = vb2_cma_put;
-        isp_vb2_memops.mmap = vb2_cma_mmap;
-
-        q->mem_ops = &isp_vb2_memops;
+        q->mem_ops = &vb2_cmalloc_memops;
     }
 #endif
     else {
