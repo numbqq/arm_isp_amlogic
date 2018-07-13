@@ -251,7 +251,12 @@ enum SocCamera_ioctl {
     // return current number of bits in raw
     // input: sensor mode
     // output: val_out - current number of bits in raw
-   SOC_SENSOR_GET_SENSOR_BITS
+   SOC_SENSOR_GET_SENSOR_BITS,
+
+    //return current bayer pattern of setting
+    //input: sensor mode
+    //output: val_out - current bayer pattern
+    SOC_SENSOR_GET_BAYER_PATTERN,
 };
 
 

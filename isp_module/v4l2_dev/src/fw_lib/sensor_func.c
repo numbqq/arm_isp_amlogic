@@ -162,6 +162,43 @@ void sensor_configure_buffers( sensor_fsm_ptr_t p_fsm )
 }
 
 
+static void sensor_update_bayer_bits(sensor_fsm_ptr_t p_fsm)
+{
+    const sensor_param_t *param = p_fsm->ctrl.get_parameters( p_fsm->sensor_ctx );
+    uint8_t isp_bayer = param->bayer;
+    uint8_t bits = param->modes_table[p_fsm->preset_mode].bits;
+    uint8_t isp_bit_width = 1;
+
+    switch (bits) {
+    case 8:
+        isp_bit_width = 0;
+        break;
+    case 10:
+        isp_bit_width = 1;
+        break;
+    case 12:
+        isp_bit_width = 2;
+        break;
+    case 14:
+        isp_bit_width = 3;
+        break;
+    case 16:
+        isp_bit_width = 4;
+        break;
+    case 20:
+        isp_bit_width = 5;
+        break;
+    default:
+        LOG(LOG_ERR, "Error input bits\n");
+        break;
+    }
+
+    acamera_isp_top_rggb_start_pre_mirror_write(p_fsm->cmn.isp_base, isp_bayer);
+    acamera_isp_top_rggb_start_post_mirror_write(p_fsm->cmn.isp_base, isp_bayer);
+    acamera_isp_input_formatter_input_bitwidth_select_write(p_fsm->cmn.isp_base, isp_bit_width);
+}
+
+
 void sensor_sw_init( sensor_fsm_ptr_t p_fsm )
 {
     const sensor_param_t *param = p_fsm->ctrl.get_parameters( p_fsm->sensor_ctx );
@@ -187,6 +224,8 @@ void sensor_sw_init( sensor_fsm_ptr_t p_fsm )
     acamera_isp_input_port_mode_request_write( p_fsm->cmn.isp_base, ACAMERA_ISP_INPUT_PORT_MODE_REQUEST_SAFE_START );
 
     sensor_update_black( p_fsm );
+
+    sensor_update_bayer_bits(p_fsm);
 
     acamera_update_cur_settings_to_isp();
 

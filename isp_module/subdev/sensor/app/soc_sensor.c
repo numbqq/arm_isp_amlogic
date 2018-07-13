@@ -276,6 +276,10 @@ static long camera_ioctl( struct v4l2_subdev *sd, unsigned int cmd, void *arg )
         ARGS_TO_PTR( arg )
             ->args.general.val_out = params->active.width;
     } break;
+    case SOC_SENSOR_GET_BAYER_PATTERN: {
+        ARGS_TO_PTR( arg )
+            ->args.general.val_out = params->bayer;
+    } break;
     default:
         LOG( LOG_WARNING, "Unknown soc sensor ioctl cmd %d", cmd );
         rc = -1;

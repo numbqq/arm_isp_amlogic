@@ -61,6 +61,7 @@ static sensor_mode_t supported_modes[5] = {
         .bps = 250,
         .lanes = 2,
         .num = 1,
+        .bayer = BAYER_BGGR,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -72,6 +73,7 @@ static sensor_mode_t supported_modes[5] = {
         .bps = 800,
         .lanes = 4,
         .num = 2,
+        .bayer = BAYER_BGGR,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -83,6 +85,7 @@ static sensor_mode_t supported_modes[5] = {
         .bps = 1440,
         .lanes = 4,
         .num = 3,
+        .bayer = BAYER_BGGR,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -94,6 +97,7 @@ static sensor_mode_t supported_modes[5] = {
         .bps = 800,
         .lanes = 4,
         .num = 4,
+        .bayer = BAYER_BGGR,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -105,6 +109,7 @@ static sensor_mode_t supported_modes[5] = {
         .bps = 1440,
         .lanes = 4,
         .num = 5,
+        .bayer = BAYER_BGGR,
     }
 };
 
@@ -379,6 +384,7 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     param->integration_time_limit = SENSOR_MAX_INTEGRATION_TIME_LIMIT;
     param->mode = mode;
     p_ctx->wdr_mode = param->modes_table[mode].wdr_mode;
+    param->bayer = param->modes_table[mode].bayer;
 
     sensor_set_iface(&param->modes_table[mode]);
 

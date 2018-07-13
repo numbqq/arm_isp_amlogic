@@ -22,6 +22,14 @@
 
 #include "acamera_types.h"
 
+// this is the sensor bayer pattern,
+// it is used in arm isp color pattern
+typedef enum {
+	BAYER_RGGB,
+	BAYER_GRBG,
+	BAYER_GBRG,
+	BAYER_BGGR,
+}bayer_type_t;
 
 // this structure represents image resolution
 // it is used in sensor driver to keep information
@@ -67,6 +75,7 @@ typedef struct _sensor_param_t {
     uint32_t modes_num;                      // The number of predefined modes
     uint8_t mode;                            // Current mode. This value is from the range [ 0 : modes_num - 1 ]
     void *sensor_ctx;                        // Conext to a sensor structure. This structure is not available to firmware
+    uint8_t bayer;                           // sensor setting bayer pattern
 } sensor_param_t;
 
 
