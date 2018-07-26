@@ -565,7 +565,21 @@ int fw_intf_stream_set_output_format( isp_v4l2_stream_type_t streamType, uint32_
         value = RGB24;
         break;
 #endif
-
+#ifdef DMA_FORMAT_AYUV
+    case V4L2_PIX_FMT_YUV444:
+        value = AYUV;
+        break;
+#endif
+#ifdef DMA_FORMAT_YUY2
+    case V4L2_PIX_FMT_YUYV:
+        value = YUY2;
+        break;
+#endif
+#ifdef DMA_FORMAT_UYVY
+    case V4L2_PIX_FMT_UYVY:
+        value = UYVY;
+        break;
+#endif
 #ifdef DMA_FORMAT_RAW16
     case V4L2_PIX_FMT_SBGGR16:
         value = RAW16;

@@ -106,6 +106,27 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
 			.is_yuv = true,
 			.planes = 2,
 		},
+		{
+			.name = "AYUV",
+			.fourcc = V4L2_PIX_FMT_YUV444,
+			.depth = 32,
+			.is_yuv = true,
+			.planes = 1,
+		},
+		{
+			.name = "YUY2",
+			.fourcc = V4L2_PIX_FMT_YUYV,
+			.depth = 16,
+			.is_yuv = true,
+			.planes = 1,
+		},
+		{
+			.name = "UYVY",
+			.fourcc = V4L2_PIX_FMT_UYVY,
+			.depth = 16,
+			.is_yuv = true,
+			.planes = 1,
+		},
         {
             .name = "RAW 16",
             .fourcc = V4L2_PIX_FMT_SBGGR16,
@@ -1331,6 +1352,9 @@ int isp_v4l2_stream_set_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
         case V4L2_PIX_FMT_RGB24:
         case V4L2_PIX_FMT_NV12:
         case V4L2_PIX_FMT_SBGGR16:
+        case V4L2_PIX_FMT_YUV444:
+        case V4L2_PIX_FMT_YUYV:
+        case V4L2_PIX_FMT_UYVY:
             pstream->stream_type = pstream->stream_id;
             break;
 #if ISP_HAS_META_CB
