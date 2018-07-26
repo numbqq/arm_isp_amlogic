@@ -3312,7 +3312,7 @@ uint8_t fr_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint8
         result = SUCCESS;
     } else if ( direction == COMMAND_SET ) {
         uint8_t base, base_uv = DMA_FORMAT_DISABLE;
-
+        am_sc_set_input_format(value);
         switch ( value ) {
         case DMA_DISABLE:
             base = DMA_FORMAT_DISABLE;
@@ -3681,7 +3681,7 @@ uint8_t scaler_output_mode( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t
     *ret_value = 0;
     if (direction == COMMAND_SET) {
         //todo list
-        am_sc_set_output_mode(value);
+        am_sc_set_output_format(value);
     } else {
         result = NOT_SUPPORTED;
     }

@@ -580,6 +580,15 @@ void isp_mtx_setting(s32 mode)
 void isp_mif_setting(ISP_MIF_t *wr_mif)
 {
 	u8 swap_uv = 0;
+	if (g_sc->info.in_fmt == RGB24) {
+	    if (g_sc->info.out_fmt == NV12_YUV) {
+	       swap_uv = 1;
+	    }
+	} else if (g_sc->info.in_fmt == AYUV) {
+	    if (g_sc->info.out_fmt == NV12_YUV) {
+	       swap_uv = 1;
+	    }
+	}
 
 	sc_wr_reg_bits(ISP_SCWR_MIF_CTRL0,
 		((1 << 0) |
@@ -649,9 +658,19 @@ static void enable_isp_scale(
 {
 	/* don't enable mif first, and use wr done int */
 	int enable = 0;
-	int rgb_swap = 4;
+	int rgb_swap = 0;
 	int irq_sel = 0;
 	u32 val = 0;
+
+	if (g_sc->info.in_fmt == RGB24) {
+		if (g_sc->info.out_fmt == AYUV) {
+		   rgb_swap = 5;
+		}
+	} else if (g_sc->info.in_fmt == AYUV) {
+		if (g_sc->info.out_fmt == AYUV) {
+		   rgb_swap = 5;
+		}
+	}
 
 	if (sc_en)
 		isp_sc_setting(src_w, src_h, out_w, out_h);
@@ -735,7 +754,17 @@ static void init_sc_mif_setting(ISP_MIF_t *mif_frame)
 	memset(mif_frame, 0, sizeof(ISP_MIF_t));
 	plane_size = g_sc->info.out_w * g_sc->info.out_h;
 	mif_frame->reg_little_endian = 1;
-	mif_frame->reg_rgb_mode = 1;
+	if ((g_sc->info.in_fmt == RGB24) ||
+		(g_sc->info.in_fmt == AYUV)) {
+		if ((g_sc->info.out_fmt == RGB24) ||
+			(g_sc->info.out_fmt == AYUV)) {
+			mif_frame->reg_rgb_mode = 1;
+		} else if (g_sc->info.out_fmt == NV12_YUV) {
+			mif_frame->reg_rgb_mode = 2;
+		} else if (g_sc->info.out_fmt == UYVY) {
+			mif_frame->reg_rgb_mode = 0;
+		}
+	}
 	mif_frame->reg_bit10_mode = 0;
 	mif_frame->reg_words_lim = 4;
 	mif_frame->reg_burst_lim = 3;
@@ -1119,9 +1148,22 @@ void am_sc_set_height(uint32_t src_h, uint32_t out_h)
 	g_sc->info.out_h= out_h;
 }
 
-void am_sc_set_output_mode(uint32_t value)
+void am_sc_set_input_format(uint32_t value)
 {
-	//todo list
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return;
+	}
+	g_sc->info.in_fmt = value;
+}
+
+void am_sc_set_output_format(uint32_t value)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return;
+	}
+	g_sc->info.out_fmt = value;
 }
 
 void am_sc_set_buf_num(uint32_t num)
@@ -1197,11 +1239,29 @@ int am_sc_hw_init(void)
 	pr_info("src_w = %d, src_h = %d, out_w = %d, out_h = %d\n",
 		g_sc->info.src_w, g_sc->info.src_h, g_sc->info.out_w, g_sc->info.out_h);
 
+	int mtx_mode = 0;
 	init_sc_mif_setting(&isp_frame);
 	buffer_id = 0;
+	if (g_sc->info.in_fmt == RGB24) {
+		if (g_sc->info.out_fmt == RGB24) {
+			mtx_mode = 0;
+		} else if ((g_sc->info.out_fmt == NV12_YUV) ||
+		          (g_sc->info.out_fmt == UYVY) ||
+		          (g_sc->info.out_fmt == AYUV)) {
+			mtx_mode = 1;
+		}
+	} else if (g_sc->info.in_fmt == AYUV) {
+		if ((g_sc->info.out_fmt == NV12_YUV) ||
+			(g_sc->info.out_fmt == UYVY) ||
+			(g_sc->info.out_fmt == AYUV)) {
+			mtx_mode = 0;
+		} else if (g_sc->info.out_fmt == RGB24) {
+			mtx_mode = 2;
+		}
+	}
 	enable_isp_scale(1,
 		g_sc->info.src_w, g_sc->info.src_h,
-		g_sc->info.out_w, g_sc->info.out_h, 0, 1, 0,
+		g_sc->info.out_w, g_sc->info.out_h, 0, 1, mtx_mode,
 		&isp_frame);
 	return 0;
 }

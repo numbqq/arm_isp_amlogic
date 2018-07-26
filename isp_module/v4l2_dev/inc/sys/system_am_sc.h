@@ -103,6 +103,8 @@ struct am_sc_info {
 	uint32_t src_h;
 	uint32_t out_w;
 	uint32_t out_h;
+	uint32_t in_fmt;
+	uint32_t out_fmt;
 	uint32_t csc_mode;
 };
 
@@ -126,7 +128,8 @@ extern uint32_t am_sc_get_width(void);
 extern void am_sc_set_width(uint32_t src_w, uint32_t out_w);
 extern uint32_t am_sc_get_height(void);
 extern void am_sc_set_height(uint32_t src_h, uint32_t out_h);
-extern void am_sc_set_output_mode(uint32_t value);
+extern void am_sc_set_input_format(uint32_t value);
+extern void am_sc_set_output_format(uint32_t value);
 extern void am_sc_set_buf_num(uint32_t num);
 extern int am_sc_set_callback(acamera_context_ptr_t p_ctx, buffer_callback_t ds2_callback);
 extern int am_sc_system_init(void);
