@@ -45,8 +45,10 @@
 
 /* isp_v4l2_dev_t to destroy video device */
 static isp_v4l2_dev_t *g_isp_v4l2_dev = NULL;
-uint8_t *isp_kaddr = NULL;
+void *isp_kaddr = NULL;
 resource_size_t isp_paddr = 0;
+#define TEMPER_MEM_SIZE (64 * 1024 * 1024UL)
+
 
 
 /* ----------------------------------------------------------------
@@ -556,17 +558,16 @@ static const struct v4l2_ioctl_ops isp_v4l2_ioctl_ops = {
 };
 
 
-int isp_cma_alloc(struct platform_device *pdev, int count)
+static int isp_cma_alloc(struct platform_device *pdev, unsigned long size)
 {
     struct page *cma_pages = NULL;
 
     cma_pages = dma_alloc_from_contiguous(
-                &(pdev->dev),
-                (count * SZ_1M) >> PAGE_SHIFT, 0);
+                &(pdev->dev), size >> PAGE_SHIFT, 0);
     if (cma_pages) {
         isp_paddr = page_to_phys(cma_pages);
     } else {
-        LOG(LOG_ERR, "alloc cma pages failed.\n");
+        LOG(LOG_ERR, "Failed alloc cma pages.\n");
         return -1;
     }
     isp_kaddr = phys_to_virt(isp_paddr);
@@ -575,6 +576,26 @@ int isp_cma_alloc(struct platform_device *pdev, int count)
 
     return 0;
 }
+
+static void isp_cma_free(struct platform_device *pdev, void *kaddr, unsigned long size)
+{
+    struct page *cma_pages = NULL;
+    bool rc = false;
+
+    if (pdev == NULL || kaddr == NULL) {
+        LOG(LOG_ERR, "Error input param\n");
+        return;
+    }
+
+    cma_pages = virt_to_page(kaddr);
+
+    rc = dma_release_from_contiguous(&(pdev->dev), cma_pages, size >> PAGE_SHIFT);
+    if (rc == false) {
+        LOG(LOG_ERR, "Failed to release cma buffer\n");
+        return;
+    }
+}
+
 
 /* ----------------------------------------------------------------
  * V4L2 external interface for probe
@@ -605,7 +626,7 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
     dev->isp_v4l2_ctrl.video_dev = &dev->video_dev;
     rc = isp_v4l2_ctrl_init( &dev->isp_v4l2_ctrl );
     if ( rc )
-        goto unreg_dev;
+        goto free_dev;
 
     /* initialize locks */
     mutex_init( &dev->mlock );
@@ -619,6 +640,25 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
     /* initialize open counter */
     atomic_set( &dev->stream_on_cnt, 0 );
     atomic_set( &dev->opened, 0 );
+
+    dev->pdev = &pdev->dev;
+
+    /* store dev pointer to destroy later and find stream */
+    g_isp_v4l2_dev = dev;
+
+    rc = isp_cma_alloc(pdev, TEMPER_MEM_SIZE);
+	if (rc < 0)
+        goto deinit_ctrl;
+
+    /* initialize isp */
+    rc = fw_intf_isp_init();
+    if ( rc < 0 )
+        goto free_cma;
+
+    /* initialize isp */
+    rc = isp_v4l2_stream_init_static_resources(pdev);
+    if ( rc < 0 )
+        goto deinit_fw_intf;
 
     /* finally start creating the device nodes */
     vfd = &dev->video_dev;
@@ -641,35 +681,20 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
     /* videoX start number, -1 is autodetect */
     rc = video_register_device( vfd, VFL_TYPE_GRABBER, -1 );
     if ( rc < 0 )
-        goto unreg_dev;
-
-    LOG( LOG_INFO, "V4L2 capture device registered as %s.",
-         video_device_node_name( vfd ) );
-
-    dev->pdev = &pdev->dev;
-
-    /* store dev pointer to destroy later and find stream */
-    g_isp_v4l2_dev = dev;
-
-    isp_cma_alloc(pdev, 64);
-
-    /* initialize isp */
-    rc = fw_intf_isp_init();
-    if ( rc < 0 )
-        goto unreg_dev;
-
-    /* initialize isp */
-    rc = isp_v4l2_stream_init_static_resources(pdev);
-    if ( rc < 0 )
         goto deinit_fw_intf;
+
+    LOG( LOG_CRIT, "V4L2 capture device registered as %s.",
+         video_device_node_name( vfd ) );
 
     return 0;
 
 deinit_fw_intf:
     fw_intf_isp_deinit();
 
-unreg_dev:
-    video_unregister_device( &dev->video_dev );
+free_cma:
+    isp_cma_free(pdev, isp_kaddr, TEMPER_MEM_SIZE);
+
+deinit_ctrl:
     isp_v4l2_ctrl_deinit( &dev->isp_v4l2_ctrl );
 
 free_dev:

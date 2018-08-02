@@ -660,20 +660,6 @@ int isp_v4l2_stream_init_static_resources(struct platform_device *pdev)
         sc->snapshot_sizes.frmsize[i].height = sc->sensor_info.preset[i].height;
     }
 
-    /* map base fpga ddr address (for raw stream) */
-#if 0
-    fpga_ddr_mem = ioremap( ISP_DDR_START, ISP_DDR_SIZE );
-    LOG( LOG_INFO, "fpga_ddr_mem : %p = 0x%x", fpga_ddr_mem, *fpga_ddr_mem );
-#else
-
-#endif
-
-#if JUNO_DIRECT_DDR_ACCESS
-    /* map base juno ddr address (for other streams) */
-    juno_ddr_mem = ioremap( JUNO_DDR_START, JUNO_DDR_SIZE );
-    LOG( LOG_INFO, "juno_ddr_mem = %p = 0x%x", juno_ddr_mem, *juno_ddr_mem );
-#endif
-
     return 0;
 }
 
