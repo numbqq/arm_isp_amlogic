@@ -11,19 +11,19 @@ echo $KERNEL_DIR
 rm -f *.ko
 
 cd ./v4l2_dev
-make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- all
+make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- clean all
 cp iv009_isp.ko ../
 
 cd .././subdev/iq
-make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- all
+make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- clean all
 cp iv009_isp_iq.ko ../../
 
 cd ../.././subdev/lens
-make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- all
+make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- clean all
 cp iv009_isp_lens.ko ../../
 
 cd ../.././subdev/sensor
-make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- all
+make KDIR=$KERNEL_DIR ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- clean all
 cp iv009_isp_sensor.ko ../../
 
 unset KERNEL_DIR

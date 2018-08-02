@@ -145,6 +145,8 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
 #endif
 };
 
+extern uint8_t *isp_kaddr;
+extern resource_size_t isp_paddr;
 
 /* ----------------------------------------------------------------
  * temporal frame sync before DDR access is available
@@ -163,9 +165,7 @@ static uint32_t sync_highest_id = 0;
 static uint32_t sync_prev_ctx_id[V4L2_STREAM_TYPE_MAX] = {
     0,
 };
-
-extern uint8_t *isp_kaddr;
-extern resource_size_t isp_paddr;
+static uint32_t sync_done_meta_cnt = 0;
 
 int sync_frame( int stream_type, uint32_t ctx_num, uint32_t fid, uint32_t flag )
 {
@@ -178,8 +178,8 @@ int sync_frame( int stream_type, uint32_t ctx_num, uint32_t fid, uint32_t flag )
     }
 
     if ( sync_flag > 0 ) {
-        LOG( LOG_DEBUG, "[Stream#%d] Sync_flag on - New fid (%d) / sync_frame_id (%d)",
-             stream_type, fid, sync_frame_id );
+        LOG( LOG_DEBUG, "[Stream#%d] Sync_flag on - sync_highest_id (%d), New fid (%d) / sync_frame_id (%d). sync flag: %x, flag: %x",
+             stream_type, sync_highest_id, fid, sync_frame_id, sync_flag, flag);
 
         if ( fid > sync_highest_id )
             sync_highest_id = fid;
@@ -188,12 +188,24 @@ int sync_frame( int stream_type, uint32_t ctx_num, uint32_t fid, uint32_t flag )
 #if ISP_HAS_META_CB
             if ( stream_type == V4L2_STREAM_TYPE_META && fid > sync_frame_id ) {
                 sync_flag &= ~flag;
+                /* FIXME: check if need reset the sync_done_meta_cnt*/
+                sync_done_meta_cnt = 0;
             }
 #endif
             spin_unlock_irqrestore( &sync_slock, sflags );
             return -1;
         }
         sync_flag |= flag;
+#if ISP_HAS_META_CB
+        if (sync_done_meta_cnt > 0) {
+            sync_flag &= ~SYNC_FLAG_META;
+            sync_done_meta_cnt--;
+        }
+        if (sync_flag & SYNC_FLAG_META) {
+            LOG( LOG_ERR, "[Stream#%d] Sync meta not done - sync_highest_id (%d), New fid (%d) / sync_frame_id (%d). sync flag: %x, flag: %x",
+                        stream_type, sync_highest_id, fid, sync_frame_id, sync_flag, flag);
+        }
+#endif
     } else {
         if ( fid > sync_highest_id ) {
             LOG( LOG_DEBUG, "[Stream#%d] New synced frame started with fid %d", stream_type, fid );
@@ -315,6 +327,16 @@ void callback_meta( uint32_t ctx_num, const void *fw_metadata )
 
     /* Put buffer back to vb2 queue */
     vb2_buffer_done( vb, VB2_BUF_STATE_DONE );
+
+#if V4L2_FRAME_ID_SYNC
+    {
+        unsigned long sflags;
+
+        spin_lock_irqsave( &sync_slock, sflags );
+        sync_done_meta_cnt++;
+        spin_unlock_irqrestore( &sync_slock, sflags );
+    }
+#endif
 
     /* Notify buffer ready */
     isp_v4l2_notify_event( pstream->stream_id, V4L2_EVENT_ACAMERA_FRAME_READY );
@@ -972,18 +994,25 @@ static int isp_v4l2_stream_copy_thread( void *data )
             } else
 #endif
 #if ISP_HAS_DS1
-                if ( pstream->stream_type == V4L2_STREAM_TYPE_DS1 ) {
+            if ( pstream->stream_type == V4L2_STREAM_TYPE_DS1 ) {
                 LOG( LOG_DEBUG, "[Stream#%d] releasing DS1 sync flag", pstream->stream_id );
                 sync_flag &= ~SYNC_FLAG_DS1;
             } else
 #endif
 #if ISP_HAS_DS2
-                if ( pstream->stream_type == V4L2_STREAM_TYPE_DS2 ) {
+            if ( pstream->stream_type == V4L2_STREAM_TYPE_DS2 ) {
                 LOG( LOG_DEBUG, "[Stream#%d] releasing DS2 sync flag", pstream->stream_id );
                 sync_flag &= ~SYNC_FLAG_DS2;
             } else
 #endif
-            {
+#if ISP_HAS_META_CB
+            if (pstream->stream_type == V4L2_STREAM_TYPE_META) {
+                LOG( LOG_DEBUG, "[Stream#%d] releasing Meta sync flag", pstream->stream_id );
+                sync_flag &= ~SYNC_FLAG_META;
+                sync_done_meta_cnt = 0;
+            } else
+#endif
+            if ( pstream->stream_type == V4L2_STREAM_TYPE_FR ) {
                 LOG( LOG_DEBUG, "[Stream#%d] releasing FR  sync flag", pstream->stream_id );
                 sync_flag &= ~SYNC_FLAG_FR;
             }
@@ -1022,18 +1051,25 @@ int isp_v4l2_stream_on( isp_v4l2_stream_t *pstream )
         } else
 #endif
 #if ISP_HAS_DS1
-		if (pstream->stream_type == V4L2_STREAM_TYPE_DS1) {
+        if (pstream->stream_type == V4L2_STREAM_TYPE_DS1) {
             LOG( LOG_DEBUG, "[Stream#%d] releasing DS1 sync flag", pstream->stream_id );
             sync_flag &= ~SYNC_FLAG_DS1;
         } else
 #endif
 #if ISP_HAS_DS2
-		if (pstream->stream_type == V4L2_STREAM_TYPE_DS2) {
+        if (pstream->stream_type == V4L2_STREAM_TYPE_DS2) {
             LOG( LOG_DEBUG, "[Stream#%d] releasing DS2 sync flag", pstream->stream_id );
             sync_flag &= ~SYNC_FLAG_DS2;
         } else
 #endif
-        {
+#if ISP_HAS_META_CB
+        if (pstream->stream_type == V4L2_STREAM_TYPE_META) {
+            LOG( LOG_DEBUG, "[Stream#%d] releasing Meta sync flag", pstream->stream_id );
+            sync_flag &= ~SYNC_FLAG_META;
+            sync_done_meta_cnt = 0;
+        } else
+#endif
+        if (pstream->stream_type == V4L2_STREAM_TYPE_FR) {
             LOG( LOG_DEBUG, "[Stream#%d] releasing FR  sync flag", pstream->stream_id );
             sync_flag &= ~SYNC_FLAG_FR;
         }
