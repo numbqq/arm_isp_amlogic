@@ -22,6 +22,7 @@
 
 #include "acamera_types.h"
 #include "dma_writer_api.h"
+#include "acamera_fw.h"
 
 
 typedef struct _dma_pipe_state {

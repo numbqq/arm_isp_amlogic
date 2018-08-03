@@ -443,6 +443,29 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
     return result;
 }
 
+dma_error dma_writer_pipe_set_half_fps(dma_pipe *pipe)
+{
+    int frm_count = 0;
+
+    if (pipe == NULL || pipe->settings.p_ctx == NULL) {
+        LOG(LOG_ERR, "Error input param:p_ctx %p\n", pipe->settings.p_ctx);
+        return edma_invalid_pipe;
+    }
+
+    frm_count = pipe->settings.p_ctx->isp_frame_counter;
+
+    if (pipe->settings.last_tframe == NULL)
+        return edma_ok;
+
+    if (frm_count % 2 != 0) {
+        pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
+        pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
+        pipe->settings.back_tframe = pipe->settings.last_tframe;
+        pipe->settings.last_tframe = NULL;
+    }
+
+    return edma_ok;
+}
 
 dma_error dma_writer_pipe_process_interrupt( dma_pipe *pipe, uint32_t irq_event )
 {
@@ -450,6 +473,9 @@ dma_error dma_writer_pipe_process_interrupt( dma_pipe *pipe, uint32_t irq_event 
     case ACAMERA_IRQ_FRAME_WRITER_FR:
         if ( pipe->type == dma_fr ) {
             dma_writer_pipe_update( pipe ); // have to change last address and buffer ring
+#if ISP_DOWN_FR_FPS
+            dma_writer_pipe_set_half_fps(pipe);
+#endif
         }
         break;
     case ACAMERA_IRQ_FRAME_WRITER_DS:
@@ -474,7 +500,8 @@ dma_error dma_writer_process_interrupt( void *handle, uint32_t irq_event )
     }
 
     for ( idx = 0; idx < dma_max; idx++ ) {
-        dma_writer_pipe_process_interrupt( &p_dma->pipe[idx], irq_event );
+        if (p_dma->pipe[idx].state.initialized == 1)
+            dma_writer_pipe_process_interrupt( &p_dma->pipe[idx], irq_event );
     }
     return result;
 }

@@ -108,6 +108,7 @@ typedef struct dma_pipe_settings {
     tframe_t *last_tframe;
     uint8_t pause;
     struct _acamera_context_t *p_ctx;
+    tframe_t *back_tframe;
 } dma_pipe_settings;
 
 
