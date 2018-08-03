@@ -80,6 +80,8 @@ struct thread_param {
     uint32_t                    width;
     uint32_t                    height;
     uint32_t                    pixformat;
+    uint32_t                    wdr_mode;
+    uint32_t                    exposure;
 
     /* for snapshot stream (non-zsl implementation) */
     int32_t                     capture_count;
@@ -137,6 +139,31 @@ static void do_other_commands(int videofd)
     }
 }
 
+
+static void do_sensor_wdr_mode(int videofd, int mode)
+{
+    struct v4l2_control ctrl;
+
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SENSOR_WDR_MODE;
+    ctrl.value = mode;
+
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("Do sensor wdr mode failed\n");
+    }
+}
+
+static void do_sensor_exposure(int videofd, int exp)
+{
+    struct v4l2_control ctrl;
+
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SENSOR_EXPOSURE;
+    ctrl.value = exp;
+
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("Do sensor exposure failed\n");
+    }
+}
+
 void save_imgae(char *buff, unsigned int size, int flag)
 {
     static int num;
@@ -187,12 +214,12 @@ void * video_thread(void *arg)
     /* condition & loop flags */
     int                         rc = 0;
     int                         i,j;
-	int							fr_continue_flag = 0;
+    int							fr_continue_flag = 0;
     int multiplanar=0;
     //__u32	v4l2_enum_type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
     __u32	v4l2_enum_type=V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-	char filename[64];
-	unsigned char *displaybuf = NULL;
+    char filename[64];
+    unsigned char *displaybuf = NULL;
 
     /**************************************************
      * find thread id
@@ -232,6 +259,15 @@ void * video_thread(void *arg)
 			v4l2_cap.device_caps);
 
     //do_sensor_preset(videofd,1);
+
+    /**************************************************
+      * according exposure value control hdr sensor setting
+     *************************************************/
+    if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
+        printf("FR wdr_mode = %d, exp = %d\n", tparm->wdr_mode, tparm->exposure);
+        do_sensor_wdr_mode(videofd, tparm->wdr_mode);
+        do_sensor_exposure(videofd, tparm->exposure);
+    }
 
     /**************************************************
      * format configuration
@@ -529,13 +565,13 @@ void * video_thread(void *arg)
 		}
 
 		/***** select save file or display through different stream_type *****/
-		if (stream_type = ARM_V4L2_TEST_STREAM_FR) {
+		if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
 		//renderImage(tparm->fbp, tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP);
-		} else if (stream_type = ARM_V4L2_TEST_STREAM_META) {
+		} else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
 		//do nothing
-		} else if (stream_type = ARM_V4L2_TEST_STREAM_DS1) {
+		} else if (stream_type == ARM_V4L2_TEST_STREAM_DS1) {
 		//save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
-		} else if (stream_type = ARM_V4L2_TEST_STREAM_DS2) {
+		} else if (stream_type == ARM_V4L2_TEST_STREAM_DS2) {
 		//save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
 		}
 
@@ -606,12 +642,14 @@ void usage(char * prog){
  * main function
  */
 
-void parse_fmt_res(uint8_t fmt, int res, void *param)
+void parse_fmt_res(uint8_t fmt, int res, uint32_t fr_wdr_mode, uint32_t fr_exposure, void *param)
 {
 	struct thread_param *t_param = NULL;
 	uint32_t pixel_format = 0;
 	uint32_t width = 0;
 	uint32_t height = 0;
+	uint32_t wdr_mode = 0;
+	uint32_t exposure = 0;
 
 	if (param == NULL) {
 		ERR("Error input param\n");
@@ -658,11 +696,47 @@ void parse_fmt_res(uint8_t fmt, int res, void *param)
 		break;
 	}
 
+	switch (fr_wdr_mode) {
+		case 0:
+			wdr_mode = 0;
+			break;
+		case 1:
+			wdr_mode = 1;
+			break;
+		case 2:
+			wdr_mode = 2;
+			break;
+		default:
+			ERR("Invalid FR wdr mode %d !\n", fr_wdr_mode);
+			break;
+	}
+
+	switch (fr_exposure) {
+		case 1:
+			exposure = 1;
+			break;
+		case 2:
+			exposure = 2;
+			break;
+		case 3:
+			exposure = 3;
+			break;
+		case 4:
+			exposure = 4;
+			break;
+		default:
+			ERR("Invalid FR exposure %d !\n", fr_exposure);
+			break;
+	}
+
 	t_param->pixformat = pixel_format;
 	t_param->width = width;
 	t_param->height = height;
+	t_param->wdr_mode = wdr_mode;
+	t_param->exposure = exposure;
 
-	ERR("pixel fmt 0x%x, width %d, height %d", pixel_format, width, height);
+	ERR("pixel fmt 0x%x, width %d, height %d, wdr_mode %d, exposure %d",
+			pixel_format, width, height, wdr_mode, exposure);
 }
 
 int main(int argc, char *argv[])
@@ -679,6 +753,8 @@ int main(int argc, char *argv[])
     int fr_num = -1;
 	int ds_num = -1;
     uint32_t pixel_format = ISP_V4L2_PIX_FMT_ARGB2101010;
+    uint32_t wdr_mode = 0;
+    uint32_t exposure = 0;
     char *fbdevname = "/dev/fb0";
     char *v4ldevname = "/dev/video0";
     int rc = 0;
@@ -688,7 +764,7 @@ int main(int argc, char *argv[])
     if (argc < 25) {
 		printf("v4l test API\n");
 		printf("usage:\n");
-		printf(" example   : ./v4l2_test  -c 1  -p 0 -F 0 -f 0 -D 0 -R 1 -r 2 -d 2 -N 1000 -n 800 -b /dev/fb0 -v /dev/video0 \n");
+		printf(" example   : ./v4l2_test  -c 1  -p 0 -F 0 -f 0 -D 0 -R 1 -r 2 -d 2 -N 1000 -n 800 -w 0 -e 1 -b /dev/fb0 -v /dev/video0 \n");
 		printf("    c : command           : default 1\n");
 		printf("    p : sensor_preset     : default 0 \n");
 		printf("    F : fr_out_fmt        : 0,1: rgb24  2:nv21 \n");
@@ -697,6 +773,8 @@ int main(int argc, char *argv[])
 		printf("    R : fr_out_resolution : 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
 		printf("    r : ds1_out_resolution: 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
 		printf("    d : ds2_out_resolution: 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
+		printf("    w : wdr mode          : 0: linear 1: native 2: fs lin\n");
+		printf("    e : exposure value    : min 1, max 4\n");
 		printf("    b : fbdev            : default: /dev/fb0\n");
 		printf("    v : videodev         : default: /dev/video0\n");
 		return -1;
@@ -705,7 +783,7 @@ int main(int argc, char *argv[])
     int c;
 
     while(optind < argc){
-		if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:b:v:")) != -1) {
+		if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:")) != -1) {
 			switch(c){
 			case 'c':
 				command = atoi(optarg);
@@ -736,6 +814,12 @@ int main(int argc, char *argv[])
 				break;
 			case 'n':
 				ds_num = atoi(optarg);
+				break;
+			case 'w':
+				wdr_mode = atoi(optarg);
+				break;
+			case 'e':
+				exposure = atoi(optarg);
 				break;
 			case 'b':
 				fbdevname = optarg;
@@ -819,6 +903,8 @@ int main(int argc, char *argv[])
             .width      = width,
             .height     = height,
             .pixformat  = pixel_format,
+            .wdr_mode	= 0,
+            .exposure	= 1,
 
             .capture_count = 1000,
         },
@@ -832,6 +918,8 @@ int main(int argc, char *argv[])
             .width      = 1*1024*1024,
             .height     = 1,
             .pixformat  = ISP_V4L2_PIX_FMT_META,
+            .wdr_mode	= 0,
+            .exposure	= 1,
 
             .capture_count = 900,
         },
@@ -846,6 +934,8 @@ int main(int argc, char *argv[])
             .width      = 1280,
             .height     = 720,
             .pixformat  = V4L2_PIX_FMT_RGB24,
+            .wdr_mode	= 0,
+            .exposure	= 1,
 
             .capture_count = 800,
         },
@@ -859,20 +949,21 @@ int main(int argc, char *argv[])
             .width      = 1280,
             .height     = 720,
             .pixformat  = V4L2_PIX_FMT_RGB24,
+            .wdr_mode	= 0,
+            .exposure	= 1,
 
             .capture_count = 700,
         },
     };
 
-	parse_fmt_res(fr_out_fmt, fr_res, &tparam[ARM_V4L2_TEST_STREAM_FR]);
-	parse_fmt_res(ds1_out_fmt, ds1_res, &tparam[ARM_V4L2_TEST_STREAM_DS1]);
-	parse_fmt_res(ds2_out_fmt, ds2_res, &tparam[ARM_V4L2_TEST_STREAM_DS2]);
+    parse_fmt_res(fr_out_fmt, fr_res, wdr_mode, exposure, &tparam[ARM_V4L2_TEST_STREAM_FR]);
+    parse_fmt_res(ds1_out_fmt, ds1_res, wdr_mode, exposure, &tparam[ARM_V4L2_TEST_STREAM_DS1]);
+    parse_fmt_res(ds2_out_fmt, ds2_res, wdr_mode, exposure, &tparam[ARM_V4L2_TEST_STREAM_DS2]);
 
-displaybuf_fr = (unsigned char *)malloc(tparam[0].width * tparam[0].height * 3);
-displaybuf_meta = (unsigned char *)malloc(tparam[1].width * tparam[1].height * 3);
-displaybuf_ds1 = (unsigned char *)malloc(tparam[2].width * tparam[2].height * 3);
-displaybuf_ds2 = (unsigned char *)malloc(tparam[3].width * tparam[2].height * 3);
-
+    displaybuf_fr = (unsigned char *)malloc(tparam[0].width * tparam[0].height * 3);
+    displaybuf_meta = (unsigned char *)malloc(tparam[1].width * tparam[1].height * 3);
+    displaybuf_ds1 = (unsigned char *)malloc(tparam[2].width * tparam[2].height * 3);
+    displaybuf_ds2 = (unsigned char *)malloc(tparam[3].width * tparam[2].height * 3);
 
 
 #if ARM_V4L2_TEST_HAS_RAW
@@ -885,6 +976,8 @@ displaybuf_ds2 = (unsigned char *)malloc(tparam[3].width * tparam[2].height * 3)
         .width      = width,
         .height     = height,
         .pixformat  = V4L2_PIX_FMT_SBGGR16,
+        .wdr_mode	= 0,
+        .exposure	= 1,
 
         .capture_count = 1
     };
