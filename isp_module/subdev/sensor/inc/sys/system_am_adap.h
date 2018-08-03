@@ -70,10 +70,17 @@
 #define MIPI_ADAPT_DDR_RD0_CNTL0    0x00
 #define MIPI_ADAPT_DDR_RD0_CNTL1    0x04
 #define MIPI_ADAPT_DDR_RD0_CNTL2    0x08
+#define MIPI_ADAPT_DDR_RD0_CNTL3    0x0C
+#define MIPI_ADAPT_DDR_RD1_CNTL0    0x40
+#define MIPI_ADAPT_DDR_RD1_CNTL1    0x44
+#define MIPI_ADAPT_DDR_RD1_CNTL2    0x48
+#define MIPI_ADAPT_DDR_RD1_CNTL3    0x4C
 
 #define PIXEL_BASE                  0x00005000
 #define MIPI_ADAPT_PIXEL0_CNTL0     0x80
 #define MIPI_ADAPT_PIXEL0_CNTL1     0x84
+#define MIPI_ADAPT_PIXEL1_CNTL0     0x88
+#define MIPI_ADAPT_PIXEL1_CNTL1     0x8C
 
 
 #define ALIGN_BASE                  0x00005000
@@ -101,6 +108,7 @@ typedef enum {
 typedef enum {
 	DDR_MODE,
 	DIR_MODE,
+	DOL_MODE,
 } adap_mode_t;
 
 typedef enum {

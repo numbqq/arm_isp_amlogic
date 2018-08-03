@@ -33,6 +33,7 @@ typedef struct _isp_v4l2_sensor_preset {
     uint8_t fps_num;
     uint8_t fps_cur;
     uint8_t exposures[MAX_SENSOR_FPS_SIZE];
+    uint8_t wdr_mode[MAX_SENSOR_FPS_SIZE];
 } isp_v4l2_sensor_preset;
 
 typedef struct _isp_v4l2_sensor_info {
@@ -80,6 +81,8 @@ typedef struct _isp_v4l2_sensor_info {
 #define ISP_V4L2_CID_AF_ROI ( ISP_V4L2_CID_BASE + 4 )
 #define ISP_V4L2_CID_OUTPUT_FR_ON_OFF ( ISP_V4L2_CID_BASE + 5 )
 #define ISP_V4L2_CID_OUTPUT_DS1_ON_OFF ( ISP_V4L2_CID_BASE + 6 )
+#define ISP_V4L2_CID_CUSTOM_SENSOR_WDR_MODE ( ISP_V4L2_CID_BASE + 7 )
+#define ISP_V4L2_CID_CUSTOM_SENSOR_EXPOSURE ( ISP_V4L2_CID_BASE + 8 )
 
 
 /* type of stream */

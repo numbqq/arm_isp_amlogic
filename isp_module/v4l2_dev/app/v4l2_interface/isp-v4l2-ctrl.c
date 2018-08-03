@@ -147,6 +147,14 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         LOG( LOG_INFO, "output DS1 on/off: 0x%x.\n", ctrl->val );
         ret = fw_intf_set_output_ds1_on_off( ctrl->val );
         break;
+    case ISP_V4L2_CID_CUSTOM_SENSOR_WDR_MODE:
+        LOG( LOG_INFO, "set custom wdr mode: 0x%x.\n", ctrl->val );
+        ret = fw_intf_set_custom_sensor_wdr_mode(ctrl->val);
+        break;
+    case ISP_V4L2_CID_CUSTOM_SENSOR_EXPOSURE:
+        LOG( LOG_INFO, "set custom exposure: 0x%x.\n", ctrl->val );
+        ret = fw_intf_set_custom_sensor_exposure(ctrl->val);
+        break;
     }
 
     return ret;
@@ -234,6 +242,29 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_output_ds1_on_off = {
     .max = 0x7FFFFFFF,
     .step = 1,
     .def = 0,
+};
+
+
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_wdr_mode = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SENSOR_WDR_MODE,
+    .name = "ISP Sensor wdr mode",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 0,
+    .max = 3,
+    .step = 1,
+    .def = 0,
+};
+
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_exposure = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SENSOR_EXPOSURE,
+    .name = "ISP Sensor exposure",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 1,
+    .max = 4,
+    .step = 1,
+    .def = 1,
 };
 
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
@@ -327,6 +358,10 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_output_fr_on_off, NULL );
     ADD_CTRL_CST( ISP_V4L2_CID_OUTPUT_DS1_ON_OFF,
                   &isp_v4l2_ctrl_output_ds1_on_off, NULL );
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SENSOR_WDR_MODE,
+                  &isp_v4l2_ctrl_sensor_wdr_mode, NULL );
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SENSOR_EXPOSURE,
+                  &isp_v4l2_ctrl_sensor_exposure, NULL );
 
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );

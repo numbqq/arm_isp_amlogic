@@ -40,7 +40,8 @@ extern int isp_fw_init( void );
 extern void isp_fw_exit( void );
 
 static int isp_started = 0;
-
+static int custom_wdr_mode = 0;
+static int custom_exp = 0;
 
 /* ----------------------------------------------------------------
  * fw_interface control interface
@@ -63,6 +64,9 @@ int fw_intf_isp_init( void )
 
     if ( rc == 0 )
         isp_started = 1;
+
+    custom_wdr_mode = 0;
+    custom_exp = 0;
 
     return rc;
 }
@@ -144,7 +148,7 @@ int fw_intf_isp_get_sensor_info( isp_v4l2_sensor_info *sensor_info )
 
     /* fill preset values */
     for ( i = 0; i < preset_num; i++ ) {
-        uint32_t width, height, fps, exposures = 1;
+        uint32_t width, height, fps, wdrmode, exposures = 1;
 
         /* get next preset */
         acamera_command( TSENSOR, SENSOR_INFO_PRESET, i, COMMAND_SET, &ret_val );
@@ -154,7 +158,7 @@ int fw_intf_isp_get_sensor_info( isp_v4l2_sensor_info *sensor_info )
 #if defined( SENSOR_INFO_EXPOSURES )
         acamera_command( TSENSOR, SENSOR_INFO_EXPOSURES, i, COMMAND_GET, &exposures );
 #endif
-
+        acamera_command( TSENSOR, SENSOR_INFO_WDR_MODE, i, COMMAND_GET, &wdrmode );
         /* find proper index from sensor_info */
         for ( j = 0; j < sensor_info->preset_num; j++ ) {
             if ( sensor_info->preset[j].width == width &&
@@ -169,6 +173,7 @@ int fw_intf_isp_get_sensor_info( isp_v4l2_sensor_info *sensor_info )
             sensor_info->preset[j].exposures[sensor_info->preset[j].fps_num] = exposures;
             sensor_info->preset[j].fps[sensor_info->preset[j].fps_num] = fps;
             sensor_info->preset[j].idx[sensor_info->preset[j].fps_num] = i;
+            sensor_info->preset[j].wdr_mode[sensor_info->preset[j].fps_num] = wdrmode;
             sensor_info->preset[j].fps_num++;
             if ( sensor_info->preset_num <= j )
                 sensor_info->preset_num++;
@@ -206,8 +211,9 @@ int fw_intf_isp_get_sensor_info( isp_v4l2_sensor_info *sensor_info )
         LOG( LOG_INFO, "   Idx#%02d - W:%04d H:%04d",
              i, sensor_info->preset[i].width, sensor_info->preset[i].height );
         for ( j = 0; j < sensor_info->preset[i].fps_num; j++ )
-            LOG( LOG_INFO, "            FPS#%d: %d (preset index = %d) exposures:%d",
-                 j, sensor_info->preset[i].fps[j] / 256, sensor_info->preset[i].idx[j], sensor_info->preset[i].exposures[j] );
+            LOG( LOG_INFO, "            FPS#%d: %d (preset index = %d) exposures:%d  wdr_mode:%d",
+                 j, sensor_info->preset[i].fps[j] / 256, sensor_info->preset[i].idx[j],
+                 sensor_info->preset[i].exposures[j], sensor_info->preset[i].wdr_mode[j] );
     }
 
     LOG( LOG_INFO, "-----------------------------------*/" );
@@ -385,6 +391,52 @@ int fw_intf_sensor_resume( void )
     return rc;
 }
 
+uint32_t fw_intf_find_proper_present_idx(const isp_v4l2_sensor_info *sensor_info, int w, int h, uint32_t* fps)
+{
+  /* search resolution from preset table
+     *   for now, use the highest fps.
+     *   this should be changed properly in the future to pick fps from application
+     */
+    int i, j;
+    uint32_t idx = 0;
+
+    for ( i = 0; i < sensor_info->preset_num; i++ ) {
+        if ( sensor_info->preset[i].width == w && sensor_info->preset[i].height == h ) {
+            if (custom_wdr_mode == 0) {
+               *( (char *)&sensor_info->preset[i].fps_cur ) = 0;
+               for ( j = 0; j < sensor_info->preset[i].fps_num; j++ ) {
+                  if ( sensor_info->preset[i].fps[j] > (*fps)) {
+                     *fps = sensor_info->preset[i].fps[j];
+                     idx = sensor_info->preset[i].idx[j];
+                     *( (char *)&sensor_info->preset[i].fps_cur ) = j;
+                  }
+               }
+               break;
+            } else if ((custom_wdr_mode == 1) || (custom_wdr_mode == 2)) {
+               for (j = 0; j < sensor_info->preset[i].fps_num; j++) {
+                  if ((sensor_info->preset[i].exposures[j] == custom_exp) &&
+                     (sensor_info->preset[i].wdr_mode[j] == custom_wdr_mode)) {
+                     idx = sensor_info->preset[i].idx[j];
+                     *fps = sensor_info->preset[i].fps[j];
+                     LOG( LOG_INFO, "idx = %d, fps = %d\n", idx, *fps);
+                     *( (char *)&sensor_info->preset[i].fps_cur ) = j;
+                     break;
+                  }
+               }
+               break;
+            } else {
+               LOG( LOG_ERR, "Not Support wdr mode\n");
+            }
+        }
+    }
+
+    if ( i >= sensor_info->preset_num ) {
+        LOG( LOG_CRIT, "invalid resolution (width = %d, height = %d)\n", w, h);
+        return 0;
+    }
+
+    return idx;
+}
 
 /* fw-interface per-stream config interface */
 int fw_intf_stream_set_resolution( const isp_v4l2_sensor_info *sensor_info,
@@ -409,42 +461,24 @@ int fw_intf_stream_set_resolution( const isp_v4l2_sensor_info *sensor_info,
         uint32_t idx = 0x0;
         uint32_t fps = 0x0;
         uint32_t w, h;
-        uint32_t i, j;
-
 
         w = *width;
         h = *height;
 
-        uint32_t width_cur, height_cur;
+        uint32_t width_cur, height_cur, exposure_cur, wdr_mode_cur;
+        wdr_mode_cur = 0;
+        exposure_cur = 0;
         //check if we need to change sensor preset
         acamera_command( TSENSOR, SENSOR_WIDTH, 0, COMMAND_GET, &width_cur );
         acamera_command( TSENSOR, SENSOR_HEIGHT, 0, COMMAND_GET, &height_cur );
-        LOG( LOG_INFO, "target (width = %d, height = %d) current (w=%d h=%d)", w, h, width_cur, height_cur );
-        if ( width_cur != w || height_cur != h ) {
-            /* search resolution from preset table
-             *   for now, use the highest fps.
-             *   this should be changed properly in the future to pick fps from application
-             */
-            for ( i = 0; i < sensor_info->preset_num; i++ ) {
-                if ( sensor_info->preset[i].width == w && sensor_info->preset[i].height == h ) {
-                    *( (char *)&sensor_info->preset[i].fps_cur ) = 0;
-                    for ( j = 0; j < sensor_info->preset[i].fps_num; j++ ) {
-                        if ( sensor_info->preset[i].fps[j] > fps ) {
-                            fps = sensor_info->preset[i].fps[j];
-                            idx = sensor_info->preset[i].idx[j];
-                            *( (char *)&sensor_info->preset[i].fps_cur ) = j;
-                        }
-                    }
+        acamera_command( TSENSOR, SENSOR_EXPOSURES, 0, COMMAND_GET, &exposure_cur );
+        acamera_command( TSENSOR, SENSOR_WDR_MODE, 0, COMMAND_GET, &wdr_mode_cur );
+        LOG( LOG_INFO, "target (width = %d, height = %d) current (w=%d h=%d exposure_cur = %d wdr_mode_cur = %d)",
+        w, h, width_cur, height_cur, exposure_cur, wdr_mode_cur );
 
-                    break;
-                }
-            }
-            if ( i >= sensor_info->preset_num ) {
-                LOG( LOG_CRIT, "invalid resolution (width = %d, height = %d) reverting to current %dx%d", w, h, width_cur, height_cur );
-                *width = width_cur;
-                *height = height_cur;
-                return 0;
-            }
+        if ( width_cur != w || height_cur != h || exposure_cur != custom_exp || wdr_mode_cur != custom_wdr_mode) {
+
+            idx = fw_intf_find_proper_present_idx(sensor_info, w, h, &fps);
 
             /* set sensor resolution preset */
             LOG( LOG_CRIT, "Setting new resolution : width = %d, height = %d (preset idx = %d, fps = %d)", w, h, idx, fps / 256 );
@@ -1457,3 +1491,16 @@ int fw_intf_set_output_ds1_on_off( uint32_t ctrl_val )
     return 0;
 #endif
 }
+
+int fw_intf_set_custom_sensor_wdr_mode(uint32_t ctrl_val)
+{
+    custom_wdr_mode = ctrl_val;
+    return 0;
+}
+
+int fw_intf_set_custom_sensor_exposure(uint32_t ctrl_val)
+{
+    custom_exp = ctrl_val;
+    return 0;
+}
+

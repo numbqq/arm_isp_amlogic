@@ -50,7 +50,7 @@
 static void start_streaming( void *ctx );
 static void stop_streaming( void *ctx );
 
-static sensor_mode_t supported_modes[5] = {
+static sensor_mode_t supported_modes[6] = {
     {
         .wdr_mode = WDR_MODE_LINEAR,
         .fps = 5 * 256,
@@ -110,7 +110,19 @@ static sensor_mode_t supported_modes[5] = {
         .lanes = 4,
         .num = 5,
         .bayer = BAYER_BGGR,
-    }
+    },
+    {
+        .wdr_mode = WDR_MODE_FS_LIN,
+        .fps = 60 * 256,
+        .resolution.width = 1920,
+        .resolution.height = 1080,
+        .bits = 10,
+        .exposures = 2,
+        .bps = 960,
+        .lanes = 4,
+        .num = 6,
+        .bayer = BAYER_BGGR,
+    },
 };
 
 typedef struct _sensor_context_t {
@@ -310,7 +322,10 @@ static void sensor_set_iface(sensor_mode_t *mode)
     info.img.width = mode->resolution.width;
     info.img.height = mode->resolution.height;
     info.path = PATH0;
-    info.mode = DIR_MODE;
+    if (mode->wdr_mode == WDR_MODE_FS_LIN)
+        info.mode = DOL_MODE;
+    else
+        info.mode = DIR_MODE;
     am_adap_set_info(&info);
     am_adap_init();
     am_adap_start(0);
@@ -345,6 +360,7 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
 
         if ( param->modes_table[mode].exposures == 2 ) {
 
+            sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, setting_num);
             //sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_720P );
         } else {
 

@@ -58,6 +58,10 @@ static resource_size_t buffer_start;
 
 static resource_size_t ddr_buf[DDR_BUF_SIZE];
 
+#define DOL_CMA_ALLOC_SIZE 24
+#define DOL_BUF_SIZE 2
+static resource_size_t dol_buf[DOL_BUF_SIZE];
+
 static resource_size_t dump_buf_addr;
 static int dump_width;
 static int dump_height;
@@ -409,6 +413,8 @@ int am_adap_frontend_init(void)
 	} else if (para.mode == DDR_MODE) {
 		if (para.path == PATH0)
 			mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f0011);
+	} else if (para.mode == DOL_MODE) {
+		mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f10a3);
 	} else {
 		pr_err("%s, Not supported Mode.\n", __func__);
 	}
@@ -417,13 +423,24 @@ int am_adap_frontend_init(void)
 	mipi_adap_reg_wr(CSI2_X_START_END_MEM, FRONTEND_IO, 0xffff0000);
 	mipi_adap_reg_wr(CSI2_Y_START_END_MEM, FRONTEND_IO, 0xffff0000);
 
+	if (para.mode == DOL_MODE) {
+		mipi_adap_reg_wr(CSI2_VC_MODE, FRONTEND_IO, 0x11220040);
+	}
+
 	if (para.mode == DDR_MODE) {
 		//config ddr_buf[0] address
 		adap_wr_reg_bits(CSI2_DDR_START_PIX, FRONTEND_IO, ddr_buf[wbuf_index], 0, 32);
+	} else if (para.mode == DOL_MODE) {
+		adap_wr_reg_bits(CSI2_DDR_START_PIX, FRONTEND_IO, dol_buf[0], 0, 32);
+		adap_wr_reg_bits(CSI2_DDR_START_PIX_ALT, FRONTEND_IO, dol_buf[1], 0, 32);
 	}
 
 	//set frame size
-	mipi_adap_reg_wr(CSI2_DDR_STRIDE_PIX, FRONTEND_IO, 0x00000780);
+	if (para.mode == DOL_MODE) {
+		mipi_adap_reg_wr(CSI2_DDR_STRIDE_PIX, FRONTEND_IO, 0x00000960);
+	} else {
+		mipi_adap_reg_wr(CSI2_DDR_STRIDE_PIX, FRONTEND_IO, 0x00000780);
+	}
 	//enable vs_rise_isp interrupt & enable ddr_wdone interrupt
 	mipi_adap_reg_wr(CSI2_INTERRUPT_CTRL_STAT, FRONTEND_IO, 0x5);
 
@@ -444,6 +461,10 @@ void am_adap_reader_start(void)
 	pr_info("reader : width = %d, val = %d\n", width, val);
 	adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL1, RD_IO, height, 16, 13);
 	adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL1, RD_IO, val, 0, 10);
+	if (para.mode == DOL_MODE) {
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD1_CNTL1, RD_IO, height, 16, 13);
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD1_CNTL1, RD_IO, val, 0, 10);
+	}
 	adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 1, 0, 1);
 }
 
@@ -456,6 +477,15 @@ int am_adap_reader_init(void)
 		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD0_CNTL1, RD_IO, 0x02d00078);
 		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, ddr_buf[wbuf_index], 0, 32);//ddr mode config frame address
 		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 0x70000001);
+	} else if (para.mode == DOL_MODE) {
+		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD0_CNTL1, RD_IO, 0x04380096);
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, dol_buf[0], 0, 32);
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL3, RD_IO, dol_buf[1], 0, 32);
+		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 0xb5800001);
+		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD1_CNTL1, RD_IO, 0x04380096);
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD1_CNTL2, RD_IO, dol_buf[0], 0, 32);
+		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD1_CNTL3, RD_IO, dol_buf[1], 0, 32);
+		mipi_adap_reg_wr(MIPI_ADAPT_DDR_RD1_CNTL0, RD_IO, 0xf1c10005);
 	} else {
 		pr_err("%s, Not supported Mode.\n", __func__);
 	}
@@ -474,6 +504,10 @@ void am_adap_pixel_start(void)
 	int width = para.img.width;
 	adap_wr_reg_bits(MIPI_ADAPT_PIXEL0_CNTL0, PIXEL_IO, fmt, 13, 3);
 	adap_wr_reg_bits(MIPI_ADAPT_PIXEL0_CNTL0, PIXEL_IO, width, 0, 13);
+	if (para.mode == DOL_MODE) {
+		adap_wr_reg_bits(MIPI_ADAPT_PIXEL1_CNTL0, PIXEL_IO, fmt, 13, 3);
+		adap_wr_reg_bits(MIPI_ADAPT_PIXEL1_CNTL0, PIXEL_IO, width, 0, 13);
+	}
 	adap_wr_reg_bits(MIPI_ADAPT_PIXEL0_CNTL1, PIXEL_IO, 1, 31, 1);
 }
 
@@ -487,6 +521,11 @@ int am_adap_pixel_init(void)
 	} else if (para.mode == DDR_MODE) {
 		mipi_adap_reg_wr(MIPI_ADAPT_PIXEL0_CNTL0, PIXEL_IO, 0x0000a500);
 		mipi_adap_reg_wr(MIPI_ADAPT_PIXEL0_CNTL1, PIXEL_IO, 0x80000008);
+	} else if (para.mode == DOL_MODE) {
+		mipi_adap_reg_wr(MIPI_ADAPT_PIXEL0_CNTL0, PIXEL_IO, 0x80008780);
+		mipi_adap_reg_wr(MIPI_ADAPT_PIXEL0_CNTL1, PIXEL_IO, 0x80000008);
+		mipi_adap_reg_wr(MIPI_ADAPT_PIXEL1_CNTL0, PIXEL_IO, 0x00008780);
+		mipi_adap_reg_wr(MIPI_ADAPT_PIXEL1_CNTL1, PIXEL_IO, 0x80000008);
 	} else {
 		pr_err("%s, Not supported Mode.\n", __func__);
 	}
@@ -518,10 +557,16 @@ void am_adap_alig_start(void)
 
 int am_adap_alig_init(void)
 {
-	//default width 1280, height 720
-	mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL0, ALIGN_IO, 0x02f80528);//associate width and height
-	mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL1, ALIGN_IO, 0x05000000);//associate width
-	mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL2, ALIGN_IO, 0x02d00000);//associate height
+	if (para.mode == DOL_MODE) {
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL0, ALIGN_IO, 0x078a043a);//associate width and height
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL1, ALIGN_IO, 0x07800000);//associate width
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL2, ALIGN_IO, 0x04380000);//associate height
+	} else {
+		//default width 1280, height 720
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL0, ALIGN_IO, 0x02f80528);//associate width and height
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL1, ALIGN_IO, 0x05000000);//associate width
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL2, ALIGN_IO, 0x02d00000);//associate height
+	}
 	if (para.mode == DIR_MODE) {
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL6, ALIGN_IO, 0x00fff011);
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL7, ALIGN_IO, 0xc350c000);
@@ -530,6 +575,10 @@ int am_adap_alig_init(void)
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL6, ALIGN_IO, 0x00fff001);
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL7, ALIGN_IO, 0x0);
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL8, ALIGN_IO, 0x80000020);
+	} else if (para.mode == DOL_MODE) {
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL6, ALIGN_IO, 0x00fff31d);
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL7, ALIGN_IO, 0xffffe000);
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL8, ALIGN_IO, 0x87881020);
 	} else {
 		pr_err("Not supported mode.\n");
 	}
@@ -600,6 +649,43 @@ int am_adap_alloc_mem(void)
 		}
 		isp_cma_mem = phys_to_virt(buffer_start);
 		pr_info("isp_cma_mem = %p\n", isp_cma_mem);
+	} else if (para.mode == DOL_MODE) {
+		cma_pages = dma_alloc_from_contiguous(
+				  &(g_adap->p_dev->dev),
+				  (DOL_CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT, 0);
+		if (cma_pages) {
+			buffer_start = page_to_phys(cma_pages);
+			pr_info("adapt dol phy addr = %llx\n", buffer_start);
+		} else {
+			pr_err("alloc dol cma pages failed.\n");
+			return 0;
+		}
+	}
+	return 0;
+}
+
+int am_adap_free_mem(void)
+{
+	if (para.mode == DDR_MODE) {
+		if (cma_pages) {
+			dma_release_from_contiguous(
+				 &(g_adap->p_dev->dev),
+				 cma_pages,
+				 (CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT);
+			cma_pages = NULL;
+			buffer_start = 0;
+			pr_info("release alloc CMA buffer.\n");
+		}
+	} else if (para.mode == DOL_MODE) {
+		if (cma_pages) {
+			dma_release_from_contiguous(
+				 &(g_adap->p_dev->dev),
+				 cma_pages,
+				 (DOL_CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT);
+			cma_pages = NULL;
+			buffer_start = 0;
+			pr_info("release alloc dol CMA buffer.\n");
+		}
 	}
 	return 0;
 }
@@ -616,18 +702,35 @@ int am_adap_init(void)
 	wbuf_index = 0;
 	dump_flag = 0;
 
-	if (para.mode == DDR_MODE) {
+	if (cma_pages) {
+		am_adap_free_mem();
+		cma_pages = NULL;
+	}
+
+	if ((para.mode == DDR_MODE) ||
+		(para.mode == DOL_MODE)) {
 		am_adap_alloc_mem();
 		depth = am_adap_get_depth();
-		if (cma_pages) {
+		if ((cma_pages) && (para.mode == DDR_MODE)) {
 			//note important : ddr_buf[0] and ddr_buf[1] address should alignment 16 byte
 			ddr_buf[0] = buffer_start;
 			temp_buf = ddr_buf[0];
+			pr_info("ddr_buf 0 = %llx.\n", ddr_buf[0]);
 			for (i = 1; i < DDR_BUF_SIZE; i++) {
 				ddr_buf[i] = temp_buf + ((para.img.width) * (para.img.height) * depth)/8;
 				ddr_buf[i] = (ddr_buf[i] + 15) & (~15);
 				temp_buf = ddr_buf[i];
 				pr_info("ddr_buf %d = %llx.\n", i, ddr_buf[i]);
+			}
+		} else if ((cma_pages) && (para.mode == DOL_MODE)) {
+			dol_buf[0] = buffer_start;
+			temp_buf = dol_buf[0];
+			pr_info("dol_buf 0 = %llx.\n", dol_buf[0]);
+			for (i = 1; i < DOL_BUF_SIZE; i++) {
+				dol_buf[i] = temp_buf + ((para.img.width) * (para.img.height) * depth)/8;
+				dol_buf[i] = (dol_buf[i] + 15) & (~15);
+				temp_buf = dol_buf[i];
+				pr_info("dol_buf %d = %llx.\n", i, dol_buf[i]);
 			}
 		}
 	}
@@ -667,22 +770,6 @@ int am_adap_start(int idx)
 	return 0;
 }
 
-int am_adap_free_mem(void)
-{
-	if (para.mode == DDR_MODE) {
-		if (cma_pages) {
-			dma_release_from_contiguous(
-				 &(g_adap->p_dev->dev),
-				 cma_pages,
-				 (CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT);
-			cma_pages = NULL;
-			buffer_start = 0;
-			pr_info("release alloc CMA buffer.");
-		}
-	}
-	return 0;
-}
-
 int am_adap_reset(void)
 {
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x0);
@@ -700,6 +787,8 @@ int am_adap_deinit(void)
 		am_adap_free_mem();
 		am_disable_irq();
 		kfifo_free(&adapt_fifo);
+	} else if (para.mode == DOL_MODE) {
+		am_adap_free_mem();
 	}
 	am_adap_reset();
 	dump_buf_addr = 0;

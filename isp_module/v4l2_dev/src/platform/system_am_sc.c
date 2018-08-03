@@ -1028,7 +1028,6 @@ int am_sc_parse_dt(struct device_node *node)
 {
 	int rtn = -1;
 	int irq = -1;
-	int ret = 0;
 	struct resource rs;
 	struct am_sc *t_sc = NULL;
 
@@ -1074,10 +1073,6 @@ int am_sc_parse_dt(struct device_node *node)
 	pr_info("%s:rs info: irq: %d\n", __func__, t_sc->irq);
 
 	t_sc->p_dev = of_find_device_by_node(node);
-	ret = of_reserved_mem_device_init(&(t_sc->p_dev->dev));
-	if (ret != 0) {
-		pr_info("isp-sc reserved mem device init failed, need external memory.\n");
-	}
 
 	device_create_file(&(t_sc->p_dev->dev), &dev_attr_sc_frame);
 
