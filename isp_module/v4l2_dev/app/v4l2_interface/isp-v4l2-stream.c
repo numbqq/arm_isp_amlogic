@@ -921,7 +921,9 @@ static int isp_v4l2_stream_copy_thread( void *data )
             break;
 
         /* wait for new frame to come  */
-        if ( wait_event_interruptible_timeout( frame_mgr->frame_wq, 1, msecs_to_jiffies( 10 ) ) < 0 ) {
+        if ( wait_event_interruptible_timeout( frame_mgr->frame_wq,
+            (ISP_FW_FRAME_BUF_VALID == frame_mgr->frame_buffer.state),
+            msecs_to_jiffies( 10 ) ) < 0 ) {
             LOG( LOG_ERR, "[Stream#%d] Error: wait_event return < 0", pstream->stream_id );
             continue;
         }
