@@ -751,6 +751,12 @@ static void init_sc_mif_setting(ISP_MIF_t *mif_frame)
 	}
 	spin_unlock_irqrestore( &g_sc->sc_lock, flags );
 
+	if (g_sc->info.out_fmt == NV12_GREY) {
+		ch_mode = 1;
+	} else {
+		ch_mode = 0;
+	}
+
 	memset(mif_frame, 0, sizeof(ISP_MIF_t));
 	plane_size = g_sc->info.out_w * g_sc->info.out_h;
 	mif_frame->reg_little_endian = 1;
@@ -763,7 +769,12 @@ static void init_sc_mif_setting(ISP_MIF_t *mif_frame)
 			mif_frame->reg_rgb_mode = 2;
 		} else if (g_sc->info.out_fmt == UYVY) {
 			mif_frame->reg_rgb_mode = 0;
+		} else if (g_sc->info.out_fmt == NV12_GREY) {
+			mif_frame->reg_rgb_mode = 2;
 		}
+	} else if (g_sc->info.in_fmt == NV12_YUV) {
+		if (g_sc->info.out_fmt == NV12_GREY)
+			mif_frame->reg_rgb_mode = 2;
 	}
 	mif_frame->reg_bit10_mode = 0;
 	mif_frame->reg_words_lim = 4;
@@ -1244,6 +1255,8 @@ int am_sc_hw_init(void)
 		          (g_sc->info.out_fmt == UYVY) ||
 		          (g_sc->info.out_fmt == AYUV)) {
 			mtx_mode = 1;
+		} else if (g_sc->info.out_fmt == NV12_GREY) {
+			mtx_mode = 1;
 		}
 	} else if (g_sc->info.in_fmt == AYUV) {
 		if ((g_sc->info.out_fmt == NV12_YUV) ||
@@ -1252,6 +1265,12 @@ int am_sc_hw_init(void)
 			mtx_mode = 0;
 		} else if (g_sc->info.out_fmt == RGB24) {
 			mtx_mode = 2;
+		} else if (g_sc->info.out_fmt == NV12_GREY) {
+			mtx_mode = 0;
+		}
+	} else if (g_sc->info.in_fmt == NV12_YUV) {
+		if (g_sc->info.out_fmt == NV12_GREY) {
+			mtx_mode = 0;
 		}
 	}
 	enable_isp_scale(1,
