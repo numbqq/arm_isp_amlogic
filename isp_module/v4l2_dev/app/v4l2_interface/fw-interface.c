@@ -584,9 +584,12 @@ int fw_intf_stream_set_output_format( isp_v4l2_stream_type_t streamType, uint32_
         value = RGB32;
         break;
 #endif
-#if defined( DMA_FORMAT_NV12_Y )
+#ifdef DMA_FORMAT_NV12_Y
     case V4L2_PIX_FMT_NV12:
         value = NV12_YUV;
+        break;
+    case V4L2_PIX_FMT_GREY:
+        value = NV12_GREY;
         break;
 #endif
 #ifdef DMA_FORMAT_A2R10G10B10

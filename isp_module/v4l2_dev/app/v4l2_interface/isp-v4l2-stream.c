@@ -127,6 +127,13 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
 			.is_yuv = true,
 			.planes = 1,
 		},
+		{
+			.name = "GREY",
+			.fourcc = V4L2_PIX_FMT_GREY,
+			.depth = 8,
+			.is_yuv = true,
+			.planes = 1,
+		},
         {
             .name = "RAW 16",
             .fourcc = V4L2_PIX_FMT_SBGGR16,
@@ -1379,6 +1386,7 @@ int isp_v4l2_stream_set_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
         case V4L2_PIX_FMT_YUV444:
         case V4L2_PIX_FMT_YUYV:
         case V4L2_PIX_FMT_UYVY:
+        case V4L2_PIX_FMT_GREY:
             pstream->stream_type = pstream->stream_id;
             break;
 #if ISP_HAS_META_CB
@@ -1403,7 +1411,6 @@ int isp_v4l2_stream_set_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
          pstream->stream_id,
          pstream->stream_common->sensor_info.preset_cur,
          pstream->stream_common->sensor_info.preset[pstream->stream_common->sensor_info.preset_cur].exposures[pstream->stream_common->sensor_info.preset[pstream->stream_common->sensor_info.preset_cur].fps_cur] );
-
 
     /* update format */
     rc = fw_intf_stream_set_output_format( pstream->stream_type, f->fmt.pix_mp.pixelformat );

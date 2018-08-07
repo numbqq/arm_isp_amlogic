@@ -3295,8 +3295,10 @@ uint8_t fr_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint8
         case DMA_FORMAT_NV12_Y:
             if ( base_uv == DMA_FORMAT_NV12_UV )
                 value = NV12_YUV;
-            else
+            else if (base_uv == DMA_FORMAT_NV12_VU)
                 value = NV12_YVU;
+            else if (base_uv == DMA_FORMAT_DISABLE)
+                value = NV12_GREY;
             break;
         case DMA_FORMAT_YV12_Y:
             if ( base_uv == DMA_FORMAT_YV12_U )
@@ -3361,6 +3363,10 @@ uint8_t fr_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint8
             base = DMA_FORMAT_NV12_Y;
             base_uv = DMA_FORMAT_NV12_VU;
             break;
+        case NV12_GREY:
+            base = DMA_FORMAT_NV12_Y;
+            base_uv = DMA_FORMAT_DISABLE;
+            break;
         case YV12_YU:
             base = DMA_FORMAT_YV12_Y;
             base_uv = DMA_FORMAT_YV12_U;
@@ -3394,9 +3400,8 @@ uint8_t fr_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint8
             break;
         }
 
-        if (base == DMA_FORMAT_RAW16) {
+        if (base == DMA_FORMAT_RAW16)
             acamera_isp_top_isp_processing_fr_bypass_mode_write(ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, 1);
-        }
 
         acamera_isp_fr_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base );
         acamera_isp_fr_uv_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base_uv );
@@ -3528,8 +3533,10 @@ uint8_t ds1_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint
         case DMA_FORMAT_NV12_Y:
             if ( base_uv == DMA_FORMAT_NV12_UV )
                 value = NV12_YUV;
-            else
+            else if (base_uv == DMA_FORMAT_NV12_VU)
                 value = NV12_YVU;
+            else if (base_uv == DMA_FORMAT_DISABLE)
+                value = NV12_GREY;
             break;
         case DMA_FORMAT_YV12_Y:
             if ( base_uv == DMA_FORMAT_YV12_U )
@@ -3593,6 +3600,10 @@ uint8_t ds1_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint
         case NV12_YVU:
             base = DMA_FORMAT_NV12_Y;
             base_uv = DMA_FORMAT_NV12_VU;
+            break;
+        case NV12_GREY:
+            base = DMA_FORMAT_NV12_Y;
+            base_uv = DMA_FORMAT_DISABLE;
             break;
         case YV12_YU:
             base = DMA_FORMAT_YV12_Y;
