@@ -23,7 +23,7 @@
 #include "renderer.h"
 
 int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fix_screeninfo finfo,
-                unsigned char* src, int width, int height, render_mode_t mode)
+    unsigned char *src, int width, int height, render_mode_t mode, int fb_fd, int fb_index)
 {
     int i, j;
     int src_x, src_y, dst_x, dst_y, w, h;
@@ -39,10 +39,12 @@ int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fi
         src_y = 0;
         dst_x = 0;
         dst_y = 0;
-/*        if(vinfo.xres > src.width) w = src.width;
+        /*
+        if (vinfo.xres > src.width) w = src.width;
         else w = vinfo.xres;
-        if(vinfo.yres > src.height) h = src.height;
-        else h = vinfo.yres;*/       
+        if (vinfo.yres > src.height) h = src.height;
+        else h = vinfo.yres;
+        */
         w = width;
         h = height;
         break;
@@ -53,7 +55,8 @@ int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fi
         break;
     }
 
-/*    if(src.fmt == ISP_V4L2_PIX_FMT_ARGB2101010) {
+    /*
+    if (src.fmt == ISP_V4L2_PIX_FMT_ARGB2101010) {
         // translate YUV to RGB line by line
         uint64_t *src_u64;
         uint64_t *dst_u64;
@@ -63,7 +66,7 @@ int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fi
         for (j = 0; j < h; j++) {
             pos_src = (src_y + j) * (src.width * bit_depth) + (src_x * bit_depth);
             pos_dst = ((dst_y + j + vinfo.yoffset) * finfo.line_length)
-                     + ((dst_x + vinfo.xoffset) * bit_depth);
+                + ((dst_x + vinfo.xoffset) * bit_depth);
 
             src_u64 = (uint64_t *)(src.ptr + pos_src);
             dst_u64 = (uint64_t *)(dst + pos_dst);
@@ -71,23 +74,35 @@ int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fi
             for (i = 0; i < (w/2); i++) {
                 value = src_u64[i];
                 dst_u64[i] =  ((value>>6) & 0x00FF000000FF0000)     // Red
-                            | ((value>>4) & 0x0000FF000000FF00)     // Green
-                            | ((value>>2) & 0x000000FF000000FF);    // Blue
+                    | ((value>>4) & 0x0000FF000000FF00)     // Green
+                    | ((value>>2) & 0x000000FF000000FF);    // Blue
             }
         }
-    } else {
- */       // Just copy the frame
+    } else
+    */
+    {
+#if 0
         for(j = 0; j < h; j++) {
             pos_src = (src_y + j) * (w * 3);
             pos_dst = ((dst_y + j + vinfo.yoffset) * finfo.line_length)
-                     + ((dst_x + vinfo.xoffset) * bit_depth);
-			for(k = 0; k < w; k++) {
-				*(dst + pos_dst + 4 * k) = *(src + pos_src + 3 * k + 1);
-				*(dst + pos_dst + 4 * k + 1) = *(src + pos_src + 3 * k);
-				*(dst + pos_dst + 4 * k + 2) = *(src + pos_src + 3 * k + 2);
-				*(dst + pos_dst + 4 * k + 3) = 0xff;
-        	}
+                + ((dst_x + vinfo.xoffset) * bit_depth);
+            for (k = 0; k < w; k++) {
+                *(dst + pos_dst + 4 * k) = *(src + pos_src + 3 * k + 1);
+                *(dst + pos_dst + 4 * k + 1) = *(src + pos_src + 3 * k);
+                *(dst + pos_dst + 4 * k + 2) = *(src + pos_src + 3 * k + 2);
+                *(dst + pos_dst + 4 * k + 3) = 0xff;
+            }
         }
-//    }
-	return 0;
+#else
+        memcpy(dst, src, w * h * 3);
+#endif
+
+        vinfo.activate = FB_ACTIVATE_NOW;
+        if (fb_index >= 3)
+            fb_index = 0;
+        vinfo.yoffset = 1080 * fb_index;
+        vinfo.vmode &= ~FB_VMODE_YWRAP;
+        ioctl(fb_fd, FBIOPAN_DISPLAY, &vinfo);
+    }
+    return 0;
 }

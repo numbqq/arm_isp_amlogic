@@ -33,6 +33,6 @@ typedef struct image_info {
 
 /* renderer function */
 int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fix_screeninfo finfo,
-                unsigned char * src, int width, int height, render_mode_t mode);
+    unsigned char *src, int width, int height, render_mode_t mode, int fb_fd, int fb_index);
 
 #endif

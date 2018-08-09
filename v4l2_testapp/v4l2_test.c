@@ -32,6 +32,9 @@
 #include <time.h>
 #include <linux/videodev2.h>
 #include <poll.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 #include "common.h"
 #include "isp_metadata.h"
@@ -54,8 +57,7 @@ unsigned char *displaybuf_fr;
 unsigned char *displaybuf_ds1;
 unsigned char *displaybuf_ds2;
 unsigned char *displaybuf_meta;
-int frame_cnt = 0;
-
+static int fb_fd = 0;
 /**********
  * thread parameters
  */
@@ -65,6 +67,10 @@ static uint32_t         v4l2_test_thread_preview = 0;
 static capture_type_t   v4l2_test_thread_capture = V4L2_TEST_CAPTURE_NONE;
 static uint32_t         v4l2_test_thread_capture_count = 0;
 static uint32_t         v4l2_test_thread_dump = 0;
+
+static int fps_test_port = -1;
+static int open_port_cnt = 1;
+static int fb_buffer_cnt = 3;
 
 /* config parameters */
 struct thread_param {
@@ -105,6 +111,12 @@ uint64_t getTimestamp() {
     }
 }
 
+int64_t GetTimeMsec() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
 static uint8_t cmd_do_af_refocus = 0;
 
 static void do_af_refocus(int videofd)
@@ -131,6 +143,7 @@ static void do_sensor_preset(int videofd, int preset)
     }
 }
 
+#if 0
 static void do_other_commands(int videofd)
 {
     if( cmd_do_af_refocus ) {
@@ -138,7 +151,7 @@ static void do_other_commands(int videofd)
         do_af_refocus(videofd);
     }
 }
-
+#endif
 
 static void do_sensor_wdr_mode(int videofd, int mode)
 {
@@ -214,13 +227,10 @@ void * video_thread(void *arg)
     /* condition & loop flags */
     int                         rc = 0;
     int                         i,j;
-    int							fr_continue_flag = 0;
-    int multiplanar=0;
-    //__u32	v4l2_enum_type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
     __u32	v4l2_enum_type=V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-    char filename[64];
     unsigned char *displaybuf = NULL;
-
+    uint64_t display_count = 0;
+    int64_t start, end;
     /**************************************************
      * find thread id
      *************************************************/
@@ -230,10 +240,13 @@ void * video_thread(void *arg)
             break;
         }
     }
-    /*if(stream_type==ARM_V4L2_TEST_STREAM_RAW && ISP_RAW_PLANES>1){
-    	multiplanar=1;
-    	v4l2_enum_type=V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-    }*/
+
+    /*
+    if (stream_type == ARM_V4L2_TEST_STREAM_RAW && ISP_RAW_PLANES > 1) {
+        multiplanar=1;
+        v4l2_enum_type=V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    }
+    */
 
     /**************************************************
      * device open
@@ -254,9 +267,7 @@ void * video_thread(void *arg)
         goto fatal;
     }
     INFO("[T#%d] VIDIOC_QUERYCAP: capabilities=0x%x, device_caps:0x%x\n",
-            stream_type,
-			v4l2_cap.capabilities,
-			v4l2_cap.device_caps);
+        stream_type, v4l2_cap.capabilities, v4l2_cap.device_caps);
 
     //do_sensor_preset(videofd,1);
 
@@ -294,14 +305,12 @@ void * video_thread(void *arg)
 
     rc = ioctl (videofd, VIDIOC_S_FMT, &v4l2_fmt);
     if (rc < 0) {
-    	ERR("Error: set format %d.\n",rc);
-        printf ("Error: set format.\n");
+        printf("Error: set format %d.\n", rc);
         goto fatal;
     }
     rc = ioctl (videofd, VIDIOC_G_FMT, &v4l2_fmt);
     if (rc < 0) {
-    	ERR("Error: get format %d.\n",rc);
-        printf ("Error: get format.\n");
+        printf("Error: get format %d.\n", rc);
         goto fatal;
     }
     INFO("[T#%d] VIDIO_G_FMT: type=%d, w=%d, h=%d, fmt=0x%x, field=%d\n",
@@ -315,23 +324,22 @@ void * video_thread(void *arg)
     //real type and planes here
     v4l2_enum_type=v4l2_fmt.type;
     if(v4l2_fmt.type==V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
-    	INFO("[T#%d] multiplanar support planes=%d\n",
-    			stream_type,
-				v4l2_fmt.fmt.pix_mp.num_planes);
+        INFO("[T#%d] multiplanar support planes=%d\n",
+            stream_type, v4l2_fmt.fmt.pix_mp.num_planes);
     }
 
     int fr_bitdepth;
     //get the pixel format
     switch(v4l2_fmt.fmt.pix.pixelformat){
-    	case V4L2_PIX_FMT_RGB32:
-    		fr_bitdepth = 24;
-    		break;
-    	case ISP_V4L2_PIX_FMT_ARGB2101010:
-    		fr_bitdepth = 30;
-    		break;
-    	default:
-    		fr_bitdepth = (v4l2_fmt.fmt.pix_mp.plane_fmt[i].bytesperline/v4l2_fmt.fmt.pix_mp.width)*8;
-    		break;
+    case V4L2_PIX_FMT_RGB32:
+        fr_bitdepth = 24;
+        break;
+    case ISP_V4L2_PIX_FMT_ARGB2101010:
+        fr_bitdepth = 30;
+        break;
+    default:
+        fr_bitdepth = (v4l2_fmt.fmt.pix_mp.plane_fmt[i].bytesperline/v4l2_fmt.fmt.pix_mp.width)*8;
+        break;
     }
 
     /**************************************************
@@ -359,40 +367,37 @@ void * video_thread(void *arg)
         v4l2_buf.type = v4l2_enum_type;
         v4l2_buf.memory = V4L2_MEMORY_MMAP;
         if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
-        	v4l2_buf.m.planes=buf_planes;
-        	v4l2_buf.length = v4l2_fmt.fmt.pix_mp.num_planes;
+            v4l2_buf.m.planes=buf_planes;
+            v4l2_buf.length = v4l2_fmt.fmt.pix_mp.num_planes;
         }
         rc = ioctl (videofd, VIDIOC_QUERYBUF, &v4l2_buf);
         if (rc < 0) {
-        	//printf(" rc:%d",rc);
-            printf("Error: query buffer.\n");
+            printf("Error: query buffer %d.\n", rc);
             goto fatal;
         }
 
         if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE){
-        	v4l2_buf_length = v4l2_buf.length;
-        	INFO("[T#%d] length: %u offset: %u\n", stream_type, v4l2_buf.length, v4l2_buf.m.offset);
-			v4l2_mem[i] = mmap (0, v4l2_buf.length, PROT_READ, MAP_SHARED,
-								videofd, v4l2_buf.m.offset);
-			++total_mapped_mem;
-			INFO("[T#%d] Buffer[%d] mapped at address %p total_mapped_mem:%d.\n", stream_type, i, v4l2_mem[i],total_mapped_mem);
+            v4l2_buf_length = v4l2_buf.length;
+            INFO("[T#%d] length: %u offset: %u\n", stream_type, v4l2_buf.length, v4l2_buf.m.offset);
+            v4l2_mem[i] = mmap (0, v4l2_buf.length, PROT_READ, MAP_SHARED,
+                videofd, v4l2_buf.m.offset);
+            ++total_mapped_mem;
+            INFO("[T#%d] Buffer[%d] mapped at address %p total_mapped_mem:%d.\n", stream_type, i, v4l2_mem[i],total_mapped_mem);
         }
         else if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
-			for(j=0;j<v4l2_fmt.fmt.pix_mp.num_planes;j++){
-				v4l2_buf_length = v4l2_buf.m.planes[j].length;
-				INFO("[T#%d] plane:%d multiplanar length: %u offset: %u\n", stream_type, j, v4l2_buf.m.planes[j].length, v4l2_buf.m.planes[j].m.mem_offset);
-				v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j] = mmap (0, v4l2_buf.m.planes[j].length, PROT_READ, MAP_SHARED,
-									videofd, v4l2_buf.m.planes[j].m.mem_offset);
-				++total_mapped_mem;
-				INFO("[T#%d] Buffer[%d] mapped at address %p total_mapped_mem:%d.\n", stream_type,i*v4l2_fmt.fmt.pix_mp.num_planes + j, v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j],total_mapped_mem);
-			}
-
+            for (j=0;j<v4l2_fmt.fmt.pix_mp.num_planes;j++) {
+                v4l2_buf_length = v4l2_buf.m.planes[j].length;
+                INFO("[T#%d] plane:%d multiplanar length: %u offset: %u\n", stream_type, j, v4l2_buf.m.planes[j].length, v4l2_buf.m.planes[j].m.mem_offset);
+                v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j] = mmap (0, v4l2_buf.m.planes[j].length, PROT_READ, MAP_SHARED,
+                    videofd, v4l2_buf.m.planes[j].m.mem_offset);
+                ++total_mapped_mem;
+                INFO("[T#%d] Buffer[%d] mapped at address %p total_mapped_mem:%d.\n", stream_type,i*v4l2_fmt.fmt.pix_mp.num_planes + j, v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j],total_mapped_mem);
+            }
         }
         if (v4l2_mem[i] == MAP_FAILED) {
             printf("Error: mmap buffers.\n");
             goto fatal;
         }
-
     }
 
     /* queue buffers */
@@ -405,18 +410,16 @@ void * video_thread(void *arg)
         v4l2_buf.type = v4l2_enum_type;
         v4l2_buf.memory = V4L2_MEMORY_MMAP;
         if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
-			v4l2_buf.m.planes=buf_planes;
-			v4l2_buf.length = v4l2_fmt.fmt.pix_mp.num_planes;
-		}
+            v4l2_buf.m.planes=buf_planes;
+            v4l2_buf.length = v4l2_fmt.fmt.pix_mp.num_planes;
+        }
         rc = ioctl (videofd, VIDIOC_QBUF, &v4l2_buf);
         if (rc < 0) {
-        	//printf(" rc:%d i:%d",rc,i);
-            printf("Error: queue buffers.\n");
+            printf("Error: queue buffers, rc:%d i:%d\n", rc, i);
             goto fatal;;
         }
     }
     DBG("[T#%d] Queue buf done.\n", stream_type);
-
 
     /**************************************************
      * V4L2 stream on, get buffers
@@ -431,6 +434,10 @@ void * video_thread(void *arg)
     }
     INFO("[T#%d] Video stream is on.\n", stream_type);
 
+    if (stream_type == fps_test_port) {
+        start = GetTimeMsec();
+    }
+
     /* poll variables */
     const int POLL_TIMEOUT = 2000;
     struct pollfd pfds[1];
@@ -441,49 +448,46 @@ void * video_thread(void *arg)
         struct v4l2_buffer v4l2_buf;
         //struct v4l2_plane buf_planes[v4l2_fmt.fmt.pix_mp.num_planes];
         frame_t newframe;
-        int length = 0;
         int idx = -1;
 
-		switch (stream_type) {
-		case ARM_V4L2_TEST_STREAM_FR:
-			memset(displaybuf_fr, 0, tparm->width * tparm->height * 3);
-			displaybuf = displaybuf_fr;
-			break;
-		case ARM_V4L2_TEST_STREAM_META:
-			memset(displaybuf_meta, 0, tparm->width * tparm->height * 3);
-			displaybuf = displaybuf_meta;
-			break;
-		case ARM_V4L2_TEST_STREAM_DS1:
-			memset(displaybuf_ds1, 0, tparm->width * tparm->height * 3);
-			displaybuf = displaybuf_ds1;
-			break;
-		case ARM_V4L2_TEST_STREAM_DS2:
-			memset(displaybuf_ds2, 0, tparm->width * tparm->height * 3);
-			displaybuf = displaybuf_ds2;
-			break;
-		}
+        switch (stream_type) {
+        case ARM_V4L2_TEST_STREAM_FR:
+            memset(displaybuf_fr, 0, tparm->width * tparm->height * 3);
+            displaybuf = displaybuf_fr;
+            break;
+        case ARM_V4L2_TEST_STREAM_META:
+            memset(displaybuf_meta, 0, tparm->width * tparm->height * 3);
+            displaybuf = displaybuf_meta;
+            break;
+        case ARM_V4L2_TEST_STREAM_DS1:
+            memset(displaybuf_ds1, 0, tparm->width * tparm->height * 3);
+            displaybuf = displaybuf_ds1;
+            break;
+        case ARM_V4L2_TEST_STREAM_DS2:
+            memset(displaybuf_ds2, 0, tparm->width * tparm->height * 3);
+            displaybuf = displaybuf_ds2;
+            break;
+        }
 
         /* wait (poll) for a frame event */
-       // printf ("[T#%d] Start polling (exit flag = %d, capture count = %d)\n",
-       //         stream_type, v4l2_test_thread_exit, tparm->capture_count);
-       if (stream_type == 3) {
-            pfds[0].fd = videofd;
-            pfds[0].events = POLLIN;
-            pfds[0].revents = 0;
-            pollret = poll(pfds, 1, POLL_TIMEOUT);
-            if (pollret == 0) {
-                INFO ("[T#%d] %d ms poll timeout.\n", stream_type, POLL_TIMEOUT);
-                if (v4l2_test_thread_exit)
-                    break;
-                else
-                    continue;
-            } else if (pollret < 0) {
-                printf ("Error: poll error\n");
-                // break;
-	        } else {
-	           // DBG ("[T#%d] Frame ready (pollret = %d, results = %d)\n", stream_type, pollret, pfds[0].revents);
-	        }
-		}
+        //printf ("[T#%d] Start polling (exit flag = %d, capture count = %d)\n",
+        //    stream_type, v4l2_test_thread_exit, tparm->capture_count);
+        pfds[0].fd = videofd;
+        pfds[0].events = POLLIN;
+        pfds[0].revents = 0;
+        pollret = poll(pfds, 1, POLL_TIMEOUT);
+        if (pollret == 0) {
+            INFO ("[T#%d] %d ms poll timeout.\n", stream_type, POLL_TIMEOUT);
+            if (v4l2_test_thread_exit)
+                break;
+            else
+               continue;
+        } else if (pollret < 0) {
+            printf ("Error: poll error\n");
+            // break;
+        } else {
+            // DBG ("[T#%d] Frame ready (pollret = %d, results = %d)\n", stream_type, pollret, pfds[0].revents);
+        }
 
         // dqbuf from video node
         memset (&v4l2_buf, 0, sizeof (struct v4l2_buffer));
@@ -491,15 +495,15 @@ void * video_thread(void *arg)
         v4l2_buf.type = v4l2_enum_type;
         v4l2_buf.memory = V4L2_MEMORY_MMAP;
         if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
-			//v4l2_buf.m.planes=buf_planes;
-        	v4l2_buf.m.planes=malloc(v4l2_fmt.fmt.pix_mp.num_planes*sizeof(struct v4l2_plane));
-			v4l2_buf.length = v4l2_fmt.fmt.pix_mp.num_planes;
-		}
+            //v4l2_buf.m.planes=buf_planes;
+            v4l2_buf.m.planes=malloc(v4l2_fmt.fmt.pix_mp.num_planes*sizeof(struct v4l2_plane));
+            v4l2_buf.length = v4l2_fmt.fmt.pix_mp.num_planes;
+        }
         rc = ioctl (videofd, VIDIOC_DQBUF, &v4l2_buf);
         if (rc < 0) {
             printf ("Error: dequeue buffer.\n");
             if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
-            	free(v4l2_buf.m.planes);
+                free(v4l2_buf.m.planes);
             break;
 
         }
@@ -510,81 +514,93 @@ void * video_thread(void *arg)
         newframe.vbuf = v4l2_buf;
         newframe.pixelformat=v4l2_fmt.fmt.pix_mp.pixelformat;
         if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE){
-        //if(	stream_type	!= ARM_V4L2_TEST_STREAM_RAW){
-			newframe.width[0] = v4l2_fmt.fmt.pix.width;
-			newframe.height[0] = v4l2_fmt.fmt.pix.height;
-			newframe.bit_depth[0] = sensor_bits;
-			newframe.bytes_per_line[0] = (((newframe.width[0] * ((sensor_bits + 7) >> 3)) + 127) >> 7 ) << 7;  // for padding
-			newframe.paddr[0] = v4l2_mem[idx];
-			DBG("[T#%d] Buffer[%d] single to capture.\n", stream_type, newframe.paddr[0]);
-			newframe.num_planes=1;
+        //if(stream_type != ARM_V4L2_TEST_STREAM_RAW){
+            newframe.width[0] = v4l2_fmt.fmt.pix.width;
+            newframe.height[0] = v4l2_fmt.fmt.pix.height;
+            newframe.bit_depth[0] = sensor_bits;
+            newframe.bytes_per_line[0] = (((newframe.width[0] * ((sensor_bits + 7) >> 3)) + 127) >> 7 ) << 7;  // for padding
+            newframe.paddr[0] = v4l2_mem[idx];
+            DBG("[T#%d] Buffer[%d] single to capture.\n", stream_type, newframe.paddr[0]);
+            newframe.num_planes=1;
         }else if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
-        	newframe.num_planes=v4l2_fmt.fmt.pix_mp.num_planes;
-        	for(i=0;i<newframe.num_planes;i++){
-        		newframe.width[i] = v4l2_fmt.fmt.pix_mp.width;
-				newframe.height[i] = v4l2_fmt.fmt.pix_mp.height;
+            newframe.num_planes=v4l2_fmt.fmt.pix_mp.num_planes;
+            for (i=0;i<newframe.num_planes;i++) {
+                newframe.width[i] = v4l2_fmt.fmt.pix_mp.width;
+                newframe.height[i] = v4l2_fmt.fmt.pix_mp.height;
 #if ARM_V4L2_TEST_HAS_RAW
-				if(stream_type==ARM_V4L2_TEST_STREAM_RAW)
-					newframe.bit_depth[i] = sensor_bits;
-				else
+                if (stream_type == ARM_V4L2_TEST_STREAM_RAW)
+                    newframe.bit_depth[i] = sensor_bits;
+                else
 #endif
-					newframe.bit_depth[i] = fr_bitdepth;
-				/*if(stream_type==ARM_V4L2_TEST_STREAM_RAW){
-					printf("i:%d newframe.bit_depth[i]:%d sensor_bits:%d",i,newframe.bit_depth[i],sensor_bits);
-				}*/
-				//newframe.bytes_per_line[i] = (((newframe.width[i] * ((sensor_bits + 7) >> 3)) + 127) >> 7 ) << 7;  // for padding
-				newframe.bytes_per_line[i] = v4l2_fmt.fmt.pix_mp.plane_fmt[i].bytesperline;
-				newframe.paddr[i] = v4l2_mem[idx*newframe.num_planes+i];
-				//DBG("[T#%d] i:%d newframe.paddr:%p to capture idx:%d.\n", stream_type,i, newframe.paddr[i],idx);
-				//newframe.paddr[i] = v4l2_mem[idx];
-        	}
+                    newframe.bit_depth[i] = fr_bitdepth;
+                /*
+                if (stream_type == ARM_V4L2_TEST_STREAM_RAW) {
+                    printf("i:%d newframe.bit_depth[i]:%d sensor_bits:%d",i,newframe.bit_depth[i],sensor_bits);
+                }
+                */
+                //newframe.bytes_per_line[i] = (((newframe.width[i] * ((sensor_bits + 7) >> 3)) + 127) >> 7 ) << 7;  // for padding
+                newframe.bytes_per_line[i] = v4l2_fmt.fmt.pix_mp.plane_fmt[i].bytesperline;
+                newframe.paddr[i] = v4l2_mem[idx*newframe.num_planes+i];
+                //DBG("[T#%d] i:%d newframe.paddr:%p to capture idx:%d.\n", stream_type,i, newframe.paddr[i],idx);
+                //newframe.paddr[i] = v4l2_mem[idx];
+            }
         }
 
+        image_info_t src;
+        src.ptr = v4l2_mem[idx];
+        src.width = v4l2_fmt.fmt.pix.width;
+        src.height = v4l2_fmt.fmt.pix.height;
+        src.bpp = 32; // Todo: fixed to ARGB for now
+        src.fmt = v4l2_fmt.fmt.pix.pixelformat;
 
-		uint64_t startt, endt;
-		image_info_t src;
+        if (src.fmt == V4L2_PIX_FMT_NV12) {
+            memcpy(displaybuf, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
+            memcpy(displaybuf + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
+                v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
+        } else {
+            memcpy(displaybuf, src.ptr, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
+        }
 
-		src.ptr = v4l2_mem[idx];
-		src.width = v4l2_fmt.fmt.pix.width;
-		src.height = v4l2_fmt.fmt.pix.height;
-		src.bpp = 32;   // Todo: fixed to ARGB for now
-		src.fmt = v4l2_fmt.fmt.pix.pixelformat;
+        rc = ioctl (videofd, VIDIOC_QBUF, &v4l2_buf);
+        if (rc < 0) {
+            printf ("Error: queue buffer.\n");
+            break;
+        }
 
-		if (src.fmt == V4L2_PIX_FMT_NV12) {
-			memcpy(displaybuf, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
-			memcpy(displaybuf + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
-				v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
-		} else {
-			memcpy(displaybuf, src.ptr, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
-		}
+        /***** select save file or display through different stream_type *****/
+        if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
+            int fb_offset = display_count % fb_buffer_cnt;
+            renderImage(tparm->fbp + (src.width * src.height * 3 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
+        } else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
+        //do nothing
+        } else if (stream_type == ARM_V4L2_TEST_STREAM_DS1) {
+        //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
+        } else if (stream_type == ARM_V4L2_TEST_STREAM_DS2) {
+        //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
+        }
 
-		rc = ioctl (videofd, VIDIOC_QBUF, &v4l2_buf);
-		if (rc < 0) {
-			printf ("Error: queue buffer.\n");
-			break;
-		}
+        display_count++;
+        if ((stream_type == fps_test_port) && (display_count % 100 == 0)) {
+            end = GetTimeMsec();
+            end = end - start;
+            printf("stream port %s fps is : %d\n",
+                (stream_type == 0) ? "FR" :
+                ((stream_type == 1) ? "Meta":
+                ((stream_type == 2) ? "DS1":
+                ((stream_type == 3) ? "DS2": "Other"))), (100 * 1000) /end);
+            start = GetTimeMsec();
+        }
 
-		/***** select save file or display through different stream_type *****/
-		if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
-		//renderImage(tparm->fbp, tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP);
-		} else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
-		//do nothing
-		} else if (stream_type == ARM_V4L2_TEST_STREAM_DS1) {
-		//save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
-		} else if (stream_type == ARM_V4L2_TEST_STREAM_DS2) {
-		//save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
-		}
+        if (tparm->capture_count > 0)
+            tparm->capture_count--;
 
-	if (tparm->capture_count > 0)
-		tparm->capture_count--;
-
-	} while (tparm->capture_count != 0);
+    } while (tparm->capture_count != 0);
 
     /**************************************************
      * resource clean-up
      *************************************************/
     /* release all buffers from capture_module */
-	free(displaybuf);
+    free(displaybuf);
     release_capture_module_stream(&g_cap_mod, stream_type);
     /* stream off */
     rc = ioctl (videofd, VIDIOC_STREAMOFF, &type);
@@ -620,22 +636,20 @@ int prepareRawCapture(struct thread_param * tparam) {
 }
 
 void finishRawCapture(struct thread_param * tparam) {
-	tparam->capture_count = 0; //force thread exit
+    tparam->capture_count = 0; //force thread exit
     pthread_join(tid[ARM_V4L2_TEST_STREAM_RAW], NULL);
 }
 #endif
 
-static pthread_t d_tid = 0;
-
 void usage(char * prog){
-	MSG("\nUsage:\t%s { -c command} {-p sensor preset} {-f FR_OUT fmt} {-r resolution} ( {-b fb device} {-v v4l2 device} )\n"
-	"\tcommand		: menu command 1-7 (Optional,  default=-1 not enabled)\n\n"
-	"\tsensor preset: sensor 0-n-1 sensor modes   (Optional,  default=current preset)\n\n"
-	"\tFR_OUT fmt   : output format of FR  (Optional, default 0:ARGB2101010, 1:ARGB8888, 2: YUV NV12)\n"
-	"\tresolution   : output resolution        (Optional, default :current preset  0:1080p , 1:12MP, 2:720p)\n"
-	"\tfb device    : device name of fb node   (Optional,  default=/dev/fb0)\n"
-	"\tv4l2 device  : device name of v4l2 node (Optional,  default=/dev/video0)\n\n"
-	, prog);
+    MSG("\nUsage:\t%s { -c command} {-p sensor preset} {-f FR_OUT fmt} {-r resolution} ( {-b fb device} {-v v4l2 device} )\n"
+        "\tcommand		: menu command 1-7 (Optional,  default=-1 not enabled)\n\n"
+        "\tsensor preset: sensor 0-n-1 sensor modes   (Optional,  default=current preset)\n\n"
+        "\tFR_OUT fmt   : output format of FR  (Optional, default 0:ARGB2101010, 1:ARGB8888, 2: YUV NV12)\n"
+        "\tresolution   : output resolution        (Optional, default :current preset  0:1080p , 1:12MP, 2:720p)\n"
+        "\tfb device    : device name of fb node   (Optional,  default=/dev/fb0)\n"
+        "\tv4l2 device  : device name of v4l2 node (Optional,  default=/dev/video0)\n\n"
+        , prog);
 }
 
 /**********
@@ -644,117 +658,115 @@ void usage(char * prog){
 
 void parse_fmt_res(uint8_t fmt, int res, uint32_t fr_wdr_mode, uint32_t fr_exposure, void *param)
 {
-	struct thread_param *t_param = NULL;
-	uint32_t pixel_format = 0;
-	uint32_t width = 0;
-	uint32_t height = 0;
-	uint32_t wdr_mode = 0;
-	uint32_t exposure = 0;
+    struct thread_param *t_param = NULL;
+    uint32_t pixel_format = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t wdr_mode = 0;
+    uint32_t exposure = 0;
 
-	if (param == NULL) {
-		ERR("Error input param\n");
-		return;
-	}
+    if (param == NULL) {
+        ERR("Error input param\n");
+        return;
+    }
 
-	t_param = param;
+    t_param = param;
 
-	switch (fmt) {
+    switch (fmt) {
     case 0:
         pixel_format = V4L2_PIX_FMT_RGB24;
         break;
     case 1:
-        pixel_format = V4L2_PIX_FMT_RGB24;
+        pixel_format = V4L2_PIX_FMT_NV12;
         break;
     case 2:
-		pixel_format = V4L2_PIX_FMT_NV12;
-		break;
+        pixel_format = V4L2_PIX_FMT_SBGGR16;
+        break;
     default:
         ERR("Invalid FR_OUT fmt %d !\n", fmt);
         break;
     }
 
+    switch (res) {
+    case 0:
+        width = 3840;
+        height = 2160;
+        break;
+    case 1:
+        width = 1920;
+        height = 1080;
+        break;
+    case 2:
+        width = 1280;
+        height = 720;
+        break;
+    case 3:
+        width = 640;
+        height = 480;
+        break;
+    default:
+        ERR("Invalid resolution %d !\n", res);
+        break;
+    }
 
-	switch (res) {
-	case 0:
-		width = 3840;
-		height = 2160;
-		break;
-	case 1:
-		width = 1920;
-		height = 1080;
-		break;
-	case 2:
-		width = 1280;
-		height = 720;
-		break;
-	case 3:
-		width = 640;
-		height = 480;
-		break;
-	default:
-		ERR("Invalid resolution %d !\n", res);
-		break;
-	}
+    switch (fr_wdr_mode) {
+    case 0:
+        wdr_mode = 0;
+        break;
+    case 1:
+        wdr_mode = 1;
+        break;
+    case 2:
+        wdr_mode = 2;
+        break;
+    default:
+        ERR("Invalid FR wdr mode %d !\n", fr_wdr_mode);
+        break;
+    }
 
-	switch (fr_wdr_mode) {
-		case 0:
-			wdr_mode = 0;
-			break;
-		case 1:
-			wdr_mode = 1;
-			break;
-		case 2:
-			wdr_mode = 2;
-			break;
-		default:
-			ERR("Invalid FR wdr mode %d !\n", fr_wdr_mode);
-			break;
-	}
+    switch (fr_exposure) {
+    case 1:
+        exposure = 1;
+        break;
+    case 2:
+        exposure = 2;
+        break;
+    case 3:
+        exposure = 3;
+        break;
+    case 4:
+        exposure = 4;
+        break;
+    default:
+        ERR("Invalid FR exposure %d !\n", fr_exposure);
+        break;
+    }
 
-	switch (fr_exposure) {
-		case 1:
-			exposure = 1;
-			break;
-		case 2:
-			exposure = 2;
-			break;
-		case 3:
-			exposure = 3;
-			break;
-		case 4:
-			exposure = 4;
-			break;
-		default:
-			ERR("Invalid FR exposure %d !\n", fr_exposure);
-			break;
-	}
+    t_param->pixformat = pixel_format;
+    t_param->width = width;
+    t_param->height = height;
+    t_param->wdr_mode = wdr_mode;
+    t_param->exposure = exposure;
 
-	t_param->pixformat = pixel_format;
-	t_param->width = width;
-	t_param->height = height;
-	t_param->wdr_mode = wdr_mode;
-	t_param->exposure = exposure;
-
-	ERR("pixel fmt 0x%x, width %d, height %d, wdr_mode %d, exposure %d",
-			pixel_format, width, height, wdr_mode, exposure);
+    ERR("pixel fmt 0x%x, width %d, height %d, wdr_mode %d, exposure %d",
+        pixel_format, width, height, wdr_mode, exposure);
 }
 
 int main(int argc, char *argv[])
 {
     /* variables for device name / format with default values  */
-	int sensor_preset=-1;
+    int sensor_preset = 0;
     uint8_t fr_out_fmt = 0;
-	uint8_t ds1_out_fmt = 0;
-	uint8_t ds2_out_fmt = 0;
+    uint8_t ds1_out_fmt = 0;
+    uint8_t ds2_out_fmt = 0;
     int fr_res = -1;
-	int ds1_res = -1;
-	int ds2_res = -1;
-    uint32_t width=0, height=0;
+    int ds1_res = -1;
+    int ds2_res = -1;
     int fr_num = -1;
-	int ds_num = -1;
+    int ds_num = -1;
     uint32_t pixel_format = ISP_V4L2_PIX_FMT_ARGB2101010;
     uint32_t wdr_mode = 0;
-    uint32_t exposure = 0;
+    uint32_t exposure = 1;
     char *fbdevname = "/dev/fb0";
     char *v4ldevname = "/dev/video0";
     int rc = 0;
@@ -762,108 +774,117 @@ int main(int argc, char *argv[])
     int command = -1;
 
     if (argc < 25) {
-		printf("v4l test API\n");
-		printf("usage:\n");
-		printf(" example   : ./v4l2_test  -c 1  -p 0 -F 0 -f 0 -D 0 -R 1 -r 2 -d 2 -N 1000 -n 800 -w 0 -e 1 -b /dev/fb0 -v /dev/video0 \n");
-		printf("    c : command           : default 1\n");
-		printf("    p : sensor_preset     : default 0 \n");
-		printf("    F : fr_out_fmt        : 0,1: rgb24  2:nv21 \n");
-		printf("    f : ds1_out_fmt       : 0,1: rgb24  2:nv21 \n");
-		printf("    D : ds2_out_fmt       : 0,1: rgb24  2:nv21 \n");
-		printf("    R : fr_out_resolution : 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
-		printf("    r : ds1_out_resolution: 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
-		printf("    d : ds2_out_resolution: 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
-		printf("    w : wdr mode          : 0: linear 1: native 2: fs lin\n");
-		printf("    e : exposure value    : min 1, max 4\n");
-		printf("    b : fbdev            : default: /dev/fb0\n");
-		printf("    v : videodev         : default: /dev/video0\n");
-		return -1;
-	}
+        printf("v4l test API\n");
+        printf("usage:\n");
+        printf(" example   : ./v4l2_test  -c 1 -p 0 -F 0 -f 0 -D 0 -R 1 -r 2 -d 2 -N 1000 -n 800 -w 0 -e 1 -b /dev/fb0 -v /dev/video0 \n");
+        printf("    c : command           : default 1\n");
+        printf("    p : sensor_preset     : default 0 \n");
+        printf("    F : fr_out_fmt        : 0: rgb24  1:nv12 2: raw16 \n");
+        printf("    f : ds1_out_fmt       : 0: rgb24  1:nv12 \n");
+        printf("    D : ds2_out_fmt       : 0: rgb24  1:nv12 \n");
+        printf("    R : fr_out_resolution : 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
+        printf("    r : ds1_out_resolution: 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
+        printf("    d : ds2_out_resolution: 0  : 4k   1: 1080p  2: 720p  3. 480p\n");
+        printf("    w : wdr mode          : 0: linear 1: native 2: fs lin\n");
+        printf("    e : exposure value    : min 1, max 4, default is 1\n");
+        printf("    b : fbdev            : default: /dev/fb0\n");
+        printf("    v : videodev         : default: /dev/video0\n");
+        printf("    N : fr frame count \n");
+        printf("    n : ds1 & ds2 frame count \n");
+        printf("    t : run the port count, default is 1\n");
+        printf("    x : fps print port. default: -1, no print. 0:  fr, 1: meta, 2: ds1, 3: ds2\n");
+        return -1;
+    }
 
     int c;
 
     while(optind < argc){
-		if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:")) != -1) {
-			switch(c){
-			case 'c':
-				command = atoi(optarg);
-				break;
-			case 'p':
-				sensor_preset = atoi(optarg);
-				break;
-			case 'F':
-				fr_out_fmt = atoi(optarg);
-				break;
-			case 'f':
-				ds1_out_fmt = atoi(optarg);
-				break;
-			case 'D':
-				ds2_out_fmt = atoi(optarg);
-				break;
-			case 'R':
-				fr_res = atoi(optarg);
-				break;
-			case 'r':
-				ds1_res = atoi(optarg);
-				break;
-			case 'd':
-				ds2_res = atoi(optarg);
-				break;
-			case 'N':
-				fr_num = atoi(optarg);
-				break;
-			case 'n':
-				ds_num = atoi(optarg);
-				break;
-			case 'w':
-				wdr_mode = atoi(optarg);
-				break;
-			case 'e':
-				exposure = atoi(optarg);
-				break;
-			case 'b':
-				fbdevname = optarg;
-				break;
-			case 'v':
-				v4ldevname = optarg;
-				break;
-			case '?':
-				usage(argv[0]);
-				exit(1);
-			}
-		}else{
-			MSG("Invalid argument %s\n",argv[optind]);
-			usage(argv[0]);
-			exit(1);
-		}
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:")) != -1) {
+            switch (c) {
+            case 'c':
+                command = atoi(optarg);
+                break;
+            case 'p':
+                sensor_preset = atoi(optarg);
+                break;
+            case 'F':
+                fr_out_fmt = atoi(optarg);
+                break;
+            case 'f':
+                ds1_out_fmt = atoi(optarg);
+                break;
+            case 'D':
+                ds2_out_fmt = atoi(optarg);
+                break;
+            case 'R':
+                fr_res = atoi(optarg);
+                break;
+            case 'r':
+                ds1_res = atoi(optarg);
+                break;
+            case 'd':
+                ds2_res = atoi(optarg);
+                break;
+            case 'N':
+                fr_num = atoi(optarg);
+                break;
+            case 'n':
+                ds_num = atoi(optarg);
+                break;
+            case 'w':
+                wdr_mode = atoi(optarg);
+                break;
+            case 'e':
+                exposure = atoi(optarg);
+                break;
+            case 'b':
+                fbdevname = optarg;
+                break;
+            case 'v':
+                v4ldevname = optarg;
+                break;
+            case 't':
+                open_port_cnt = atoi(optarg);
+                break;
+            case 'x':
+                fps_test_port = atoi(optarg);
+                break;
+            case '?':
+                usage(argv[0]);
+                exit(1);
+            }
+        }else{
+            MSG("Invalid argument %s\n",argv[optind]);
+            usage(argv[0]);
+            exit(1);
+        }
     }
 
-	printf("ds1_out_fmt = %d, ds2_out_fmt = %d, ds1_res = %d, ds2_res = %d\n", ds1_out_fmt, ds2_out_fmt, ds1_res, ds2_res);
+    printf("ds1_out_fmt = %d, ds2_out_fmt = %d, ds1_res = %d, ds2_res = %d\n", ds1_out_fmt, ds2_out_fmt, ds1_res, ds2_res);
     /**************************************************
      * Frame buffer initialize
      *************************************************/
-    int fbfd = 0;
     struct fb_var_screeninfo vinfo;
     struct fb_fix_screeninfo finfo;
     long int screensize = 0;
     char *fbp = 0;
 
     /* Open the file for reading and writing */
-    fbfd = open(fbdevname, O_RDWR);
-    if (fbfd == -1) {
+    fb_fd = open(fbdevname, O_RDWR);
+    if (fb_fd == -1) {
         printf("Error: cannot open framebuffer device\n");
         exit(1);
     }
     MSG("The %s device was opened successfully.\n", fbdevname);
 
     /* Get fixed screen information */
-    if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1) {
+    if (ioctl(fb_fd, FBIOGET_FSCREENINFO, &finfo) == -1) {
         printf("Error reading fixed information\n");
         exit(2);
     }
 
     /* Get variable screen information */
-    if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
+    if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
         printf("Error reading variable information\n");
         exit(3);
     }
@@ -871,16 +892,23 @@ int main(int argc, char *argv[])
     MSG("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
 
     /* Figure out the size of the screen in bytes */
-    screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
+    screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel * fb_buffer_cnt / 8; // 3 buffers
 
     /* Map the device to memory */
     fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE,
-                        MAP_SHARED, fbfd, 0);
+        MAP_SHARED, fb_fd, 0);
     if (fbp < 0) {
         printf("Error: failed to map framebuffer device to memory\n");
         exit(4);
     }
     MSG("The framebuffer device was mapped to memory successfully.\n");
+
+    if (fr_num <= 0 && ds_num <= 0) {
+        printf("can't display both fr and ds\n");
+        fr_num = 200;
+        ds_num = 200;
+    }
+    printf("fr_num = %d, ds_num = %d\n", fr_num, ds_num);
 
     /**************************************************
      * Starting streams
@@ -900,13 +928,13 @@ int main(int argc, char *argv[])
             .finfo      = finfo,
             .vinfo      = vinfo,
 
-            .width      = width,
-            .height     = height,
+            .width      = 1920,
+            .height     = 1080,
             .pixformat  = pixel_format,
             .wdr_mode	= 0,
             .exposure	= 1,
 
-            .capture_count = 1000,
+            .capture_count = fr_num,
         },
 #if ARM_V4L2_TEST_HAS_META
         {
@@ -921,11 +949,10 @@ int main(int argc, char *argv[])
             .wdr_mode	= 0,
             .exposure	= 1,
 
-            .capture_count = 900,
+            .capture_count = -1,
         },
 #endif
-
-		{
+        {
             .devname    = v4ldevname,
             .fbp        = fbp,
             .finfo      = finfo,
@@ -937,10 +964,9 @@ int main(int argc, char *argv[])
             .wdr_mode	= 0,
             .exposure	= 1,
 
-            .capture_count = 800,
+            .capture_count = ds_num,
         },
-
-		{
+        {
             .devname    = v4ldevname,
             .fbp        = fbp,
             .finfo      = finfo,
@@ -952,7 +978,7 @@ int main(int argc, char *argv[])
             .wdr_mode	= 0,
             .exposure	= 1,
 
-            .capture_count = 700,
+            .capture_count = ds_num,
         },
     };
 
@@ -965,7 +991,6 @@ int main(int argc, char *argv[])
     displaybuf_ds1 = (unsigned char *)malloc(tparam[2].width * tparam[2].height * 3);
     displaybuf_ds2 = (unsigned char *)malloc(tparam[3].width * tparam[2].height * 3);
 
-
 #if ARM_V4L2_TEST_HAS_RAW
     struct thread_param tparam_raw = {
         .devname    = v4ldevname,
@@ -973,35 +998,32 @@ int main(int argc, char *argv[])
         .finfo      = finfo,
         .vinfo      = vinfo,
 
-        .width      = width,
-        .height     = height,
+        .width      = 1920,
+        .height     = 1080,
         .pixformat  = V4L2_PIX_FMT_SBGGR16,
         .wdr_mode	= 0,
         .exposure	= 1,
-
         .capture_count = 1
     };
 #endif
-
-
 
     /* init mutex lock for frame_pack_t */
     init_capture_module(&g_cap_mod);
 
     if(sensor_preset>=0){
-		int videofd = open(v4ldevname, O_RDWR);
-		if (videofd == -1) {
-			printf("Error: cannot open video device\n");
-			exit(1);
-		}
-		MSG("Setting %d sensor preset\n", sensor_preset);
-		do_sensor_preset(videofd,sensor_preset);
-		close(videofd);
-		sleep(3); //let the sensor settle
+        int videofd = open(v4ldevname, O_RDWR);
+        if (videofd == -1) {
+            printf("Error: cannot open video device\n");
+            exit(1);
+        }
+        MSG("Setting %d sensor preset\n", sensor_preset);
+        do_sensor_preset(videofd,sensor_preset);
+        close(videofd);
+        sleep(3); //let the sensor settle
     }
 
     /* Launch threads */
-    for (i = 0; i < STATIC_STREAM_COUNT; i++) {
+    for (i = 0; i < open_port_cnt; i++) {
         rc = pthread_create(&tid[i], NULL, &video_thread, &tparam[i]);
         if (rc != 0)
             ERR("can't create thread :[%s]\n", strerror(rc));
@@ -1009,7 +1031,6 @@ int main(int argc, char *argv[])
             MSG("Thread %d created successfully\n", i);
 
         usleep(300000);
-        //sleep(1);
     }
 
 
@@ -1019,7 +1040,7 @@ int main(int argc, char *argv[])
     enum {
         V4L2_TEST_MENU_PREVIEW_ON_OFF = 1,
         V4L2_TEST_MENU_DO_CAPTURE_LEGACY,
-		V4L2_TEST_MENU_DO_CAPTURE_FRM,
+        V4L2_TEST_MENU_DO_CAPTURE_FRM,
         V4L2_TEST_MENU_DO_CAPTURE_DNG,
         V4L2_TEST_MENU_DO_AF_REFOCUS,
         V4L2_TEST_MENU_DUMP_LAST_CAPTURE,
@@ -1035,18 +1056,18 @@ int main(int argc, char *argv[])
         if(command>=V4L2_TEST_MENU_PREVIEW_ON_OFF){
             menu=command;
         }else{
-			MSG("\nV4L2 test application\n");
-			MSG("%d) turn preview %s\n",
-				 V4L2_TEST_MENU_PREVIEW_ON_OFF, str_on_off[v4l2_test_thread_preview]);
-			MSG("%d) Do capture (Legacy)\n", V4L2_TEST_MENU_DO_CAPTURE_LEGACY);
-			MSG("%d) Do capture (FRM)\n", V4L2_TEST_MENU_DO_CAPTURE_FRM);
-			MSG("%d) Do capture (DNG)\n", V4L2_TEST_MENU_DO_CAPTURE_DNG);
-			MSG("%d) Do AF Refocus\n", V4L2_TEST_MENU_DO_AF_REFOCUS);
-			MSG("%d) Dump last capture\n", V4L2_TEST_MENU_DUMP_LAST_CAPTURE);
-			MSG("%d) Exit\n", V4L2_TEST_MENU_EXIT);
-			MSG("Choose menu > ");
-			//fflush(stdout);
-			scanf("%d", &menu);
+            MSG("\nV4L2 test application\n");
+            MSG("%d) turn preview %s\n",
+                V4L2_TEST_MENU_PREVIEW_ON_OFF, str_on_off[v4l2_test_thread_preview]);
+            MSG("%d) Do capture (Legacy)\n", V4L2_TEST_MENU_DO_CAPTURE_LEGACY);
+            MSG("%d) Do capture (FRM)\n", V4L2_TEST_MENU_DO_CAPTURE_FRM);
+            MSG("%d) Do capture (DNG)\n", V4L2_TEST_MENU_DO_CAPTURE_DNG);
+            MSG("%d) Do AF Refocus\n", V4L2_TEST_MENU_DO_AF_REFOCUS);
+            MSG("%d) Dump last capture\n", V4L2_TEST_MENU_DUMP_LAST_CAPTURE);
+            MSG("%d) Exit\n", V4L2_TEST_MENU_EXIT);
+            MSG("Choose menu > ");
+            //fflush(stdout);
+            scanf("%d", &menu);
         }
         switch(menu) {
         case V4L2_TEST_MENU_PREVIEW_ON_OFF:
@@ -1063,13 +1084,13 @@ int main(int argc, char *argv[])
             }
 #endif
             if(menu==V4L2_TEST_MENU_DO_CAPTURE_LEGACY)
-            	v4l2_test_thread_capture = V4L2_TEST_CAPTURE_LEGACY;
+                v4l2_test_thread_capture = V4L2_TEST_CAPTURE_LEGACY;
             else
-            	v4l2_test_thread_capture = V4L2_TEST_CAPTURE_FRM;
+                v4l2_test_thread_capture = V4L2_TEST_CAPTURE_FRM;
             v4l2_test_thread_capture_count = 1;
 
             do {
-            	printf("sleeping while v4l2_test_thread_capture:%d\n",v4l2_test_thread_capture);
+                printf("sleeping while v4l2_test_thread_capture:%d\n",v4l2_test_thread_capture);
                 usleep(200000);
             } while(v4l2_test_thread_capture != V4L2_TEST_CAPTURE_NONE);
 
@@ -1120,7 +1141,7 @@ int main(int argc, char *argv[])
         }
 
         if(command>=V4L2_TEST_MENU_PREVIEW_ON_OFF)
-        	v4l2_test_thread_exit = 1;
+            v4l2_test_thread_exit = 1;
 
     } while (!v4l2_test_thread_exit);
 
@@ -1130,14 +1151,13 @@ int main(int argc, char *argv[])
      *************************************************/
     MSG("terminating all threads ...\n");
 
-    for (i = 0; i < STATIC_STREAM_COUNT; i++) {
+    for (i = 0; i < open_port_cnt; i++) {
         pthread_join(tid[i], NULL);
     }
 
     MSG("terminating v4l2 test app, thank you ...\n");
 
-fatal:
     munmap(fbp, screensize);
-    close(fbfd);
+    close(fb_fd);
     return 0;
 }
