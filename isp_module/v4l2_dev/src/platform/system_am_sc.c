@@ -772,9 +772,11 @@ static void init_sc_mif_setting(ISP_MIF_t *mif_frame)
 		} else if (g_sc->info.out_fmt == NV12_GREY) {
 			mif_frame->reg_rgb_mode = 2;
 		}
-	} else if (g_sc->info.in_fmt == NV12_YUV) {
-		if (g_sc->info.out_fmt == NV12_GREY)
+	} else if ((g_sc->info.in_fmt == NV12_YUV) ||
+			(g_sc->info.in_fmt == NV12_GREY)) {
+		if (g_sc->info.out_fmt == NV12_GREY) {
 			mif_frame->reg_rgb_mode = 2;
+		}
 	}
 	mif_frame->reg_bit10_mode = 0;
 	mif_frame->reg_words_lim = 4;
@@ -1268,7 +1270,8 @@ int am_sc_hw_init(void)
 		} else if (g_sc->info.out_fmt == NV12_GREY) {
 			mtx_mode = 0;
 		}
-	} else if (g_sc->info.in_fmt == NV12_YUV) {
+	} else if ((g_sc->info.in_fmt == NV12_YUV) ||
+			(g_sc->info.in_fmt == NV12_GREY)) {
 		if (g_sc->info.out_fmt == NV12_GREY) {
 			mtx_mode = 0;
 		}
