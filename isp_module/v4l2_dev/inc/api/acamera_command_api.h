@@ -421,5 +421,7 @@ uint8_t acamera_api_calibration( uint8_t type, uint8_t id, uint8_t direction, vo
 
 uint8_t acamera_api_dma_buffer( uint8_t type, void* data, uint32_t data_size, uint32_t* ret_value);
 void acamera_api_dma_buff_queue_reset(uint8_t type);
+uint8_t acamera_api_set_fps(uint8_t type, uint32_t c_fps, uint32_t t_fps);
+
 
 #endif//_ACAMERA_COMMAND_API_H_

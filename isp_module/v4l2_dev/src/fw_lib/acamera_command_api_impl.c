@@ -4436,6 +4436,22 @@ uint8_t acamera_api_dma_buffer( uint8_t type, void *data, uint32_t data_size, ui
     return result;
 }
 
+uint8_t acamera_api_set_fps(uint8_t type, uint32_t c_fps, uint32_t t_fps)
+{
+    acamera_fsm_mgr_t *instance = NULL;
+    fsm_param_path_fps_t pipe_fps;
+
+    pipe_fps.pipe_id = type;
+    pipe_fps.c_fps = c_fps;
+    pipe_fps.t_fps = t_fps;
+
+    instance = &(((acamera_context_t *)acamera_get_api_ctx_ptr() )->fsm_mgr);
+
+    acamera_fsm_mgr_set_param(instance, FSM_PARAM_SET_PATH_FPS, &pipe_fps, sizeof(pipe_fps));
+
+    return SUCCESS;
+}
+
 void acamera_api_dma_buff_queue_reset(uint8_t type)
 {
     uint8_t d_type = 0xff;

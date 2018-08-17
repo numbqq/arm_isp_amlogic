@@ -684,6 +684,22 @@ int fw_intf_stream_set_output_format( isp_v4l2_stream_type_t streamType, uint32_
     return 0;
 }
 
+static int fw_intf_set_fr_fps(uint32_t fps)
+{
+    uint32_t cur_fps = 0;
+
+    acamera_command(TSENSOR, SENSOR_FPS, 0, COMMAND_GET, &cur_fps);
+    if (cur_fps == 0) {
+        LOG(LOG_ERR, "Error input param\n");
+        return -1;
+    }
+
+    cur_fps = cur_fps / 256;
+
+    acamera_api_set_fps(dma_fr, cur_fps, fps);
+
+    return 0;
+}
 
 /* ----------------------------------------------------------------
  * Internal handler for control interface functions
@@ -1505,5 +1521,14 @@ int fw_intf_set_custom_sensor_exposure(uint32_t ctrl_val)
 {
     custom_exp = ctrl_val;
     return 0;
+}
+
+int fw_intf_set_custom_fr_fps(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    rtn = fw_intf_set_fr_fps(ctrl_val);
+
+    return rtn;
 }
 

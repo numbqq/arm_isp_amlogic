@@ -83,6 +83,8 @@ typedef struct _isp_v4l2_sensor_info {
 #define ISP_V4L2_CID_OUTPUT_DS1_ON_OFF ( ISP_V4L2_CID_BASE + 6 )
 #define ISP_V4L2_CID_CUSTOM_SENSOR_WDR_MODE ( ISP_V4L2_CID_BASE + 7 )
 #define ISP_V4L2_CID_CUSTOM_SENSOR_EXPOSURE ( ISP_V4L2_CID_BASE + 8 )
+#define ISP_V4L2_CID_CUSTOM_SET_FR_FPS ( ISP_V4L2_CID_BASE + 9 )
+
 
 
 /* type of stream */

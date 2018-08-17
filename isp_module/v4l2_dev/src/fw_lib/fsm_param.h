@@ -134,6 +134,12 @@ typedef struct _fsm_param_dma_pipe_setting_buf_ {
     buffer_callback_t callback;
 } fsm_param_dma_pipe_setting_t;
 
+typedef struct _fsm_param_path_fps_ {
+	dma_type pipe_id;
+	uint32_t c_fps;
+	uint32_t t_fps;
+}fsm_param_path_fps_t;
+
 
 typedef struct _fsm_param_dma_frame_ {
     aframe_t **p_frame;

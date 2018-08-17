@@ -77,5 +77,6 @@ int fw_intf_set_output_fr_on_off( uint32_t ctrl_val );
 int fw_intf_set_output_ds1_on_off( uint32_t ctrl_val );
 int fw_intf_set_custom_sensor_wdr_mode( uint32_t ctrl_val );
 int fw_intf_set_custom_sensor_exposure( uint32_t ctrl_val );
+int fw_intf_set_custom_fr_fps(uint32_t ctrl_val);
 
 #endif

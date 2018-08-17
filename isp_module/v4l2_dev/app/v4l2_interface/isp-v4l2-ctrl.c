@@ -155,6 +155,10 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         LOG( LOG_INFO, "set custom exposure: 0x%x.\n", ctrl->val );
         ret = fw_intf_set_custom_sensor_exposure(ctrl->val);
         break;
+    case ISP_V4L2_CID_CUSTOM_SET_FR_FPS:
+        LOG( LOG_INFO, "set fr fps: 0x%x.\n", ctrl->val );
+        ret = fw_intf_set_custom_fr_fps(ctrl->val);
+        break;
     }
 
     return ret;
@@ -267,6 +271,17 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_exposure = {
     .def = 1,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_fr_fps = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SET_FR_FPS,
+    .name = "ISP fr fps",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 0,
+    .max = 120,
+    .step = 1,
+    .def = 0,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -362,6 +377,8 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_sensor_wdr_mode, NULL );
     ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SENSOR_EXPOSURE,
                   &isp_v4l2_ctrl_sensor_exposure, NULL );
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_FR_FPS,
+                  &isp_v4l2_ctrl_fr_fps, NULL);
 
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );

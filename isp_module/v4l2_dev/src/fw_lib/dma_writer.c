@@ -184,10 +184,42 @@ dma_error dma_writer_reset( void *handle, dma_type type )
         pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
         pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
         pipe->settings.enabled = 0;
+        pipe->settings.c_fps = 0;
+        pipe->settings.t_fps = 0;
+        pipe->settings.inter_val = 0;
+        pipe->settings.back_tframe = NULL;
     } else {
         result = edma_fail;
     }
     return result;
+}
+
+dma_error dma_writer_set_pipe_fps(void *handle, dma_type type,
+                                uint32_t c_fps, uint32_t t_fps)
+{
+    dma_handle *p_dma = NULL;
+    dma_pipe *pipe = NULL;
+    uint32_t inter_val = 0;
+
+    if (handle == NULL || c_fps == 0 || t_fps == 0 || (t_fps > c_fps)) {
+        LOG(LOG_ERR, "Error input param\n");
+        return edma_wrong_parameters;
+    }
+
+    p_dma = handle;
+    pipe = &p_dma->pipe[type];
+    pipe->settings.c_fps = c_fps;
+    pipe->settings.t_fps = t_fps;
+
+    inter_val = c_fps / t_fps;
+    if (c_fps % t_fps != 0)
+        inter_val += 1;
+
+    pipe->settings.inter_val = inter_val;
+
+    LOG(LOG_INFO, "c_fps: %d, t_fps: %d, interval %d\n", c_fps, t_fps, inter_val);
+
+    return edma_ok;
 }
 
 
@@ -306,7 +338,7 @@ extern int32_t acamera_get_api_context( void );
 dma_error dma_writer_pipe_update( dma_pipe *pipe )
 {
     dma_error result = edma_ok;
-    tframe_t *empty_frame;
+    tframe_t *empty_frame = NULL;
     uint32_t addr = 0;
 #if ISP_HAS_FPGA_WRAPPER && ISP_CONTROLS_DMA_READER
     uint32_t addr_uv = 0;
@@ -353,8 +385,14 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
                 addr_late1_uv = addr_uv;
             }
 #endif
-            pipe->settings.last_tframe = 0;
-            if ( ( empty_frame = dma_get_next_empty_frame( pipe ) ) ) {
+            pipe->settings.last_tframe = NULL;
+
+            if (pipe->settings.back_tframe != NULL)
+                empty_frame = pipe->settings.back_tframe;
+            else
+                empty_frame = dma_get_next_empty_frame(pipe);
+
+            if ( empty_frame != NULL ) {
                 empty_frame->primary.type = pipe->api.p_acamera_isp_dma_writer_format_read( pipe->settings.isp_base );
                 if ( empty_frame->primary.type != DMA_FORMAT_DISABLE ) {
                     empty_frame->primary.width = pipe->api.p_acamera_isp_dma_writer_active_width_read( pipe->settings.isp_base );
@@ -443,9 +481,12 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
     return result;
 }
 
-dma_error dma_writer_pipe_set_half_fps(dma_pipe *pipe)
+dma_error dma_writer_pipe_set_fps(dma_pipe *pipe)
 {
     int frm_count = 0;
+    uint32_t inter_val = 0;
+    uint32_t c_fps = 0;
+    uint32_t t_fps = 0;
 
     if (pipe == NULL || pipe->settings.p_ctx == NULL) {
         LOG(LOG_ERR, "Error input param:p_ctx %p\n", pipe->settings.p_ctx);
@@ -453,15 +494,34 @@ dma_error dma_writer_pipe_set_half_fps(dma_pipe *pipe)
     }
 
     frm_count = pipe->settings.p_ctx->isp_frame_counter;
+    inter_val = pipe->settings.inter_val;
+    pipe->settings.back_tframe = NULL;
+    c_fps = pipe->settings.c_fps;
+    t_fps = pipe->settings.t_fps;
 
-    if (pipe->settings.last_tframe == NULL)
+    if (pipe->settings.last_tframe == NULL ||
+                inter_val == 0 || inter_val == 1)
         return edma_ok;
 
-    if (frm_count % 2 != 0) {
-        pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
-        pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
-        pipe->settings.back_tframe = pipe->settings.last_tframe;
-        pipe->settings.last_tframe = NULL;
+    if (inter_val > 2) {
+        if (frm_count % inter_val != 0) {
+            pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
+            pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
+            pipe->settings.back_tframe = pipe->settings.last_tframe;
+            pipe->settings.last_tframe = NULL;
+        } else {
+            pipe->settings.back_tframe = NULL;
+        }
+    } else {
+        inter_val = c_fps  / (c_fps - t_fps);
+        if (frm_count % inter_val == 0) {
+            pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
+            pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
+            pipe->settings.back_tframe = pipe->settings.last_tframe;
+            pipe->settings.last_tframe = NULL;
+        } else {
+            pipe->settings.back_tframe = NULL;
+        }
     }
 
     return edma_ok;
@@ -473,9 +533,7 @@ dma_error dma_writer_pipe_process_interrupt( dma_pipe *pipe, uint32_t irq_event 
     case ACAMERA_IRQ_FRAME_WRITER_FR:
         if ( pipe->type == dma_fr ) {
             dma_writer_pipe_update( pipe ); // have to change last address and buffer ring
-#if ISP_DOWN_FR_FPS
-            dma_writer_pipe_set_half_fps(pipe);
-#endif
+            dma_writer_pipe_set_fps(pipe); //change the fps of fr path
         }
         break;
     case ACAMERA_IRQ_FRAME_WRITER_DS:

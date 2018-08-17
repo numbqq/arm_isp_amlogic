@@ -456,6 +456,17 @@ void frame_buffer_queue_reset(dma_writer_fsm_ptr_t p_fsm, dma_type type)
     dma_writer_reset( p_fsm->handle, type);
 }
 
+void dma_writer_set_path_fps(dma_writer_fsm_ptr_t p_fsm, dma_type type,
+                            uint32_t c_fps, uint32_t t_fps)
+{
+    if (p_fsm == NULL || p_fsm->handle == NULL) {
+        LOG(LOG_ERR, "Error input param\n");
+        return;
+    }
+
+    dma_writer_set_pipe_fps(p_fsm->handle, type, c_fps, t_fps);
+}
+
 void dma_writer_update_address_interrupt( dma_writer_fsm_const_ptr_t p_fsm, uint8_t irq_event )
 {
     if ( acamera_fsm_util_is_irq_event_ignored( (fsm_irq_mask_t *)( &p_fsm->mask ), irq_event ) )
