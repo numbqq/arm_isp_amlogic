@@ -3402,7 +3402,8 @@ uint8_t fr_format_base_plane( acamera_fsm_mgr_t *instance, uint32_t value, uint8
 
         if (base == DMA_FORMAT_RAW16)
             acamera_isp_top_isp_processing_fr_bypass_mode_write(ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, 1);
-
+        else
+            acamera_isp_top_isp_processing_fr_bypass_mode_write(ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, 0);
         acamera_isp_fr_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base );
         acamera_isp_fr_uv_dma_writer_format_write( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base, base_uv );
 
