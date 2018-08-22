@@ -716,6 +716,8 @@ void isp_v4l2_destroy_instance( struct platform_device *pdev )
         LOG( LOG_INFO, "unregistering %s.",
              video_device_node_name( &g_isp_v4l2_dev->video_dev ) );
 
+        isp_cma_free(pdev, isp_kaddr, TEMPER_MEM_SIZE);
+
         /* unregister video device */
         video_unregister_device( &g_isp_v4l2_dev->video_dev );
 

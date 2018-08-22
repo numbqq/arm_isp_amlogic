@@ -137,14 +137,18 @@ static int arm_sensor_i2c_remove(struct i2c_client *client)
 
 	s_ctrl = i2c_get_clientdata(client);
 
-	if (s_ctrl == NULL)
-		pr_info("%s: client data is NULL\n", __func__);
+	if (s_ctrl == NULL) {
+		pr_err("%s: Error client data is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	am_mipi_deinit_parse_dt();
 
 	kfree(s_ctrl);
 	s_ctrl = NULL;
 	g_sensor_ctrl = s_ctrl;
 
-	pr_info("%s: remove i2c sensor addr:0x%x\n", __func__, s_ctrl->slave_addr);
+	pr_info("%s: remove i2c sensor\n", __func__);
 
 	return 0;
 }

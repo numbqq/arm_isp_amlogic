@@ -660,21 +660,6 @@ void callback_ds2( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadat
 /* sensor static informations */
 static isp_v4l2_stream_common g_stream_common;
 
-#if 0
-/* 128MB assigned from DDR on FPGA */
-static uint8_t *fpga_ddr_mem = NULL;
-#else
-/*we allocte from CMA*/
-
-static struct page *cma_pages = NULL;
-static resource_size_t buffer_start;
-#endif
-
-#if JUNO_DIRECT_DDR_ACCESS
-/* 750MB reserved from DDR on Juno */
-static uint8_t *juno_ddr_mem = NULL;
-#endif
-
 int isp_v4l2_stream_init_static_resources(struct platform_device *pdev)
 {
     isp_v4l2_stream_common *sc = &g_stream_common;
@@ -692,34 +677,9 @@ int isp_v4l2_stream_init_static_resources(struct platform_device *pdev)
     return 0;
 }
 
-void isp_v4l2_stream_deinit_static_resources(struct platform_device *pdev)
+void isp_v4l2_stream_deinit_static_resources( struct platform_device *pdev )
 {
-    /* unmap base fpga ddr address (for raw stream) */
-#if 0
-    if ( fpga_ddr_mem ) {
-        iounmap( fpga_ddr_mem );
-        fpga_ddr_mem = NULL;
-    }
-#else
-    if (cma_pages) {
-        dma_release_from_contiguous(
-             &(pdev->dev),
-             cma_pages,
-             (CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT);
-        cma_pages = NULL;
-        buffer_start = 0;
-        LOG(LOG_INFO, "release alloc CMA buffer.");
-    }
-
-#endif
-
-#if JUNO_DIRECT_DDR_ACCESS
-    /* unmap base juno ddr address (for other streams) */
-    if ( juno_ddr_mem ) {
-        iounmap( juno_ddr_mem );
-        juno_ddr_mem = NULL;
-    }
-#endif
+    return;
 }
 
 int isp_v4l2_stream_init( isp_v4l2_stream_t **ppstream, int stream_id )

@@ -306,10 +306,13 @@ static const struct v4l2_subdev_ops camera_ops = {
 static int32_t soc_sensor_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
-
     struct device *dev = &pdev->dev;
-    //struct device_node *np = dev->of_node;
+
     sensor_bp = kzalloc( sizeof( *sensor_bp ), GFP_KERNEL );
+    if (sensor_bp == NULL) {
+        LOG(LOG_ERR, "Failed to alloc mem\n");
+        return -ENOMEM;
+    }
     sensor_bp_init(sensor_bp, dev);
 
     v4l2_subdev_init( &soc_sensor, &camera_ops );
@@ -329,16 +332,18 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
 static int soc_sensor_remove( struct platform_device *pdev )
 {
     v4l2_async_unregister_subdev( &soc_sensor );
-    kfree(sensor_bp);
+
+    if (sensor_bp != NULL) {
+        kfree(sensor_bp);
+        sensor_bp = NULL;
+    }
+
     return 0;
 }
 
 static const struct of_device_id sensor_dt_match[] = {
     {.compatible = "soc, sensor"},
     {}};
-
-
-static struct platform_device *soc_sensor_dev;
 
 static struct platform_driver soc_sensor_driver = {
     .probe = soc_sensor_probe,
@@ -354,8 +359,6 @@ int __init acamera_camera_sensor_init( void )
 {
     LOG( LOG_ERR, "Sensor subdevice init" );
 
-    soc_sensor_dev = platform_device_register_simple(
-        "soc_sensor_v4l2", -1, NULL, 0 );
     return platform_driver_register( &soc_sensor_driver );
 }
 
@@ -363,8 +366,8 @@ int __init acamera_camera_sensor_init( void )
 void __exit acamera_camera_sensor_exit( void )
 {
     LOG( LOG_INFO, "Sensor subdevice exit" );
+
     platform_driver_unregister( &soc_sensor_driver );
-    platform_device_unregister( soc_sensor_dev );
 }
 
 

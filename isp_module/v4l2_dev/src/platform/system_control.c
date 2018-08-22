@@ -38,5 +38,5 @@ void bsp_init( void )
 void bsp_destroy( void )
 {
     system_interrupts_disable();
-    system_interrupts_deinit();
+    //system_interrupts_deinit();
 }

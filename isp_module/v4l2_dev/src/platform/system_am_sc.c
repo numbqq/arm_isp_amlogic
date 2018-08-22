@@ -1102,6 +1102,25 @@ reg_error:
 	return -1;
 }
 
+void am_sc_deinit_parse_dt(void)
+{
+	if (g_sc == NULL) {
+		pr_err("Error g_sc is NULL\n");
+		return;
+	}
+
+	if (g_sc->p_dev != NULL)
+		device_remove_file(&(g_sc->p_dev->dev), &dev_attr_sc_frame);
+
+	if (g_sc->base_addr != NULL) {
+		iounmap(g_sc->base_addr);
+		g_sc->base_addr = NULL;
+	}
+
+	kfree(g_sc);
+	g_sc = NULL;
+}
+
 void am_sc_api_dma_buffer(tframe_t * data, unsigned int index)
 {
 	unsigned long flags;

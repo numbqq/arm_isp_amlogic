@@ -154,6 +154,7 @@ typedef struct _sensor_context_t {
     uint16_t max_L;
     uint16_t frame;
     uint32_t wdr_mode;
+    void *sbp;
 } sensor_context_t;
 
 #if SENSOR_BINARY_SEQUENCE
@@ -471,12 +472,19 @@ static void start_streaming( void *ctx )
 
 void sensor_deinit_ov08a10( void *ctx )
 {
-	reset_sensor_bus_counter();
-	am_adap_deinit();
-	am_mipi_deinit();
+    sensor_context_t *t_ctx = ctx;
+
+    reset_sensor_bus_counter();
+    am_adap_deinit();
+    am_mipi_deinit();
+
+    acamera_sbus_deinit(&t_ctx->sbus,  sbus_i2c);
+
+    if (t_ctx != NULL && t_ctx->sbp != NULL)
+        clk_am_disable(t_ctx->sbp);
 }
 //--------------------Initialization------------------------------------------------------------
-void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void* sbp )
+void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void *sbp )
 {
     // Local sensor data structure
 	static sensor_context_t s_ctx;
@@ -499,6 +507,8 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void* sbp )
 	if (ret < 0 )
 		pr_err("set reset fail\n");
 #endif
+
+	s_ctx.sbp = sbp;
 
 	*ctx = &s_ctx;
 

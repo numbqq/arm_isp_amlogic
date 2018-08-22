@@ -42,12 +42,11 @@
 #include <asm/uaccess.h>
 #include <asm/unaligned.h>
 #include <linux/delay.h>
+#include "v4l2_interface/isp-v4l2.h"
+
 
 #define LOG_CONTEXT "[ ACamera ]"
-
 #define ISP_V4L2_MODULE_NAME "isp-v4l2"
-
-#include "v4l2_interface/isp-v4l2.h"
 
 #define AO_RTI_GEN_PWR_SLEEP0 	(0xff800000 + 0x3a * 4)
 #define AO_RTI_GEN_PWR_ISO0		(0xff800000 + 0x3b * 4)
@@ -56,11 +55,18 @@
 #define HHI_CSI_PHY_CNTL0		(0xff630000 + 0xd3 * 4)
 #define HHI_CSI_PHY_CNTL1		(0xff630000 + 0x114 * 4)
 
+struct device_info {
+    struct clk* clk_isp_0;
+    struct clk* clk_mipi_0;
+    struct device_node *am_sc;
+};
+
 extern uint8_t *isp_kaddr;
 extern resource_size_t isp_paddr;
 
 extern void system_interrupts_set_irq( int irq_num, int flags );
 extern void system_interrupts_init(void);
+extern void system_interrupts_deinit(void);
 extern uintptr_t acamera_get_isp_sw_setting_base( void );
 
 //map and unmap fpga memory
@@ -70,6 +76,7 @@ extern int32_t close_hw_io( void );
 static struct v4l2_device v4l2_dev;
 static struct platform_device *isp_pdev;
 static int initialized = 0;
+static struct device_info dev_info;
 
 #if V4L2_SOC_SUBDEV_ENABLE
 extern uint32_t fw_calibration_update( void );
@@ -459,6 +466,11 @@ uint32_t isp_power_on(void)
     return 0;
 }
 
+void isp_power_down(void)
+{
+    return;
+}
+
 static void hw_reset(bool reset)
 {
     void __iomem *reset_addr;
@@ -495,11 +507,8 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
     struct resource *isp_res;
-    struct clk* clk_isp_0;
-    struct clk* clk_mipi_0;
     u32 isp_clk_rate = 666666667;
     u32 isp_mipi_rate = 200000000;
-    struct device_node *link_node;
 
     // Initialize irq
     isp_res = platform_get_resource_byname( pdev,
@@ -528,47 +537,41 @@ static int32_t isp_platform_probe( struct platform_device *pdev )
 
     of_reserved_mem_device_init(&(pdev->dev));
 
-    link_node = of_parse_phandle(pdev->dev.of_node, "link-device", 0);
+    memset(&dev_info, 0, sizeof(dev_info));
 
-    if (link_node == NULL) {
-        pr_err("%s:Failed to get link device\n", __func__);
+    dev_info.am_sc = of_parse_phandle(pdev->dev.of_node, "link-device", 0);
+
+    if (dev_info.am_sc == NULL) {
+        LOG( LOG_ERR,"Failed to get link device\n");
     } else {
-        pr_info("%s:Success to get link device: %s\n", __func__,
-            link_node->name);
-        am_sc_parse_dt(link_node);
-        //am_sc_system_init();
-#if 0 // TODO: config isp sc at the right place
-        struct am_sc_info sc_info;
-        memset(&sc_info, 0, sizeof(sc_info));
-        sc_info.out_w = 1280;
-        sc_info.out_h = 720;
-        sc_info.src_w = 1920;
-        sc_info.src_h = 1080;
-        am_sc_hw_init(&sc_info);
-        am_sc_start();
-#endif
+        LOG( LOG_ERR,"Success to get link device: %s\n", dev_info.am_sc->name);
+        am_sc_parse_dt(dev_info.am_sc);
     }
 
-    clk_isp_0 = devm_clk_get(&pdev->dev, "cts_mipi_isp_clk_composite");
-    if (IS_ERR(clk_isp_0)) {
+    dev_info.clk_isp_0 = devm_clk_get(&pdev->dev, "cts_mipi_isp_clk_composite");
+    if (IS_ERR(dev_info.clk_isp_0)) {
         LOG(LOG_ERR, "cannot get clock\n");
-        clk_isp_0 = NULL;
+        dev_info.clk_isp_0 = NULL;
         return -1;
     }
-    clk_set_rate(clk_isp_0, isp_clk_rate);
-    clk_prepare_enable(clk_isp_0);
-    isp_clk_rate = clk_get_rate(clk_isp_0);
+
+    clk_set_rate(dev_info.clk_isp_0, isp_clk_rate);
+    clk_prepare_enable(dev_info.clk_isp_0);
+
+    isp_clk_rate = clk_get_rate(dev_info.clk_isp_0);
     LOG(LOG_ERR, "isp init clock is %d MHZ\n", isp_clk_rate / 1000000);
 
-    clk_mipi_0 = devm_clk_get(&pdev->dev, "cts_mipi_csi_phy_clk0_composite");
-    if (IS_ERR(clk_mipi_0)) {
+    dev_info.clk_mipi_0 = devm_clk_get(&pdev->dev, "cts_mipi_csi_phy_clk0_composite");
+    if (IS_ERR(dev_info.clk_mipi_0)) {
         LOG(LOG_ERR, "cannot get clock\n");
-        clk_mipi_0 = NULL;
+        dev_info.clk_mipi_0 = NULL;
         return -1;
     }
-    clk_set_rate(clk_mipi_0, isp_mipi_rate);
-    clk_prepare_enable(clk_mipi_0);
-    isp_mipi_rate = clk_get_rate(clk_mipi_0);
+
+    clk_set_rate(dev_info.clk_mipi_0, isp_mipi_rate);
+    clk_prepare_enable(dev_info.clk_mipi_0);
+
+    isp_mipi_rate = clk_get_rate(dev_info.clk_mipi_0);
     LOG(LOG_ERR, "mipi init clock is %d MHZ\n",isp_mipi_rate/1000000);
 
     hw_reset(true);
@@ -640,6 +643,46 @@ free_res:
 
 static int isp_platform_remove(struct platform_device *pdev)
 {
+    device_remove_file(&pdev->dev, &dev_attr_reg);
+    device_remove_file(&pdev->dev, &dev_attr_dump_frame);
+
+    if ( initialized == 1 ) {
+        isp_v4l2_destroy_instance(isp_pdev);
+        initialized = 0;
+    }
+
+#if V4L2_SOC_SUBDEV_ENABLE
+    v4l2_async_notifier_unregister( &g_subdevs.notifier );
+#endif
+
+    v4l2_device_unregister( &v4l2_dev );
+
+    hw_reset(true);
+
+    system_interrupts_deinit();
+
+    if (dev_info.clk_mipi_0 != NULL) {
+        clk_disable_unprepare(dev_info.clk_mipi_0);
+        devm_clk_put(&pdev->dev, dev_info.clk_mipi_0);
+        dev_info.clk_mipi_0 = NULL;
+    }
+
+    if (dev_info.clk_isp_0!= NULL) {
+        clk_disable_unprepare(dev_info.clk_isp_0);
+        devm_clk_put(&pdev->dev, dev_info.clk_isp_0);
+        dev_info.clk_isp_0 = NULL;
+    }
+
+    if (dev_info.am_sc != NULL) {
+        am_sc_deinit_parse_dt();
+        dev_info.am_sc = NULL;
+    }
+
+    isp_power_down();
+
+    close_hw_io();
+
+    LOG(LOG_ERR, "Isp remove\n");
     return 0;
 }
 
@@ -674,16 +717,6 @@ static void __exit fw_module_exit( void )
 {
     LOG( LOG_ERR, "Juno isp fw_module_exit\n" );
 
-    if ( initialized == 1 ) {
-        isp_v4l2_destroy_instance(isp_pdev);
-        initialized = 0;
-    }
-
-#if V4L2_SOC_SUBDEV_ENABLE
-    v4l2_async_notifier_unregister( &g_subdevs.notifier );
-#endif
-    v4l2_device_unregister( &v4l2_dev );
-    close_hw_io();
     platform_driver_unregister( &isp_platform_driver );
 }
 

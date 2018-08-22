@@ -126,6 +126,51 @@ int am_mipi_parse_dt(struct device_node *node)
 	return 0;
 }
 
+void am_mipi_deinit_parse_dt(void)
+{
+	struct am_mipi *t_mipi = NULL;
+
+	t_mipi = g_mipi;
+
+	if (t_mipi == NULL) {
+		pr_err("Error input param\n");
+		return;
+	}
+
+	am_adap_deinit_parse_dt();
+
+	if (t_mipi->csi1_host != NULL) {
+		iounmap(t_mipi->csi1_host);
+		t_mipi->csi1_host = NULL;
+	}
+
+	if (t_mipi->csi0_host != NULL) {
+		iounmap(t_mipi->csi0_host);
+		t_mipi->csi0_host = NULL;
+	}
+
+	if (t_mipi->aphy != NULL) {
+		iounmap(t_mipi->aphy);
+		t_mipi->aphy = NULL;
+	}
+
+	if (t_mipi->csi2_phy1 != NULL) {
+		iounmap(t_mipi->csi2_phy1);
+		t_mipi->csi2_phy1 = NULL;
+	}
+
+	if (t_mipi->csi2_phy0 != NULL) {
+		iounmap(t_mipi->csi2_phy0);
+		t_mipi->csi2_phy0 = NULL;
+	}
+
+	kfree(t_mipi);
+	t_mipi = NULL;
+	g_mipi = NULL;
+
+	pr_info("Success deinit parse mipi module\n");
+}
+
 /*
  *	=======================MIPI PHY INTERFACE====================
  */

@@ -123,6 +123,7 @@ struct am_sc {
 };
 
 extern int am_sc_parse_dt(struct device_node *node);
+extern void am_sc_deinit_parse_dt(void);
 extern void am_sc_api_dma_buffer(tframe_t * data, unsigned int index);
 extern uint32_t am_sc_get_width(void);
 extern void am_sc_set_width(uint32_t src_w, uint32_t out_w);

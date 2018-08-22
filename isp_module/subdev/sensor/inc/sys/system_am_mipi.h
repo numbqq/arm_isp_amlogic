@@ -98,6 +98,7 @@ typedef struct am_mipi_info {
 }am_mipi_info_t;
 
 int am_mipi_parse_dt(struct device_node *node);
+void am_mipi_deinit_parse_dt(void);
 int am_mipi_init(void *info);
 void am_mipi_set_lanes(int lanes);
 void am_mipi_deinit(void);

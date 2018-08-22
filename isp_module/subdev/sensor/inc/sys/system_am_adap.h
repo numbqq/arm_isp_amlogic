@@ -148,6 +148,7 @@ struct am_adap_info {
 
 
 int am_adap_parse_dt(struct device_node *node);
+void am_adap_deinit_parse_dt(void);
 int am_adap_init(void);
 int am_adap_start(int idx);
 int am_adap_reset(void);

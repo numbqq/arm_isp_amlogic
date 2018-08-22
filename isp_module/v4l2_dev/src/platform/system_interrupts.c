@@ -194,7 +194,7 @@ void system_interrupts_deinit( void )
         //interrupt_request_status = ISP_IRQ_STATUS_DISABLED;
         interrupt_request_status = ISP_IRQ_STATUS_DEINIT;
         // No dev_id for now, but will need this to be shared
-        free_irq( interrupt_line_ACAMERA_JUNO_IRQ, NULL );
+        free_irq( interrupt_line_ACAMERA_JUNO_IRQ, (void *)dev_id );
         LOG( LOG_INFO, "Interrupt %d released\n", interrupt_line_ACAMERA_JUNO_IRQ );
     }
     app_handler = NULL;

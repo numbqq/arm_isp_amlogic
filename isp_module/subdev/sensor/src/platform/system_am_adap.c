@@ -230,6 +230,30 @@ reg_error:
 	return -1;
 }
 
+void am_adap_deinit_parse_dt(void)
+{
+	struct am_adap *t_adap = NULL;
+
+	t_adap = g_adap;
+
+	if (t_adap == NULL || t_adap->p_dev == NULL ||
+				t_adap->base_addr == NULL) {
+		pr_err("Error input param\n");
+		return;
+	}
+
+	device_remove_file(&(t_adap->p_dev->dev), &dev_attr_adapt_frame);
+
+	iounmap(t_adap->base_addr);
+	t_adap->base_addr = NULL;
+
+	kfree(t_adap);
+	t_adap = NULL;
+	g_adap = NULL;
+
+	pr_info("Success deinit parse adap module\n");
+}
+
 static inline void update_wr_reg_bits(unsigned int reg,
 				adap_io_type_t io_type, unsigned int mask,
 				unsigned int val)
