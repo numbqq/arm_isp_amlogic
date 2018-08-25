@@ -1226,6 +1226,15 @@ int isp_v4l2_stream_try_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
     LOG( LOG_INFO, "[Stream#%d] try fmt type: %u, pixelformat: 0x%x, width: %u, height: %u.\n",
          pstream->stream_id, f->type, f->fmt.pix_mp.pixelformat, f->fmt.pix_mp.width, f->fmt.pix_mp.height );
 
+#if ISP_HAS_META_CB
+    if ((pstream->stream_id == V4L2_STREAM_TYPE_META)
+        && (f->fmt.pix_mp.pixelformat != ISP_V4L2_PIX_FMT_META)) {
+        LOG(LOG_ERR, "[Stream#%d] pixel format for meta port must be 0x%08x, not 0x%08x. Correct it!!",
+             pstream->stream_id, ISP_V4L2_PIX_FMT_META, f->fmt.pix_mp.pixelformat);
+        f->fmt.pix_mp.pixelformat = ISP_V4L2_PIX_FMT_META;
+    }
+#endif
+
     /* check format and modify */
     tfmt = isp_v4l2_stream_find_format( f->fmt.pix_mp.pixelformat );
     if ( !tfmt ) {
