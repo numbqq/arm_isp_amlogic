@@ -65,7 +65,7 @@ static void dump_gain(const char* name, int32_t gain_log2)
     uint16_t gain_dec = (uint16_t)(((APICAL_ABS(gain_log10)&((1<<LOG2_GAIN_SHIFT)-1))*1000)>>LOG2_GAIN_SHIFT);
     int32_t gain_ones = math_exp2(gain_log2, LOG2_GAIN_SHIFT, LOG2_GAIN_SHIFT); // 1% error
     uint16_t gain_ones_dec = (uint16_t)(((APICAL_ABS(gain_ones)&((1<<LOG2_GAIN_SHIFT)-1))*1000)>>LOG2_GAIN_SHIFT);
-    printf("%s gain %ld.%03d = %ld.%03d dB\n", name, gain_ones>>LOG2_GAIN_SHIFT, gain_ones_dec, gain_log10>>LOG2_GAIN_SHIFT, gain_dec);
+    printf("%s gain %d.%03d = %d.%03d dB\n", name, gain_ones>>LOG2_GAIN_SHIFT, gain_ones_dec, gain_log10>>LOG2_GAIN_SHIFT, gain_dec);
 }
 
 void metadata_dump(const firmware_metadata_t *md)
@@ -77,15 +77,15 @@ void metadata_dump(const firmware_metadata_t *md)
     printf("ISP mode: %s\n", modes[md->isp_mode]);
     printf("FPS: %d.%02d\n", md->fps>>8,((md->fps&0xFF)*100)>>8);
 
-    printf("Integration time: %ld lines %ld.%02ld ms\n", md->int_time, md->int_time_ms/100, md->int_time_ms%100);
-    printf("Integration time medium: %ld\n", md->int_time_medium);
-    printf("Integration time long: %ld\n", md->int_time_long);
+    printf("Integration time: %d lines %ld.%02ld ms\n", md->int_time, md->int_time_ms/100, md->int_time_ms%100);
+    printf("Integration time medium: %d\n", md->int_time_medium);
+    printf("Integration time long: %d\n", md->int_time_long);
     dump_gain("A",md->again);
     dump_gain("D",md->dgain);
     dump_gain("ISP",md->isp_dgain);
-    printf("Equivalent Exposure: %ld lines\n", math_exp2(md->exposure, LOG2_GAIN_SHIFT, 0));
-    printf("Exposure_log2: %ld\n", md->exposure);
-    printf("Gain_log2: %ld\n", md->gain_log2);
+    printf("Equivalent Exposure: %d lines\n", math_exp2(md->exposure, LOG2_GAIN_SHIFT, 0));
+    printf("Exposure_log2: %d\n", md->exposure);
+    printf("Gain_log2: %d\n", md->gain_log2);
 
     printf("Lens Position: %d\n", md->lens_pos);
 
@@ -149,7 +149,7 @@ static void format_gain(char* buf, const char* name, int32_t gain_log2)
     uint16_t gain_dec = (uint16_t)(((APICAL_ABS(gain_log10)&((1<<LOG2_GAIN_SHIFT)-1))*1000)>>LOG2_GAIN_SHIFT);
     int32_t gain_ones = math_exp2(gain_log2, LOG2_GAIN_SHIFT, LOG2_GAIN_SHIFT); // 1% error
     uint16_t gain_ones_dec = (uint16_t)(((APICAL_ABS(gain_ones)&((1<<LOG2_GAIN_SHIFT)-1))*1000)>>LOG2_GAIN_SHIFT);
-    sprintf(buf,"%s gain %ld.%03d = %ld.%03d dB\n",name,gain_ones>>LOG2_GAIN_SHIFT,gain_ones_dec,gain_log10>>LOG2_GAIN_SHIFT,gain_dec);
+    sprintf(buf,"%s gain %d.%03d = %d.%03d dB\n",name,gain_ones>>LOG2_GAIN_SHIFT,gain_ones_dec,gain_log10>>LOG2_GAIN_SHIFT,gain_dec);
 }
 
 int32_t fill_meta_buf(char *metadata_buf, firmware_metadata_t *md) {
@@ -165,17 +165,17 @@ int32_t fill_meta_buf(char *metadata_buf, firmware_metadata_t *md) {
     sprintf(buf, "ISP mode: %s\n", modes[md->isp_mode]);                    buf += strlen(buf);
     sprintf(buf, "FPS: %d.%02d\n", md->fps>>8, ((md->fps&0xFF)*100)>>8);    buf += strlen(buf);
 
-    sprintf(buf, "Integration time: %ld lines %ld.%02ld ms\n",
+    sprintf(buf, "Integration time: %d lines %ld.%02ld ms\n",
                 md->int_time, md->int_time_ms/100, md->int_time_ms%100);    buf += strlen(buf);
-    sprintf(buf, "Integration time medium: %ld\n", md->int_time_medium);    buf += strlen(buf);
-    sprintf(buf, "Integration time long: %ld\n", md->int_time_long);        buf += strlen(buf);
+    sprintf(buf, "Integration time medium: %d\n", md->int_time_medium);    buf += strlen(buf);
+    sprintf(buf, "Integration time long: %d\n", md->int_time_long);        buf += strlen(buf);
     format_gain(buf, "A",md->again);                                        buf += strlen(buf);
     format_gain(buf, "D",md->dgain);                                        buf += strlen(buf);
     format_gain(buf, "ISP",md->isp_dgain);                                  buf += strlen(buf);
-    sprintf(buf, "Equivalent Exposure: %ld lines\n",
+    sprintf(buf, "Equivalent Exposure: %d lines\n",
                 math_exp2(md->exposure, LOG2_GAIN_SHIFT, 0));               buf += strlen(buf);
-    sprintf(buf, "Exposure_log2: %ld\n", md->exposure);                     buf += strlen(buf);
-    sprintf(buf, "Gain_log2: %ld\n", md->gain_log2);                        buf += strlen(buf);
+    sprintf(buf, "Exposure_log2: %d\n", md->exposure);                     buf += strlen(buf);
+    sprintf(buf, "Gain_log2: %d\n", md->gain_log2);                        buf += strlen(buf);
 
     sprintf(buf, "Lens Position: %d\n", md->lens_pos);                      buf += strlen(buf);
 

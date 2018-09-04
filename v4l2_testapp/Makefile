@@ -5,7 +5,7 @@ CFLAGS=-I. -g -fPIE -Wall -pthread
 ODIR=obj
 OFILE=v4l2_test
 
-_OBJ = v4l2_test.o capture.o renderer.o isp_metadata.o
+_OBJ = v4l2_test.o capture.o renderer.o isp_metadata.o gdc.o
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c

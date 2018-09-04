@@ -41,6 +41,7 @@
 #include "renderer.h"
 #include "capture.h"
 #include "logs.h"
+#include "gdc_api.h"
 
 #define STATIC_STREAM_COUNT (ARM_V4L2_TEST_STREAM_MAX - ARM_V4L2_TEST_HAS_RAW)
 #define NB_BUFFER           6
@@ -72,6 +73,8 @@ static int fps_test_port = -1;
 static int open_port_cnt = 1;
 static int fb_buffer_cnt = 3;
 
+#define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
+
 /* config parameters */
 struct thread_param {
     /* video device info */
@@ -91,6 +94,7 @@ struct thread_param {
 
     /* for snapshot stream (non-zsl implementation) */
     int32_t                     capture_count;
+    int32_t                     gdc_ctrl;
 };
 
 pthread_t tid[STATIC_STREAM_COUNT];
@@ -165,6 +169,18 @@ static void do_sensor_wdr_mode(int videofd, int mode)
     }
 }
 
+static void do_fr_fps(int videofd, int fps)
+{
+    struct v4l2_control ctrl;
+
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_FR_FPS;
+    ctrl.value = fps;
+
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("Do sensor fps failed");
+    }
+}
+
 static void do_sensor_exposure(int videofd, int exp)
 {
     struct v4l2_control ctrl;
@@ -177,9 +193,8 @@ static void do_sensor_exposure(int videofd, int exp)
     }
 }
 
-void save_imgae(char *buff, unsigned int size, int flag)
+void save_imgae(char *buff, unsigned int size, int flag, int count)
 {
-    static int num;
     char name[60] = {'\0'};
     int fd = -1;
 
@@ -188,11 +203,10 @@ void save_imgae(char *buff, unsigned int size, int flag)
         return;
     }
 
-    num++;
-    if (num % 100 != 0)
+    if (count % 10 != 0)
         return;
 
-    sprintf(name, "/media/ca_%d_dump-%d.raw", flag, num);
+    sprintf(name, "/media/ca_%d_dump-%d.raw", flag, count);
 
     fd = open(name, O_RDWR | O_CREAT, 0666);
     if (fd < 0) {
@@ -201,6 +215,169 @@ void save_imgae(char *buff, unsigned int size, int flag)
     }
     write(fd, buff, size);
     close(fd);
+}
+
+int get_file_size(char *f_name)
+{
+    int f_size = -1;
+    FILE *fp = NULL;
+
+    if (f_name == NULL) {
+        printf("Error file name\n");
+        return f_size;
+    }
+
+    fp = fopen(f_name, "rb");
+    if (fp == NULL) {
+        printf("Error open file %s\n", f_name);
+        return f_size;
+    }
+
+    fseek(fp, 0, SEEK_END);
+
+    f_size = ftell(fp);
+
+    fclose(fp);
+
+    printf("%s: size %d\n", f_name, f_size);
+
+    return f_size;
+}
+
+int gdc_set_config_param(struct gdc_usr_ctx_s *ctx,
+                                    char *f_name, int len)
+{
+    FILE *fp = NULL;
+    int r_size = -1;
+
+    if (f_name == NULL || ctx == NULL || ctx->c_buff == NULL) {
+        printf("Error input param\n");
+        return r_size;
+    }
+
+    fp = fopen(f_name, "rb");
+    if (fp == NULL) {
+        printf("Error open file %s\n", f_name);
+        return -1;
+    }
+
+    r_size = fread(ctx->c_buff, len, 1, fp);
+    if (r_size <= 0) {
+        printf("Failed to read file %s\n", f_name);
+    }
+
+    fclose(fp);
+
+    return r_size;
+}
+
+int gdc_init_cfg(struct gdc_usr_ctx_s *ctx, struct thread_param *tparm, char *f_name)
+{
+    struct gdc_settings *gdc_gs = NULL;
+    int ret = -1;
+    uint32_t format = 0;
+    uint32_t i_width = 0;
+    uint32_t i_height = 0;
+    uint32_t o_width = 0;
+    uint32_t o_height = 0;
+    uint32_t i_y_stride = 0;
+    uint32_t i_c_stride = 0;
+    uint32_t o_y_stride = 0;
+    uint32_t o_c_stride = 0;
+    uint32_t i_len = 0;
+    uint32_t o_len = 0;
+    uint32_t c_len = 0;
+
+    if (ctx == NULL || tparm == NULL || f_name == NULL) {
+        printf("Error invalid input param\n");
+        return ret;
+    }
+
+    memset(ctx, 0, sizeof(*ctx));
+
+    i_width = tparm->width;
+    i_height = tparm->height;
+    o_width = tparm->width;
+    o_height = tparm->height;
+
+    if (tparm->pixformat == V4L2_PIX_FMT_NV12)
+        format = NV12;
+    else {
+        printf("Error format\n");
+        return ret;
+    }
+
+    i_y_stride = i_width;
+    o_y_stride = o_width;
+
+    if (format == NV12) {
+        i_c_stride = i_width;
+        o_c_stride = o_width;
+    } else if (format == YV12) {
+        i_c_stride = i_width / 2;
+        o_c_stride = o_width / 2;
+    } else {
+        printf("Error unknow format\n");
+        return ret;
+    }
+
+    gdc_gs = &ctx->gs;
+
+    gdc_gs->base_gdc = 0;
+
+    gdc_gs->gdc_config.input_width = i_width;
+    gdc_gs->gdc_config.input_height = i_height;
+    gdc_gs->gdc_config.input_y_stride = i_y_stride;
+    gdc_gs->gdc_config.input_c_stride = i_c_stride;
+    gdc_gs->gdc_config.output_width = o_width;
+    gdc_gs->gdc_config.output_height = o_height;
+    gdc_gs->gdc_config.output_y_stride = o_y_stride;
+    gdc_gs->gdc_config.output_c_stride = o_c_stride;
+    gdc_gs->gdc_config.format = format;
+    gdc_gs->magic = sizeof(*gdc_gs);
+
+    gdc_create_ctx(ctx);
+
+    c_len = get_file_size(f_name);
+    if (c_len <= 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error gdc config file size\n");
+        return ret;
+    }
+
+    ret = gdc_alloc_dma_buffer(ctx, CONFIG_BUFF_TYPE, c_len);
+    if (ret < 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error alloc gdc cfg buff\n");
+        return ret;
+    }
+
+    ret = gdc_set_config_param(ctx, f_name, c_len);
+    if (ret < 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error cfg gdc param buff\n");
+        return ret;
+    }
+
+    gdc_gs->gdc_config.config_size = c_len / 4;
+
+    i_len = i_y_stride * i_height * 2;
+    ret = gdc_alloc_dma_buffer(ctx, INPUT_BUFF_TYPE, i_len);
+    if (ret < 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error alloc gdc input buff\n");
+        return ret;
+    }
+
+    o_len = o_y_stride * o_height * 2;
+    ret = gdc_alloc_dma_buffer(ctx, OUTPUT_BUFF_TYPE, o_len);
+    if (ret < 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error alloc gdc input buff\n");
+        return ret;
+    }
+
+    return ret;
 }
 
 /**********
@@ -231,6 +408,8 @@ void * video_thread(void *arg)
     unsigned char *displaybuf = NULL;
     uint64_t display_count = 0;
     int64_t start, end;
+    struct gdc_usr_ctx_s gdc_ctx;
+    int gdc_ret = -1;
     /**************************************************
      * find thread id
      *************************************************/
@@ -421,6 +600,13 @@ void * video_thread(void *arg)
     }
     DBG("[T#%d] Queue buf done.\n", stream_type);
 
+    if (stream_type == ARM_V4L2_TEST_STREAM_DS1 && tparm->gdc_ctrl == 1) {
+        gdc_ret = gdc_init_cfg(&gdc_ctx, tparm, GDC_CFG_FILE_NAME);
+        if (gdc_ret < 0)
+            ERR("Failed to init gdc cfg\n");
+    }
+
+
     /**************************************************
      * V4L2 stream on, get buffers
      *************************************************/
@@ -554,11 +740,21 @@ void * video_thread(void *arg)
         src.fmt = v4l2_fmt.fmt.pix.pixelformat;
 
         if (src.fmt == V4L2_PIX_FMT_NV12) {
-            memcpy(displaybuf, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
-            memcpy(displaybuf + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
-                v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
+                if (stream_type == ARM_V4L2_TEST_STREAM_DS1 && tparm->gdc_ctrl == 1) {
+                        if (gdc_ret >= 0) {
+                                memcpy(gdc_ctx.i_buff, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
+                                memcpy(gdc_ctx.i_buff + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
+                                                        v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
+                                gdc_process(&gdc_ctx);
+                                save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type, tparm->capture_count);
+                        }
+                } else {
+                        memcpy(displaybuf, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
+                        memcpy(displaybuf + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
+                                                v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
+                }
         } else {
-            memcpy(displaybuf, src.ptr, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
+                memcpy(displaybuf, src.ptr, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
         }
 
         rc = ioctl (videofd, VIDIOC_QBUF, &v4l2_buf);
@@ -616,6 +812,9 @@ void * video_thread(void *arg)
     }
 
 fatal:
+    if (stream_type == ARM_V4L2_TEST_STREAM_DS1 && tparm->gdc_ctrl == 1)
+        gdc_destroy_ctx(&gdc_ctx);
+
     close(videofd);
 
     MSG("thread %d terminated ...\n", stream_type);
@@ -772,6 +971,7 @@ int main(int argc, char *argv[])
     int rc = 0;
     int i;
     int command = -1;
+    int ds_gdc_ctrl = 0;
 
     if (argc < 25) {
         printf("v4l test API\n");
@@ -793,13 +993,14 @@ int main(int argc, char *argv[])
         printf("    n : ds1 & ds2 frame count \n");
         printf("    t : run the port count, default is 1\n");
         printf("    x : fps print port. default: -1, no print. 0:  fr, 1: meta, 2: ds1, 3: ds2\n");
+        printf("    g : enable or disable gdc module: 0: disable, 1: enable\n");
         return -1;
     }
 
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -848,6 +1049,9 @@ int main(int argc, char *argv[])
                 break;
             case 'x':
                 fps_test_port = atoi(optarg);
+                break;
+            case 'g':
+                ds_gdc_ctrl = atoi(optarg);
                 break;
             case '?':
                 usage(argv[0]);
@@ -933,6 +1137,7 @@ int main(int argc, char *argv[])
             .pixformat  = pixel_format,
             .wdr_mode	= 0,
             .exposure	= 1,
+            .gdc_ctrl = 0,
 
             .capture_count = fr_num,
         },
@@ -948,6 +1153,7 @@ int main(int argc, char *argv[])
             .pixformat  = ISP_V4L2_PIX_FMT_META,
             .wdr_mode	= 0,
             .exposure	= 1,
+            .gdc_ctrl = 0,
 
             .capture_count = -1,
         },
@@ -963,6 +1169,7 @@ int main(int argc, char *argv[])
             .pixformat  = V4L2_PIX_FMT_RGB24,
             .wdr_mode	= 0,
             .exposure	= 1,
+            .gdc_ctrl = ds_gdc_ctrl,
 
             .capture_count = ds_num,
         },
@@ -977,6 +1184,7 @@ int main(int argc, char *argv[])
             .pixformat  = V4L2_PIX_FMT_RGB24,
             .wdr_mode	= 0,
             .exposure	= 1,
+            .gdc_ctrl = 0,
 
             .capture_count = ds_num,
         },
