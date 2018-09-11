@@ -61,7 +61,7 @@ typedef struct isp_fw_frame {
     int state;
     uint32_t addr[VIDEO_MAX_PLANES]; //multiplanar addresses
     metadata_t meta;
-    tframe_t *tframe;
+    tframe_t tframe;
 } isp_v4l2_frame_t;
 
 /**

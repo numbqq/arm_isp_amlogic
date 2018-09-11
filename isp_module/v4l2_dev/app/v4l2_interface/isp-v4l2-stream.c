@@ -409,10 +409,9 @@ void callback_raw( uint32_t ctx_num, aframe_t *aframe, const metadata_t *metadat
         /* save current frame  */
 
         for ( i = 0; i < exposures_num; i++ ) {
-
-            aframe[i].status = dma_buf_purge;
             frame_mgr->frame_buffer.addr[i] = aframe[i].address;
             LOG( LOG_INFO, "[Stream#2] v4l2 addresses:0x%x", aframe[i].address );
+            aframe[i].status = dma_buf_purge;
         }
         if ( pstream->stream_common->sensor_info.preset[pstream->stream_common->sensor_info.preset_cur].exposures[pstream->stream_common->sensor_info.preset[pstream->stream_common->sensor_info.preset_cur].fps_cur] > exposures_num ) {
             LOG( LOG_CRIT, "V4L2 Raw exposures expecting %d got %d.", pstream->stream_common->sensor_info.preset[pstream->stream_common->sensor_info.preset_cur].exposures[pstream->stream_common->sensor_info.preset[pstream->stream_common->sensor_info.preset_cur].fps_cur], exposures_num );
@@ -420,7 +419,7 @@ void callback_raw( uint32_t ctx_num, aframe_t *aframe, const metadata_t *metadat
         frame_mgr->frame_buffer.meta = *metadata;
         frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
 
-        frame_mgr->frame_buffer.tframe = (tframe_t *)aframe;
+        frame_mgr->frame_buffer.tframe.primary = *aframe;
 
         /* wake up thread */
         wake_up = 1;
@@ -484,16 +483,16 @@ void callback_fr( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadata
 
     spin_lock_irqsave( &frame_mgr->frame_slock, flags );
     if ( ISP_FW_FRAME_BUF_INVALID == frame_mgr->frame_buffer.state ) {
-        /* lock buffer from firmware */
-        tframe->primary.status = dma_buf_purge;
-        tframe->secondary.status = dma_buf_purge;
         /* save current frame  */
         //only 2 planes are possible
         frame_mgr->frame_buffer.addr[0] = tframe->primary.address;
         frame_mgr->frame_buffer.addr[1] = tframe->secondary.address;
         frame_mgr->frame_buffer.meta = *metadata;
         frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
-        frame_mgr->frame_buffer.tframe = tframe;
+        frame_mgr->frame_buffer.tframe = *tframe;
+        /* lock buffer from firmware */
+        tframe->primary.status = dma_buf_purge;
+        tframe->secondary.status = dma_buf_purge;
 
         /* wake up thread */
         wake_up = 1;
@@ -553,16 +552,17 @@ void callback_ds1( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadat
 
     spin_lock_irqsave( &frame_mgr->frame_slock, flags );
     if ( ISP_FW_FRAME_BUF_INVALID == frame_mgr->frame_buffer.state ) {
-        /* lock buffer from firmware */
-        tframe->primary.status = dma_buf_purge;
-        tframe->secondary.status = dma_buf_purge;
         /* save current frame  */
         //only 2 planes are possible
         frame_mgr->frame_buffer.addr[0] = tframe->primary.address;
         frame_mgr->frame_buffer.addr[1] = tframe->secondary.address;
         frame_mgr->frame_buffer.meta = *metadata;
         frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
-        frame_mgr->frame_buffer.tframe = tframe;
+        frame_mgr->frame_buffer.tframe = *tframe;
+
+        /* lock buffer from firmware */
+        tframe->primary.status = dma_buf_purge;
+        tframe->secondary.status = dma_buf_purge;
 
         /* wake up thread */
         wake_up = 1;
@@ -624,16 +624,17 @@ void callback_ds2( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadat
 
 		spin_lock_irqsave( &frame_mgr->frame_slock, flags );
 		if ( ISP_FW_FRAME_BUF_INVALID == frame_mgr->frame_buffer.state ) {
-			/* lock buffer from firmware */
-			tframe->primary.status = dma_buf_purge;
-			tframe->secondary.status = dma_buf_purge;
 			/* save current frame  */
 			//only 2 planes are possible
 			frame_mgr->frame_buffer.addr[0] = tframe->primary.address;
 			frame_mgr->frame_buffer.addr[1] = tframe->secondary.address;
 			frame_mgr->frame_buffer.meta = *metadata;
 			frame_mgr->frame_buffer.state = ISP_FW_FRAME_BUF_VALID;
-			frame_mgr->frame_buffer.tframe = tframe;
+			frame_mgr->frame_buffer.tframe = *tframe;
+
+			/* lock buffer from firmware */
+			tframe->primary.status = dma_buf_purge;
+			tframe->secondary.status = dma_buf_purge;
 
 			/* wake up thread */
 			wake_up = 1;
@@ -860,7 +861,7 @@ static int isp_v4l2_stream_copy_thread( void *data )
     unsigned long flags;
 
     metadata_t meta;
-    tframe_t *tframe = NULL;
+    tframe_t tframe;
     unsigned int idx_tmp = 0;
     isp_v4l2_buffer_t *pbuf = NULL;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
@@ -911,7 +912,8 @@ static int isp_v4l2_stream_copy_thread( void *data )
         /* try to get an active buffer from vb2 queue  */
         pbuf = NULL;
         spin_lock( &pstream->slock );
-        t_list = (frame_mgr->frame_buffer.tframe)->list;
+        t_list = tframe.list;
+
 
         list_for_each_entry(pbuf, &pstream->stream_buffer_list, list) {
             s_list = (void *)&pbuf->list;
@@ -923,7 +925,7 @@ static int isp_v4l2_stream_copy_thread( void *data )
         }
 
         if ((s_list != t_list) || (t_list == NULL) || (s_list == NULL)) {
-            LOG(LOG_ERR, "Failed to find vb2 buffer on stream buffer list\n");
+            LOG(LOG_ERR, "[Stream#%d] Failed to find vb2 buffer on stream buffer list, s_list:%p, t_list:%p", pstream->stream_id, s_list, t_list);
             spin_unlock( &pstream->slock );
             continue;
         }
