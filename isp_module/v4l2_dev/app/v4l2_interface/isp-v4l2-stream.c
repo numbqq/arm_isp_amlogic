@@ -929,6 +929,43 @@ static int isp_v4l2_stream_copy_thread( void *data )
         if ((s_list != t_list) || (t_list == NULL) || (s_list == NULL)) {
             LOG(LOG_ERR, "[Stream#%d] Failed to find vb2 buffer on stream buffer list, s_list:%p, t_list:%p", pstream->stream_id, s_list, t_list);
             spin_unlock( &pstream->slock );
+#if V4L2_FRAME_ID_SYNC
+            {
+                unsigned long sflags;
+
+                spin_lock_irqsave( &sync_slock, sflags );
+#if ISP_HAS_RAW_CB
+                if ( pstream->stream_type == V4L2_STREAM_TYPE_RAW ) {
+                    LOG( LOG_DEBUG, "[Stream#%d] releasing RAW sync flag", pstream->stream_id );
+                    sync_flag &= ~SYNC_FLAG_RAW;
+                } else
+#endif
+#if ISP_HAS_DS1
+                if ( pstream->stream_type == V4L2_STREAM_TYPE_DS1 ) {
+                    LOG( LOG_DEBUG, "[Stream#%d] releasing DS1 sync flag", pstream->stream_id );
+                    sync_flag &= ~SYNC_FLAG_DS1;
+                } else
+#endif
+#if ISP_HAS_DS2
+                if ( pstream->stream_type == V4L2_STREAM_TYPE_DS2 ) {
+                    LOG( LOG_DEBUG, "[Stream#%d] releasing DS2 sync flag", pstream->stream_id );
+                    sync_flag &= ~SYNC_FLAG_DS2;
+                } else
+#endif
+#if ISP_HAS_META_CB
+                if (pstream->stream_type == V4L2_STREAM_TYPE_META) {
+                    LOG( LOG_DEBUG, "[Stream#%d] releasing Meta sync flag", pstream->stream_id );
+                    sync_flag &= ~SYNC_FLAG_META;
+                    sync_done_meta_cnt = 0;
+                } else
+#endif
+                if ( pstream->stream_type == V4L2_STREAM_TYPE_FR ) {
+                    LOG( LOG_DEBUG, "[Stream#%d] releasing FR  sync flag", pstream->stream_id );
+                    sync_flag &= ~SYNC_FLAG_FR;
+                }
+                spin_unlock_irqrestore( &sync_slock, sflags );
+            }
+#endif
             continue;
         }
         spin_unlock( &pstream->slock );
