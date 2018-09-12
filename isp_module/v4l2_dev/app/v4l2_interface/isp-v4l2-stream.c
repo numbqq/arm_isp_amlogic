@@ -291,7 +291,9 @@ void callback_meta( uint32_t ctx_num, const void *fw_metadata )
     }
     spin_unlock( &pstream->slock );
     if ( !pbuf ) {
+#if V4L2_FRAME_ID_SYNC
         LOG( LOG_ERR, "[Stream#%d] No active buffer in queue !", pstream->stream_id );
+#endif
         return;
     }
     if ( atomic_inc_and_test( &pstream->running ) ) {
