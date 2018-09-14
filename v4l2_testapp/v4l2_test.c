@@ -302,6 +302,8 @@ int gdc_init_cfg(struct gdc_usr_ctx_s *ctx, struct thread_param *tparm, char *f_
 
     if (tparm->pixformat == V4L2_PIX_FMT_NV12)
         format = NV12;
+    else if (tparm->pixformat == V4L2_PIX_FMT_GREY)
+        format = Y_GREY;
     else {
         printf("Error format\n");
         return ret;
@@ -316,6 +318,9 @@ int gdc_init_cfg(struct gdc_usr_ctx_s *ctx, struct thread_param *tparm, char *f_
     } else if (format == YV12) {
         i_c_stride = i_width / 2;
         o_c_stride = o_width / 2;
+    } else if (format == Y_GREY) {
+        i_c_stride = 0;
+        o_c_stride = 0;
     } else {
         printf("Error unknow format\n");
         return ret;

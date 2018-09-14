@@ -16,8 +16,19 @@
 #ifndef __GDC_API_H__
 #define __GDC_API_H__
 
-#define NV12 1
-#define YV12 2
+#define WORD_SIZE 16
+#define WORD_MASK (~(WORD_SIZE - 1))
+#define AXI_WORD_ALIGN(size) ((size + WORD_SIZE - 1) & WORD_MASK)
+
+enum {
+    NV12 = 1,
+    YV12,
+    Y_GREY,
+    YUV444_P,
+    RGB444_P,
+    FMT_MAX
+};
+
 
 typedef unsigned int uint32_t;
 
