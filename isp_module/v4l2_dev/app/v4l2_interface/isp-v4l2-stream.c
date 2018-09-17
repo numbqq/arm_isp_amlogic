@@ -178,6 +178,7 @@ static uint32_t sync_done_meta_cnt = 0;
 int sync_frame( int stream_type, uint32_t ctx_num, uint32_t fid, uint32_t flag )
 {
     unsigned long sflags;
+    int rc = -1;
 
     spin_lock_irqsave( &sync_slock, sflags );
     if ( sync_prev_ctx_id[stream_type] != ctx_num ) {
@@ -193,15 +194,26 @@ int sync_frame( int stream_type, uint32_t ctx_num, uint32_t fid, uint32_t flag )
             sync_highest_id = fid;
 
         if ( fid != sync_frame_id || sync_flag & flag ) {
+            if (fid != sync_frame_id)
+                rc = -2;
+            else
+                rc = -3;
+
 #if ISP_HAS_META_CB
             if ( stream_type == V4L2_STREAM_TYPE_META && fid > sync_frame_id ) {
                 sync_flag &= ~flag;
                 /* FIXME: check if need reset the sync_done_meta_cnt*/
                 sync_done_meta_cnt = 0;
+                if (!sync_flag) {
+                    sync_flag |= flag;
+                    sync_highest_id = fid;
+                    sync_frame_id = fid;
+                    rc = 0;
+                }
             }
 #endif
             spin_unlock_irqrestore( &sync_slock, sflags );
-            return -1;
+            return rc;
         }
         sync_flag |= flag;
 #if ISP_HAS_META_CB
@@ -224,7 +236,7 @@ int sync_frame( int stream_type, uint32_t ctx_num, uint32_t fid, uint32_t flag )
             LOG( LOG_DEBUG, "[Stream#%d] returning since new fid is not the highest, (id = %d, highest = %d) ",
                  stream_type, fid, sync_highest_id );
             spin_unlock_irqrestore( &sync_slock, sflags );
-            return -1;
+            return rc;
         }
     }
     spin_unlock_irqrestore( &sync_slock, sflags );
