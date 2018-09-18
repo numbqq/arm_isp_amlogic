@@ -200,11 +200,7 @@ uint8_t system_i2c_write( uint32_t bus, uint32_t phy_addr, uint8_t *data, uint32
 		pr_err("%s:Error input param\n", __func__);
 		return -EINVAL;
 	}
-/*
-	for (i = 0; i < size; i++) {
-		pr_err("%s:LIKE:i2c_buff[%d]:0x%02x\n", __func__, i, data[i]);
-	}
-*/
+
 	addr_type = g_sensor_ctrl->reg_addr_type;
 	data_type = g_sensor_ctrl->reg_data_type;
 
@@ -226,9 +222,12 @@ uint8_t system_i2c_write( uint32_t bus, uint32_t phy_addr, uint8_t *data, uint32
 			break;
 	}
 
-	if (rc < 0)
+	if (rc < 0) {
 		pr_err("%s:failed to write reg data: rc %d, saddr 0x%x\n", __func__,
 					rc, saddr);
+		return rc;
+	}
+
 	return I2C_OK;
 }
 
@@ -272,9 +271,6 @@ uint8_t system_i2c_read( uint32_t bus, uint32_t phy_addr, uint8_t *data, uint32_
 		if (rc == msg_count)
 			break;
 	}
-
-	//for (i = 0; i < size; i++)
-	//	pr_err("%s:LIKE:data[%d]:0x%02x\n", __func__, i, data[i]);
 
 	if (rc < 0) {
 		pr_err("%s:failed to read reg data: rc %d, saddr 0x%02x\n", __func__,

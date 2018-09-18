@@ -332,12 +332,30 @@ static void sensor_set_iface(sensor_mode_t *mode)
     am_adap_start(0);
 }
 
+static uint16_t sensor_get_id( void *ctx )
+{
+    sensor_context_t *p_ctx = ctx;
+    uint32_t sensor_id = 0;
+
+    sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x300a) << 16;
+    sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x300b) << 8;
+    sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x300c);
+
+    if (sensor_id != SENSOR_CHIP_ID) {
+        LOG(LOG_ERR, "%s: Failed to read sensor id\n", __func__);
+        return 0xFF;
+    }
+
+    return 0;
+}
+
 static void sensor_set_mode( void *ctx, uint8_t mode )
 {
     sensor_context_t *p_ctx = ctx;
     sensor_param_t *param = &p_ctx->param;
     acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
     uint8_t setting_num = 0;
+    uint16_t s_id = 0xff;
 
     sensor_hw_reset_enable();
     system_timer_usleep( 10000 );
@@ -345,6 +363,10 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     system_timer_usleep( 10000 );
 
     setting_num = param->modes_table[mode].num;
+
+    s_id = sensor_get_id(ctx);
+    if (s_id != 0)
+        return;
 
     switch ( param->modes_table[mode].wdr_mode ) {
     case WDR_MODE_LINEAR:
@@ -360,12 +382,9 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
         param->isp_exposure_channel_delay = 0;
 
         if ( param->modes_table[mode].exposures == 2 ) {
-
             sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, setting_num);
-            //sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_720P );
         } else {
 
-            //sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_720P );
         }
         p_ctx->s_fps = 50;
         break;
@@ -407,25 +426,6 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
 
     LOG( LOG_CRIT, "Mode %d, Setting num: %d, RES:%dx%d\n", mode, setting_num,
                 (int)param->active.width, (int)param->active.height );
-}
-
-static uint16_t sensor_get_id( void *ctx )
-{
-	sensor_context_t *p_ctx = ctx;
-	uint32_t sensor_id = 0;
-
-	sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x300a) << 16;
-	sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x300b) << 8;
-	sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x300c);
-
-	if (sensor_id != SENSOR_CHIP_ID) {
-		LOG(LOG_ERR, "%s: Failed to read sensor id\n", __func__);
-		return 0xFF;
-	}
-
-	LOG(LOG_ERR, "%s: Success Read sensor id 0x%x\n", __func__, sensor_id);
-
-    return 0;
 }
 
 static const sensor_param_t *sensor_get_parameters( void *ctx )
