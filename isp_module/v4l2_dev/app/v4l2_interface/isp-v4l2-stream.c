@@ -49,6 +49,7 @@
 
 #include "isp-v4l2-stream.h"
 
+#define CHECK_METADATA_ID 0
 
 #define ISP_FW_FRAME_BUF_INVALID 0 /* buffer data is invalid  */
 #define ISP_FW_FRAME_BUF_VALID 1   /* buffer data is valid  */
@@ -272,15 +273,21 @@ void callback_meta( uint32_t ctx_num, const void *fw_metadata )
 
     /* filter redundant frame id */
     frame_id = *(uint32_t *)fw_metadata;
+#if CHECK_METADATA_ID
     if ( pstream->last_frame_id == frame_id ) {
         LOG( LOG_ERR, "[Stream#%d] Redundant frame ID %d on ctx#%d", pstream->stream_id, frame_id, ctx_num );
         return;
     }
+#endif
     pstream->last_frame_id = frame_id;
+    LOG( LOG_INFO, "[Stream#%d] Meta Frame ID %d.", pstream->stream_id, frame_id );
 
 #if V4L2_FRAME_ID_SYNC
-    if ( sync_frame( pstream->stream_type, ctx_num, frame_id, SYNC_FLAG_META ) < 0 )
+    rc = sync_frame( pstream->stream_type, ctx_num, frame_id, SYNC_FLAG_META );
+    if ( rc  < 0 ) {
+        LOG( LOG_DEBUG, "sync_frame on ctx %d (errno = %d)", ctx_num, rc );
         return;
+    }
 #endif
 
     /* get buffer from vb2 queue  */
@@ -387,12 +394,14 @@ void callback_raw( uint32_t ctx_num, aframe_t *aframe, const metadata_t *metadat
         return;
     }
 
+#if CHECK_METADATA_ID
     /* filter redundant frame id */
     if ( pstream->last_frame_id == metadata->frame_id ) {
         LOG( LOG_ERR, "[Stream#%d] Redundant frame ID %d on ctx#%d", pstream->stream_id, metadata->frame_id, ctx_num );
         return;
     }
     pstream->last_frame_id = metadata->frame_id;
+#endif
 
 #if V4L2_FRAME_ID_SYNC
     if ( sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_RAW ) < 0 ) {
@@ -465,12 +474,14 @@ void callback_fr( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadata
         return;
     }
 
+#if CHECK_METADATA_ID
     /* filter redundant frame id */
     if ( pstream->last_frame_id == metadata->frame_id ) {
         LOG( LOG_ERR, "[Stream#%d] Redundant frame ID %d on ctx#%d", pstream->stream_id, metadata->frame_id, ctx_num );
         return;
     }
     pstream->last_frame_id = metadata->frame_id;
+#endif
 
 #if V4L2_FRAME_ID_SYNC
     rc = sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_FR );
@@ -537,16 +548,21 @@ void callback_ds1( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadat
         return;
     }
 
+#if CHECK_METADATA_ID
     /* filter redundant frame id */
     if ( pstream->last_frame_id == metadata->frame_id ) {
         LOG( LOG_ERR, "[Stream#%d] Redundant frame ID %d on ctx#%d", pstream->stream_id, metadata->frame_id, ctx_num );
         return;
     }
     pstream->last_frame_id = metadata->frame_id;
+#endif
 
 #if V4L2_FRAME_ID_SYNC
-    if ( sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_DS1 ) < 0 )
+    rc = sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_DS1 );
+    if ( rc  < 0 ) {
+        LOG( LOG_DEBUG, "sync_frame on ctx %d (errno = %d)", ctx_num, rc );
         return;
+    }
 #endif
 
     frame_mgr = &pstream->frame_mgr;
@@ -608,17 +624,21 @@ void callback_ds2( uint32_t ctx_num, tframe_t *tframe, const metadata_t *metadat
 			return;
 		}
 
+#if CHECK_METADATA_ID
 		/* filter redundant frame id */
 		if ( pstream->last_frame_id == metadata->frame_id ) {
 			LOG( LOG_ERR, "[Stream#%d] Redundant frame ID %d on ctx#%d", pstream->stream_id, metadata->frame_id, ctx_num );
 			//return;
 		}
 		pstream->last_frame_id = metadata->frame_id;
+#endif
+
 #if 0
 #if V4L2_FRAME_ID_SYNC
-		if ( sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_DS2 ) < 0 )
+		if ( sync_frame( pstream->stream_type, ctx_num, metadata->frame_id, SYNC_FLAG_DS2 ) < 0 ) {
 			LOG(LOG_ERR, "callback_ds2 sync frame failed");
 			return;
+		}
 #endif
 #endif
 		frame_mgr = &pstream->frame_mgr;

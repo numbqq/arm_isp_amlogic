@@ -99,7 +99,7 @@ uint32_t acamera_log2_int_to_fixed( const uint32_t val, const uint8_t out_precis
     a = ( pos <= 15 ) ? ( in << ( 15 - pos ) ) : ( in >> ( pos - 15 ) );
     for ( i = 0; i < precision; ++i ) {
         b = a * a;
-        if ( b & ( 1 << 31 ) ) {
+        if ( b & ( (uint32_t)1 << 31 ) ) {
             result = ( result << 1 ) + 1;
             a = b >> 16;
         } else {
@@ -128,7 +128,7 @@ static uint32_t log2_int_to_fixed_64( uint64_t val, uint8_t out_precision, uint8
     a = ( pos <= 15 ) ? ( in << ( 15 - pos ) ) : ( in >> ( pos - 15 ) );
     for ( i = 0; i < precision; ++i ) {
         b = a * a;
-        if ( b & ( 1 << 31 ) ) {
+        if ( b & ( (uint32_t)1 << 31 ) ) {
             result = ( result << 1 ) + 1;
             a = b >> 16;
         } else {
@@ -278,7 +278,7 @@ uint32_t acamera_math_log2(
     a = ( pos <= 15 ) ? ( in << ( 15 - pos ) ) : ( in >> ( pos - 15 ) );
     for ( i = 0; i < precision; ++i ) {
         b = a * a;
-        if ( b & ( 1 << 31 ) ) {
+        if ( b & ( (uint32_t)1 << 31 ) ) {
             result = ( result << 1 ) + 1;
             a = b >> 16;
         } else {

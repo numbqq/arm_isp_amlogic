@@ -1453,7 +1453,7 @@ int fw_intf_set_white_balance_auto( int val )
 
 int fw_intf_set_white_balance( int val )
 {
-    int mode;
+    int mode = 0;
 
     switch ( val ) {
 #ifdef AWB_MODE_ID

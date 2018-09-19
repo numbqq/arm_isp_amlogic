@@ -187,12 +187,15 @@ int cmos_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_t inpu
             break;
         default:
             rc = -2;
+            LOG( LOG_WARNING, "Not supported strategy preset: %d.", strategy );
             return NOT_SUPPORTED;
         }
+        break;
     }
 
     default:
         rc = -1;
+        LOG( LOG_WARNING, "Not supported cmd id: %d.", param_id );
         break;
     }
 
