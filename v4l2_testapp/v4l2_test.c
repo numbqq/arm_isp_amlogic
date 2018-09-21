@@ -95,6 +95,7 @@ struct thread_param {
     /* for snapshot stream (non-zsl implementation) */
     int32_t                     capture_count;
     int32_t                     gdc_ctrl;
+    int                         videofd;
 };
 
 pthread_t tid[STATIC_STREAM_COUNT];
@@ -190,6 +191,16 @@ static void do_sensor_exposure(int videofd, int exp)
 
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("Do sensor exposure failed\n");
+    }
+}
+
+static void set_manual_exposure(int videofd, int enable)
+{
+    struct v4l2_control ctrl;
+    ctrl.id = V4L2_CID_EXPOSURE_AUTO;
+    ctrl.value = enable;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("set_manual_exposure failed\n");
     }
 }
 
@@ -442,6 +453,8 @@ void * video_thread(void *arg)
         exit(1);
     }
     INFO("[T#%d] The %s device was opened successfully.\n", stream_type, tparm->devname);
+
+    tparm->videofd = videofd;
 
     /* check capability */
     memset (&v4l2_cap, 0, sizeof (struct v4l2_capability));
@@ -982,7 +995,7 @@ int main(int argc, char *argv[])
         printf("v4l test API\n");
         printf("usage:\n");
         printf(" example   : ./v4l2_test  -c 1 -p 0 -F 0 -f 0 -D 0 -R 1 -r 2 -d 2 -N 1000 -n 800 -w 0 -e 1 -b /dev/fb0 -v /dev/video0 \n");
-        printf("    c : command           : default 1\n");
+        printf("    c : command           : default 1, 7: set_manual_exposure(just enable manual exposure)\n");
         printf("    p : sensor_preset     : default 0 \n");
         printf("    F : fr_out_fmt        : 0: rgb24  1:nv12 2: raw16 \n");
         printf("    f : ds1_out_fmt       : 0: rgb24  1:nv12 \n");
@@ -1257,6 +1270,7 @@ int main(int argc, char *argv[])
         V4L2_TEST_MENU_DO_CAPTURE_DNG,
         V4L2_TEST_MENU_DO_AF_REFOCUS,
         V4L2_TEST_MENU_DUMP_LAST_CAPTURE,
+        V4L2_TEST_MENU_SET_MANUAL_EXP,
         V4L2_TEST_MENU_EXIT,
         V4L2_TEST_MENU_MAX
     };
@@ -1266,6 +1280,7 @@ int main(int argc, char *argv[])
 
     do {
         int menu;
+        int enable;
         if(command>=V4L2_TEST_MENU_PREVIEW_ON_OFF){
             menu=command;
         }else{
@@ -1277,6 +1292,7 @@ int main(int argc, char *argv[])
             MSG("%d) Do capture (DNG)\n", V4L2_TEST_MENU_DO_CAPTURE_DNG);
             MSG("%d) Do AF Refocus\n", V4L2_TEST_MENU_DO_AF_REFOCUS);
             MSG("%d) Dump last capture\n", V4L2_TEST_MENU_DUMP_LAST_CAPTURE);
+            MSG("%d) SET_MANUAL_EXP\n", V4L2_TEST_MENU_SET_MANUAL_EXP);
             MSG("%d) Exit\n", V4L2_TEST_MENU_EXIT);
             MSG("Choose menu > ");
             //fflush(stdout);
@@ -1344,6 +1360,10 @@ int main(int argc, char *argv[])
             do {
                 usleep(200000);
             } while(v4l2_test_thread_dump);
+            break;
+            case V4L2_TEST_MENU_SET_MANUAL_EXP:
+            enable = 1;
+            set_manual_exposure(tparam[0].videofd, enable);
             break;
         case V4L2_TEST_MENU_EXIT:
             v4l2_test_thread_exit = 1;
