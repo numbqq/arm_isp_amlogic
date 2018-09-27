@@ -158,6 +158,7 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
     case ISP_V4L2_CID_CUSTOM_SET_FR_FPS:
         LOG( LOG_INFO, "set fr fps: 0x%x.\n", ctrl->val );
         ret = fw_intf_set_custom_fr_fps(ctrl->val);
+        *(ctrl->p_new.p_s32) = 0;
         break;
     }
 
