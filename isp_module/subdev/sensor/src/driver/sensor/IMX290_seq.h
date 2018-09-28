@@ -430,6 +430,7 @@ static acam_reg_t linear_1080p_60fps_446Mbps_4lane_10bits[] = {
 
 static acam_reg_t dol_1080p_25fps_4lane_10bits[] = {
     {0x3000, 0x01, 0xff, 1}, /* standby */
+    {0xFFFF, 200},
     {0x3002, 0x00, 0xff, 1}, /* XTMSTA */
 
     {0x3005, 0x00, 0xff, 1},
@@ -558,10 +559,12 @@ static acam_reg_t dol_1080p_25fps_4lane_10bits[] = {
 
     {0xFFFF, 100},
     {0x3002, 0x00, 0xff, 1}, /* master mode start */
+    {0x0000, 0x0000, 0x0000, 0x0000},
 };
 
 static acam_reg_t dol_1080p_30fps_4lane_10bits[] = {
     {0x3000, 0x01, 0xff, 1}, /* standby */
+    {0xFFFF, 200},
     {0x3002, 0x00, 0xff, 1}, /* XTMSTA */
 
     {0x3005, 0x00, 0xff, 1},
@@ -691,6 +694,7 @@ static acam_reg_t dol_1080p_30fps_4lane_10bits[] = {
     {0xFFFF, 100},
 
     {0x3002, 0x00, 0xff, 1}, /* master mode start */
+    {0x0000, 0x0000, 0x0000, 0x0000},
 };
 
 static acam_reg_t settings_context_imx290[] = {

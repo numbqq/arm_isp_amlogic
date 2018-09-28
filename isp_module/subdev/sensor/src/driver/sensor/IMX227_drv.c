@@ -70,6 +70,7 @@ static sensor_mode_t supported_modes[] = {
         .lanes = 2,
         .num = 1,
         .bayer = BAYER_RGGB,
+        .dol_type = DOL_NON,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -82,6 +83,7 @@ static sensor_mode_t supported_modes[] = {
         .lanes = 2,
         .num = 5,
         .bayer = BAYER_RGGB,
+        .dol_type = DOL_NON,
     },
 };
 
@@ -279,7 +281,11 @@ static void sensor_set_iface(sensor_mode_t *mode)
     info.img.width = mode->resolution.width;
     info.img.height = mode->resolution.height;
     info.path = PATH0;
-    info.mode = DIR_MODE;
+    if (mode->wdr_mode == WDR_MODE_FS_LIN) {
+        info.mode = DOL_MODE;
+        info.type = mode->dol_type;
+    } else
+        info.mode = DIR_MODE;
     am_adap_set_info(&info);
     am_adap_init();
     am_adap_start(0);

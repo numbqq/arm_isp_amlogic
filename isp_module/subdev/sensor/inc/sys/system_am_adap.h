@@ -130,6 +130,12 @@ typedef enum {
 	AM_RAW14,
 } img_fmt_t;
 
+typedef enum {
+	DOL_NON = 0,
+	DOL_VC,
+	DOL_LINEINFO,
+} dol_type_t;
+
 struct am_adap {
 	struct device_node *of_node;
 	struct platform_device *p_dev;
@@ -144,6 +150,7 @@ struct am_adap_info {
 	adap_mode_t mode;
 	adap_img_t img;
 	img_fmt_t fmt;
+	dol_type_t type;
 };
 
 

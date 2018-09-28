@@ -62,6 +62,7 @@ static sensor_mode_t supported_modes[6] = {
         .lanes = 2,
         .num = 1,
         .bayer = BAYER_BGGR,
+        .dol_type = DOL_NON,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -74,6 +75,7 @@ static sensor_mode_t supported_modes[6] = {
         .lanes = 4,
         .num = 2,
         .bayer = BAYER_BGGR,
+        .dol_type = DOL_NON,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -86,6 +88,7 @@ static sensor_mode_t supported_modes[6] = {
         .lanes = 4,
         .num = 3,
         .bayer = BAYER_BGGR,
+        .dol_type = DOL_NON,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -98,6 +101,7 @@ static sensor_mode_t supported_modes[6] = {
         .lanes = 4,
         .num = 4,
         .bayer = BAYER_BGGR,
+        .dol_type = DOL_NON,
     },
     {
         .wdr_mode = WDR_MODE_LINEAR,
@@ -110,6 +114,7 @@ static sensor_mode_t supported_modes[6] = {
         .lanes = 4,
         .num = 5,
         .bayer = BAYER_BGGR,
+        .dol_type = DOL_NON,
     },
     {
         .wdr_mode = WDR_MODE_FS_LIN,
@@ -122,6 +127,7 @@ static sensor_mode_t supported_modes[6] = {
         .lanes = 4,
         .num = 6,
         .bayer = BAYER_BGGR,
+        .dol_type = DOL_VC,
     },
 };
 
@@ -325,9 +331,10 @@ static void sensor_set_iface(sensor_mode_t *mode)
     info.img.width = mode->resolution.width;
     info.img.height = mode->resolution.height;
     info.path = PATH0;
-    if (mode->wdr_mode == WDR_MODE_FS_LIN)
+    if (mode->wdr_mode == WDR_MODE_FS_LIN) {
         info.mode = DOL_MODE;
-    else
+        info.type = mode->dol_type;
+    } else
         info.mode = DIR_MODE;
     am_adap_set_info(&info);
     am_adap_init();

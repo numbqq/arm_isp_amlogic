@@ -53,6 +53,7 @@ typedef struct _sensor_mode_t {
     uint32_t bps;					//Bps of lane,unit is Mega
     uint8_t num;					//the setting idx in seq
     uint8_t bayer;					//the setting bayer pattern
+    uint8_t dol_type;			    //the DOL type
 } sensor_mode_t;
 
 typedef struct _sensor_name_t {

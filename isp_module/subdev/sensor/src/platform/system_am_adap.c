@@ -436,9 +436,9 @@ int am_adap_frontend_init(void)
 			mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f0001);//bit[0] 1:enable virtual channel 0
 	} else if (para.mode == DDR_MODE) {
 		if (para.path == PATH0)
-			mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f0011);
+			mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f001f);
 	} else if (para.mode == DOL_MODE) {
-		mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f10a3);
+		mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f10a1);
 	} else {
 		pr_err("%s, Not supported Mode.\n", __func__);
 	}
@@ -448,7 +448,23 @@ int am_adap_frontend_init(void)
 	mipi_adap_reg_wr(CSI2_Y_START_END_MEM, FRONTEND_IO, 0xffff0000);
 
 	if (para.mode == DOL_MODE) {
-		mipi_adap_reg_wr(CSI2_VC_MODE, FRONTEND_IO, 0x11220040);
+		if (para.type == DOL_VC) {
+			mipi_adap_reg_wr(CSI2_VC_MODE, FRONTEND_IO, 0x11220040);
+		} else if (para.type == DOL_LINEINFO) {
+			mipi_adap_reg_wr(CSI2_VC_MODE, FRONTEND_IO, 0x11110052);
+			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_MASK_L, FRONTEND_IO, 0x7f7f7f7f);
+			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_MASK_H, FRONTEND_IO, 0xffffff00);
+			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_TO_VC_L, FRONTEND_IO, 0x80808080);
+			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_TO_VC_H, FRONTEND_IO, 0x55);
+			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_TO_IGNORE_L, FRONTEND_IO, 0x80808080);
+			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_TO_IGNORE_H, FRONTEND_IO, 0x0);
+			mipi_adap_reg_wr(CSI2_X_START_END_MEM, FRONTEND_IO, 0x078b000c);
+			mipi_adap_reg_wr(CSI2_Y_START_END_MEM, FRONTEND_IO, 0x044c0015);
+			mipi_adap_reg_wr(CSI2_X_START_END_ISP, FRONTEND_IO, 0x078b000c);
+			mipi_adap_reg_wr(CSI2_Y_START_END_ISP, FRONTEND_IO, 0x044c0015);
+		} else {
+			pr_err("Not support DOL type\n");
+		}
 	}
 
 	if (para.mode == DDR_MODE) {

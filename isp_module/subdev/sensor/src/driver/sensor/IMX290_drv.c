@@ -53,20 +53,8 @@ static sensor_mode_t supported_modes[] = {
         .lanes = 4,
         .bps = 446,
         .bayer = BAYER_RGGB,
+        .dol_type = DOL_NON,
         .num = 0,
-    },
-    {
-        .wdr_mode = WDR_MODE_FS_LIN, // 8 Lanes
-        .fps = 30 * 256,
-#if FS_LIN_1080P
-        .resolution.width = 1920,
-        .resolution.height = 1080,
-#else
-        .resolution.width = 1280,
-        .resolution.height = 720,
-#endif
-        .bits = 10,
-        .exposures = 3,
     },
     {
         .wdr_mode = WDR_MODE_FS_LIN, // 8 Lanes
@@ -80,6 +68,29 @@ static sensor_mode_t supported_modes[] = {
 #endif
         .bits = 10,
         .exposures = 3,
+        .lanes = 4,
+        .bps = 446,
+        .bayer = BAYER_RGGB,
+        .dol_type = DOL_NON,
+        .num = 1,
+    },
+    {
+        .wdr_mode = WDR_MODE_FS_LIN, // 8 Lanes
+        .fps = 25 * 256,
+#if FS_LIN_1080P
+        .resolution.width = 1920,
+        .resolution.height = 1080,
+#else
+        .resolution.width = 1280,
+        .resolution.height = 720,
+#endif
+        .bits = 10,
+        .exposures = 3,
+        .lanes = 4,
+        .bps = 446,
+        .bayer = BAYER_RGGB,
+        .dol_type = DOL_NON,
+        .num = 2,
     },
     {
         .wdr_mode = WDR_MODE_FS_LIN, // 8 Lanes 3DOL sequence used two exposures only
@@ -92,11 +103,16 @@ static sensor_mode_t supported_modes[] = {
         .resolution.height = 720,
 #endif
         .bits = 10,
-        .exposures = 2,
+        .exposures = 3,
+        .lanes = 4,
+        .bps = 446,
+        .bayer = BAYER_RGGB,
+        .dol_type = DOL_NON,
+        .num = 3,
     },
     {
         .wdr_mode = WDR_MODE_FS_LIN, // 8 Lanes
-        .fps = 25 * 256,
+        .fps = 30 * 256,
 #if FS_LIN_1080P
         .resolution.width = 1920,
         .resolution.height = 1080,
@@ -105,8 +121,14 @@ static sensor_mode_t supported_modes[] = {
         .resolution.height = 720,
 #endif
         .bits = 10,
-        .exposures = 4,
-    }};
+        .exposures = 2,
+        .lanes = 4,
+        .bps = 446,
+        .bayer = BAYER_RGGB,
+        .dol_type = DOL_LINEINFO,
+        .num = 4,
+    }
+};
 
 
 typedef struct _sensor_context_t {
@@ -199,6 +221,7 @@ static void sensor_alloc_integration_time( void *ctx, uint16_t *int_time_S, uint
         }
         break;
     case WDR_MODE_FS_LIN: // DOL3 Frames
+#ifdef FS_LIN_3DOL
         if ( *int_time_S < 2 ) *int_time_S = 2;
         if ( *int_time_S > p_ctx->max_S ) *int_time_S = p_ctx->max_S;
         if ( *int_time_L < 2 ) *int_time_L = 2;
@@ -218,6 +241,22 @@ static void sensor_alloc_integration_time( void *ctx, uint16_t *int_time_S, uint
             p_ctx->shs1 = p_ctx->rhs1 - *int_time_M - 1;
             p_ctx->shs2 = p_ctx->rhs2 - *int_time_S - 1;
         }
+#else  //default DOL2 Frames
+        if ( *int_time_S < 2 ) *int_time_S = 2;
+        if ( *int_time_S > p_ctx->max_S ) *int_time_S = p_ctx->max_S;
+        if ( *int_time_L < 2 ) *int_time_L = 2;
+        if ( *int_time_L > p_ctx->max_L ) *int_time_L = p_ctx->max_L;
+
+        if ( p_ctx->int_time_S != *int_time_S || p_ctx->int_time_M != *int_time_M || p_ctx->int_time_L != *int_time_L ) {
+            p_ctx->int_cnt = 2;
+
+            p_ctx->int_time_S = *int_time_S;
+            p_ctx->int_time_L = *int_time_L;
+
+            p_ctx->shs2 = p_ctx->frame - *int_time_L - 1;
+            p_ctx->shs1 = p_ctx->rhs2 - *int_time_S - 1;
+        }
+#endif
         break;
     }
 }
@@ -248,10 +287,11 @@ static void sensor_update( void *ctx )
             case WDR_MODE_FS_LIN:
                 p_ctx->shs2_old = p_ctx->shs2;
                 p_ctx->shs1_old = p_ctx->shs1;
+#ifdef FS_LIN_3DOL
                 // SHS3
                 acamera_sbus_write_u8( p_sbus, 0x3029, ( p_ctx->shs3 >> 8 ) & 0xFF );
                 acamera_sbus_write_u8( p_sbus, 0x3028, ( p_ctx->shs3 >> 0 ) & 0xFF );
-
+#endif
                 // SHS1
                 acamera_sbus_write_u8( p_sbus, 0x3021, ( p_ctx->shs1_old >> 8 ) & 0xFF );
                 acamera_sbus_write_u8( p_sbus, 0x3020, ( p_ctx->shs1_old >> 0 ) & 0xFF );
@@ -324,7 +364,11 @@ static void sensor_set_iface(sensor_mode_t *mode)
     info.img.width = mode->resolution.width;
     info.img.height = mode->resolution.height;
     info.path = PATH0;
-    info.mode = DIR_MODE;
+    if (mode->wdr_mode == WDR_MODE_FS_LIN) {
+        info.mode = DOL_MODE;
+        info.type = mode->dol_type;
+    } else
+        info.mode = DIR_MODE;
     am_adap_set_info(&info);
     am_adap_init();
     am_adap_start(0);
@@ -366,7 +410,7 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
         if ( param->modes_table[mode].exposures == 2 ) {
 //sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_1080P_2DOL );
 #if FS_LIN_1080P
-            sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_1080P );
+            sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, setting_num);
 #else
             sensor_load_sequence( p_sbus, p_ctx->seq_width, p_sensor_data, SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_720P );
 #endif
@@ -389,6 +433,9 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
         acamera_sbus_write_u8( p_sbus, 0x3019, 0x05 );
         p_ctx->s_fps = 25;
         p_ctx->vmax = 1350;
+    } else if ((param->modes_table[mode].exposures == 2) && (param->modes_table[mode].fps == 30 * 256)) {
+        p_ctx->s_fps = 30;
+        p_ctx->vmax = 1220;
     } else {
         //p_ctx->vmax = ((uint32_t)acamera_sbus_read_u8(p_sbus,0x8219)<<8)|acamera_sbus_read_u8(p_sbus,0x8218);
         p_ctx->vmax = 1125;
@@ -429,11 +476,13 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
 
     // Enable syncs on XHS and XVS pins
     //acamera_sbus_write_u8(p_sbus, 0x024b, 0x0A);
+    if (param->modes_table[mode].exposures == 1) {
+        acamera_sbus_write_u8( p_sbus, 0x3031, ( p_ctx->rhs1 >> 8 ) & 0xFF );
+        acamera_sbus_write_u8( p_sbus, 0x3030, ( p_ctx->rhs1 >> 0 ) & 0xFF );
+        acamera_sbus_write_u8( p_sbus, 0x3035, ( p_ctx->rhs2 >> 8 ) & 0xFF );
+        acamera_sbus_write_u8( p_sbus, 0x3034, ( p_ctx->rhs2 >> 0 ) & 0xFF );
+    }
 
-    acamera_sbus_write_u8( p_sbus, 0x3031, ( p_ctx->rhs1 >> 8 ) & 0xFF );
-    acamera_sbus_write_u8( p_sbus, 0x3030, ( p_ctx->rhs1 >> 0 ) & 0xFF );
-    acamera_sbus_write_u8( p_sbus, 0x3035, ( p_ctx->rhs2 >> 8 ) & 0xFF );
-    acamera_sbus_write_u8( p_sbus, 0x3034, ( p_ctx->rhs2 >> 0 ) & 0xFF );
     param->total.width = ( (uint16_t)acamera_sbus_read_u8( p_sbus, 0x301D ) << 8 ) | acamera_sbus_read_u8( p_sbus, 0x301C );
     param->lines_per_second = p_ctx->pixel_clock / param->total.width;
     param->total.height = (uint16_t)p_ctx->vmax;
