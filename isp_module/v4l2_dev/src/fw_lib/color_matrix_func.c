@@ -158,13 +158,22 @@ void color_matrix_shading_mesh_reload( color_matrix_fsm_ptr_t p_fsm )
 
     uint8_t mirror = !acamera_isp_top_bypass_mirror_read( p_fsm->cmn.isp_base );
 
-    //    temporary for mesh shading light switching
+
+    // assume that all mesh tables have identical size
+    uint32_t mesh_size = _GET_COLS( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_LS_A_R );
+
+
+    // determine the shading size. assume the tables have identical dimentions NxN
+    uint32_t dim = acamera_sqrt32(mesh_size);
+
+
+    //for mesh shading light switching
     acamera_isp_top_bypass_mesh_shading_write( p_fsm->cmn.isp_base, 0 );
     acamera_isp_mesh_shading_mesh_page_r_write( p_fsm->cmn.isp_base, 0x0 );
     acamera_isp_mesh_shading_mesh_page_g_write( p_fsm->cmn.isp_base, 0x1 );
     acamera_isp_mesh_shading_mesh_page_b_write( p_fsm->cmn.isp_base, 0x2 );
-    acamera_isp_mesh_shading_mesh_width_write( p_fsm->cmn.isp_base, 31 );
-    acamera_isp_mesh_shading_mesh_height_write( p_fsm->cmn.isp_base, 31 );
+    acamera_isp_mesh_shading_mesh_width_write( p_fsm->cmn.isp_base, dim-1 );
+    acamera_isp_mesh_shading_mesh_height_write( p_fsm->cmn.isp_base, dim-1 );
     acamera_isp_mesh_shading_mesh_scale_write( p_fsm->cmn.isp_base, 1 );
     acamera_isp_mesh_shading_mesh_alpha_mode_write( p_fsm->cmn.isp_base, 2 );
 
@@ -193,11 +202,13 @@ void color_matrix_shading_mesh_reload( color_matrix_fsm_ptr_t p_fsm )
 
     mesh_page[3][2] = _GET_UCHAR_PTR( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_SHADING_LS_D65_B );
     for ( i = 0; i < 3; ++i ) {
-        for ( j = 0; j < 32; ++j ) {
-            for ( k = 0; k < 32; ++k ) {
-                p = mirror ? ( 31 - k ) : k; // for mirror images shading must be mirrored
-
-                acamera_mesh_shading_mem_array_data_write( p_fsm->cmn.isp_base, i * 32 * 32 + j * 32 + p, (uint32_t)mesh_page[0][i][j * 32 + k] + ( (uint32_t)mesh_page[1][i][j * 32 + k] << 8 ) + ( (uint32_t)mesh_page[2][i][j * 32 + k] << 16 ) + ( (uint32_t)mesh_page[3][i][j * 32 + k] << 24 ) );
+        for ( j = 0; j < dim; ++j ) {
+            for ( k = 0; k < dim; ++k ) {
+                p = mirror ? ( dim - 1 - k ) : k; // for mirror images shading must be mirrored
+                acamera_mesh_shading_mem_array_data_write( p_fsm->cmn.isp_base, i * 32 * 32 + j * 32 + p,     ( (uint32_t)mesh_page[0][i][j * dim + k] << 0  ) +
+                                                                                                               ( (uint32_t)mesh_page[1][i][j * dim + k] << 8  ) +
+                                                                                                               ( (uint32_t)mesh_page[2][i][j * dim + k] << 16 ) +
+                                                                                                               ( (uint32_t)mesh_page[3][i][j * dim + k] << 24 ) );
             }
         }
     }
