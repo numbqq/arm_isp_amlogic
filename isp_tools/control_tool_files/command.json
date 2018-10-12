@@ -10,267 +10,259 @@
     "dynamic_calibrations": {
         "CALIBRATION_SCALER_H_FILTER": {
             "description": "Scaler H Filter", 
-            "value": 103
+            "value": 108
         }, 
         "CALIBRATION_AWB_ZONE_WGHT_VER": {
             "description": "AWB Zone weight vertical", 
-            "value": 96
+            "value": 101
         }, 
         "CALIBRATION_STITCHING_SVS_NP": {
             "description": "no description available", 
-            "value": 70
+            "value": 75
         }, 
         "CALIBRATION_AWB_BG_MAX_GAIN": {
             "description": "Maximum AWB bg gain according to total gain", 
-            "value": 58
+            "value": 63
         }, 
         "CALIBRATION_IRIDIX_STRENGTH_MAXIMUM": {
             "description": "The Maximum Strength of Iridix ", 
-            "value": 74
+            "value": 79
         }, 
         "CALIBRATION_SINTER_RADIAL_PARAMS": {
             "description": "The lookup table containing the values for Radial Sinter Parameters", 
-            "value": 57
+            "value": 62
         }, 
         "CALIBRATION_GAMMA_BE_1": {
             "description": "The lookup table for Pre-Compander calibrations ", 
-            "value": 100
+            "value": 105
         }, 
         "CALIBRATION_SHARPEN_FR": {
             "description": "The lookup table for Sharpen calibrations in Full Resolution ", 
-            "value": 97
+            "value": 102
         }, 
         "CALIBRATION_PF_RADIAL_PARAMS": {
             "description": "x center, y center, rm_off_centre_mult", 
-            "value": 55
+            "value": 60
         }, 
         "CALIBRATION_SINTER_STRENGTH_MC_CONTRAST": {
             "description": "Adjusts sinter global thresh according to contrast of scnene calculated in iridix8", 
-            "value": 105
+            "value": 110
         }, 
         "CALIBRATION_CCM_ONE_GAIN_THRESHOLD": {
             "description": "The threshold value of the Colour Correction Matrix", 
-            "value": 91
+            "value": 96
         }, 
         "CALIBRATION_SHARP_ALT_UD": {
             "description": "The lookup table for Un-Directional sharpening calibrations ", 
-            "value": 86
+            "value": 91
         }, 
         "CALIBRATION_MESH_SHADING_STRENGTH": {
             "description": "The lookup table for Mesh Shading Strength", 
-            "value": 89
+            "value": 94
         }, 
         "CALIBRATION_AF_LMS": {
             "description": "The values for the Auto Focus lens position         [0] - Down_FarEnd,         [1] - Hor_FarEnd,         [2] - Up_FarEnd,         [3] - Down_Infinity ,         [4] - Hor_Infinity,         [5] - Up_Infinity,         [6] - Down_Macro,         [7] - Hor_Macro,         [8] - Up_Macro,         [9] - Down_NearEnd,         [10] - Hor_NearEnd,         [11] - Up_NearEnd,         [12] - step_num,         [13] - skip_frames_init,         [14] - skip_frames_move,         [15] - dynamic_range_th,         [16] - spot_tolerance,         [17] - exit_th,         [18] - caf_trigger_th,         [19] - caf_stable_th         ", 
-            "value": 110
-        }, 
-        "CALIBRATION_DECOMPANDER1_MEM": {
-            "description": "The lookup table for Decompander1", 
-            "value": 116
+            "value": 115
         }, 
         "CALIBRATION_DP_SLOPE": {
             "description": "The value of the Defect Pixel Slope", 
-            "value": 63
+            "value": 68
         }, 
         "CALIBRATION_SHARPEN_DS1": {
             "description": "The lookup table for Sharpen calibrations in Downscale ", 
-            "value": 98
+            "value": 103
         }, 
         "CALIBRATION_GAMMA_BE_0": {
             "description": "The lookup table for Pre-Compander calibrations ", 
-            "value": 99
+            "value": 104
         }, 
         "CALIBRATION_SINTER_INTCONFIG": {
             "description": "Modulates intensity - raw blending for sinter noise reduction", 
-            "value": 84
+            "value": 89
         }, 
         "CALIBRATION_CNR_UV_DELTA12_SLOPE": {
             "description": "The lookup table containing values for the Colour Noise Reduction UV delta slope", 
-            "value": 107
+            "value": 112
         }, 
         "CALIBRATION_RGB2YUV_CONVERSION": {
             "description": "YUV conversion matrix and offset", 
-            "value": 92
+            "value": 97
         }, 
         "CALIBRATION_STITCHING_MS_MOV_MULT": {
             "description": "The gradient of the motion detection alpha ramp", 
-            "value": 67
+            "value": 72
         }, 
         "CALIBRATION_AWB_AVG_COEF": {
             "description": "The average coefficient value for Auto White Balance", 
-            "value": 72
+            "value": 77
         }, 
         "CALIBRATION_AWB_ZONE_WGHT_HOR": {
             "description": "AWB Zone weight horizontal", 
-            "value": 95
+            "value": 100
         }, 
         "CALIBRATION_IRIDIX_MIN_MAX_STR": {
             "description": "The minimum value of strength of Iridix to be applied, value taken from within the range of [0:255]", 
-            "value": 75
+            "value": 80
         }, 
         "CALIBRATION_SHARP_ALT_D": {
             "description": "The lookup table for Directional sharpening calibrations ", 
-            "value": 85
+            "value": 90
         }, 
         "CALIBRATION_IRIDIX_AVG_COEF": {
             "description": "The average coefficient value for Iridix", 
-            "value": 73
+            "value": 78
         }, 
         "CALIBRATION_STITCHING_MS_NP": {
             "description": "The value by which the noise profile is multiplied to yield the expected noise amplitude", 
-            "value": 68
+            "value": 73
         }, 
         "CALIBRATION_EVTOLUX_PROBABILITY_ENABLE": {
             "description": "The value to enable/ disable the use of lux probability in AWB calculations", 
-            "value": 71
+            "value": 76
         }, 
         "CALIBRATION_AE_CORRECTION": {
             "description": "Calibration values for the fine tuning parameter, which alters the strength of ae_comp ", 
-            "value": 78
+            "value": 83
         }, 
         "CALIBRATION_AE_ZONE_WGHT_VER": {
             "description": "AE Zone weight vertical", 
-            "value": 94
+            "value": 99
         }, 
         "CALIBRATION_STITCHING_SVS_MOV_MULT": {
             "description": "no description available", 
-            "value": 69
+            "value": 74
         }, 
         "CALIBRATION_SINTER_THRESH1": {
             "description": "The lookup table for Sinter Thresh scale 1 calibrations ", 
-            "value": 82
+            "value": 87
         }, 
         "CALIBRATION_AF_ZONE_WGHT_VER": {
             "description": "AF Zone weight vertical", 
-            "value": 112
+            "value": 117
         }, 
         "CALIBRATION_DP_THRESHOLD": {
             "description": "The value of the Defect Pixel Threshold", 
-            "value": 64
+            "value": 69
         }, 
         "CALIBRATION_SCALER_V_FILTER": {
             "description": "Scaler V Filter", 
-            "value": 104
+            "value": 109
         }, 
         "AWB_COLOUR_PREFERENCE": {
             "description": "Calibration values for auto white balance colour preference CCT", 
-            "value": 52
+            "value": 57
         }, 
         "CALIBRATION_EXPOSURE_RATIO_ADJUSTMENT": {
             "description": "Adjusts the amount of clipped pixles for long expusre", 
-            "value": 106
+            "value": 111
         }, 
         "CALIBRATION_SINTER_SAD": {
             "description": "Calibration value to balance the contrast between edge detail and smoothness of flat regions ", 
-            "value": 109
+            "value": 114
         }, 
         "CALIBRATION_IRIDIX_EV_LIM_NO_STR": {
             "description": "The EV maximum value, in terms of EV_log2", 
-            "value": 77
-        }, 
-        "CALIBRATION_DECOMPANDER0_MEM": {
-            "description": "The lookup table for Decompander0", 
-            "value": 115
+            "value": 82
         }, 
         "CALIBRATION_AE_CONTROL_HDR_TARGET": {
             "description": "AE HDR target control. This target is modulated by totoal gain  ", 
-            "value": 113
+            "value": 118
         }, 
         "CALIBRATION_DEMOSAIC_NP_OFFSET": {
             "description": "The lookup table for Demosaic NP Offset ", 
-            "value": 88
+            "value": 93
         }, 
         "CALIBRATION_PF_RADIAL_LUT": {
             "description": "Purple fringe radial weight", 
-            "value": 54
+            "value": 59
         }, 
         "CALIBRATION_TEMPER_STRENGTH": {
             "description": "The lookup table for Temper Strength", 
-            "value": 101
+            "value": 106
         }, 
         "CALIBRATION_NP_LUT_MEAN": {
             "description": "The lookup table containing values for Noise Profile calibrations", 
-            "value": 102
+            "value": 107
         }, 
         "CALIBRATION_STATUS_INFO": {
             "description": "firmware status information", 
-            "value": 61
+            "value": 66
         }, 
         "CALIBRATION_STITCHING_LM_NP": {
             "description": "The value by which the noise profile is multiplied by to yield the expected noise amplitude", 
-            "value": 66
+            "value": 71
         }, 
         "CALIBRATION_SHARP_ALT_DU": {
             "description": "The lookup table for Un-Directional sharpening calibrations ", 
-            "value": 87
+            "value": 92
         }, 
         "CALIBRATION_IRIDIX_EV_LIM_FULL_STR": {
             "description": "The EV minimum value, in terms of EV_log2", 
-            "value": 76
+            "value": 81
         }, 
         "CALIBRATION_SINTER_THRESH4": {
             "description": "The lookup table for Sinter Thresh scale 4 calibrations ", 
-            "value": 83
+            "value": 88
         }, 
         "CALIBRATION_AE_CONTROL": {
             "description": "AE control:          [0] - AE convergance         [1] - LDR AE target -> this should match the 18% grey of teh output gamma         [2] - AE tail weight         [3] - WDR mode only: Max percentage of clipped pixels for long exposure: WDR mode only: 256 = 100% clipped pixels         [4] - WDR mode only: Time filter for exposure ratio         [5] - control for clipping: bright percentage of pixels that should be below hi_target_prc         [6] - control for clipping: highlights percentage (hi_target_prc): target for tail of histogram         [7] - 1:0 enable | disable iridix global gain.      ", 
-            "value": 114
+            "value": 119
         }, 
         "CALIBRATION_IRIDIX8_STRENGTH_DK_ENH_CONTROL": {
             "description": "Iridix8 strength and dark enhancememt control:         [0] - dark_prc         [1] - bright_prc         [2] - min_dk: minimum dark enhancement         [3] - max_dk: maximum dark enhancement         [4] - pD_cut_min: minimum intensity cut for dark regions in which dk_enh will be applied          [5] - pD_cut_max: maximum intensity cut for dark regions in which dk_enh will be applied          [6] - dark contrast min         [7] - dark contrast max         [8] - min_str: iridix strength in percentage         [9] - max_str: iridix strength in percentage: 50 = 1x gain. 100 = 2x gain         [10] - dark_prc_gain_target: target in histogram (percentage) for dark_prc after iridix is applied         [11] - contrast_min: clip factor of strength for LDR scenes.          [12] - contrast_max: clip factor of strength for HDR scenes.          [13] - max iridix gain            [14] - print debug ", 
-            "value": 59
+            "value": 64
         }, 
         "CALIBRATION_FS_MC_OFF": {
             "description": "no description available", 
-            "value": 108
+            "value": 113
         }, 
         "CALIBRATION_SINTER_STRENGTH": {
             "description": "The lookup table for Sinter Strength calibrations ", 
-            "value": 80
+            "value": 85
         }, 
         "CALIBRATION_STITCHING_LM_MED_NOISE_INTENSITY": {
             "description": "Modulates motion intensity to be denoised. Only in 3:1 mode", 
-            "value": 51
+            "value": 56
         }, 
         "CALIBRATION_SINTER_STRENGTH1": {
             "description": "The lookup table for Sinter Strength1 calibrations ", 
-            "value": 81
+            "value": 86
         }, 
         "CALIBRATION_CMOS_CONTROL": {
             "description": "Parameters to control CMOS in manual mode", 
-            "value": 60
+            "value": 65
         }, 
         "CALIBRATION_SINTER_RADIAL_LUT": {
             "description": "The lookup table containing Radial Sinter values", 
-            "value": 56
+            "value": 61
         }, 
         "CALIBRATION_AE_ZONE_WGHT_HOR": {
             "description": "AE Zone weight horizontal", 
-            "value": 93
+            "value": 98
         }, 
         "CALIBRATION_AWB_MIX_LIGHT_PARAMETERS": {
             "description": "awb mix light param", 
-            "value": 53
+            "value": 58
         }, 
         "CALIBRATION_AUTO_LEVEL_CONTROL": {
             "description": "Addaptive gamma controls: hist_target dark_prc min_gain max_gain enable/disable", 
-            "value": 62
+            "value": 67
         }, 
         "CALIBRATION_SATURATION_STRENGTH": {
             "description": "The lookup table for Saturation Strength ", 
-            "value": 90
+            "value": 95
         }, 
         "CALIBRATION_STITCHING_LM_MOV_MULT": {
             "description": "The gradient of the motion detection alpha ramp", 
-            "value": 65
+            "value": 70
         }, 
         "CALIBRATION_AE_EXPOSURE_CORRECTION": {
             "description": "Calibration values for the fine tuning parameter, which sets the exposure value nodes", 
-            "value": 79
+            "value": 84
         }, 
         "CALIBRATION_AF_ZONE_WGHT_HOR": {
             "description": "AF Zone weight horizontal", 
-            "value": 111
+            "value": 116
         }
     }, 
     "errors": {
@@ -286,7 +278,7 @@
     }, 
     "selfcheck": {
         "FIRMWARE_ID": {
-            "value": "0xb425c73"
+            "value": "0xb5c6bd4"
         }
     }, 
     "static_calibrations": {
@@ -301,6 +293,10 @@
         "CALIBRATION_MESH_COLOR_TEMPERATURE": {
             "description": "WB Calibration values for colour temperature estimations", 
             "value": 5
+        }, 
+        "CALIBRATION_DECOMPANDER1_MEM": {
+            "description": "The lookup table for Decompander1", 
+            "value": 52
         }, 
         "CALIBRATION_RG_POS": {
             "description": "The Red-Green position values", 
@@ -341,6 +337,10 @@
         "CALIBRATION_LUT3D_MEM": {
             "description": "LUT3D memory", 
             "value": 50
+        }, 
+        "CALIBRATION_DECOMPANDER0_MEM": {
+            "description": "The lookup table for Decompander0", 
+            "value": 51
         }, 
         "CALIBRATION_MT_ABSOLUTE_LS_A_CCM": {
             "description": "Calibration values for Colour Correction Matrix under A lighting ", 
@@ -394,9 +394,17 @@
             "description": "Calibration values for the skin tone patches of the Colour Correction Matrix", 
             "value": 43
         }, 
+        "CALIBRATION_SHADING_RADIAL_G": {
+            "description": "The lookup table for Radial Shading G Channel", 
+            "value": 54
+        }, 
         "CALIBRATION_STATIC_WB": {
             "description": "The calibration values for static white", 
             "value": 20
+        }, 
+        "CALIBRATION_SHADING_RADIAL_B": {
+            "description": "The lookup table for Radial Shading B Channel", 
+            "value": 55
         }, 
         "CALIBRATION_IRIDIX_REC709TORGB": {
             "description": "The backward Iridix lookup table", 
@@ -429,6 +437,10 @@
         "CALIBRATION_LIGHT_SRC": {
             "description": "Calibration rg bg values for extra light sources. Note: CWF lighting should be set as the first entire", 
             "value": 0
+        }, 
+        "CALIBRATION_SHADING_RADIAL_R": {
+            "description": "The lookup table for Radial Shading R Channel", 
+            "value": 53
         }, 
         "CALIBRATION_SHADING_LS_TL84_R": {
             "description": "Shading value for red channel under TL84 lighting conditions", 
@@ -1034,6 +1046,64 @@
                     "value": 70, 
                     "description": "Change FR Base and plane select and matrix yuv fsm accordingly Values: {DMA_DISABLE} {RGB32} {A2R10G10B10} {RGB565} {RGB24} {GEN32} {RAW16} {RAW12} {AYUV} {Y410} {YUY2} {UYVY} {Y210} {NV12_YUV} {NV12_YVU} {YV12_YU} {YV12_YV}"
                 }, 
+                "DS1_FORMAT_BASE_PLANE_ID": {
+                    "dir": "SET/GET", 
+                    "options": {
+                        "DMA_DISABLE": {
+                            "value": 18
+                        }, 
+                        "RGB32": {
+                            "value": 19
+                        }, 
+                        "A2R10G10B10": {
+                            "value": 20
+                        }, 
+                        "RGB565": {
+                            "value": 21
+                        }, 
+                        "RGB24": {
+                            "value": 22
+                        }, 
+                        "GEN32": {
+                            "value": 23
+                        }, 
+                        "RAW16": {
+                            "value": 24
+                        }, 
+                        "RAW12": {
+                            "value": 25
+                        }, 
+                        "AYUV": {
+                            "value": 26
+                        }, 
+                        "Y410": {
+                            "value": 27
+                        }, 
+                        "YUY2": {
+                            "value": 28
+                        }, 
+                        "UYVY": {
+                            "value": 29
+                        }, 
+                        "Y210": {
+                            "value": 30
+                        }, 
+                        "NV12_YUV": {
+                            "value": 31
+                        }, 
+                        "NV12_YVU": {
+                            "value": 32
+                        }, 
+                        "YV12_YU": {
+                            "value": 33
+                        }, 
+                        "YV12_YV": {
+                            "value": 34
+                        }
+                    }, 
+                    "value": 71, 
+                    "description": "Change DS1 Base and plane select and matrix yuv fsm accordingly Values: {DMA_DISABLE} {RGB32} {A2R10G10B10} {RGB565} {RGB24} {GEN32} {RAW16} {RAW12} {AYUV} {Y410} {YUY2} {UYVY} {Y210} {NV12_YUV} {NV12_YVU} {YV12_YU} {YV12_YV}"
+                }, 
                 "ORIENTATION_VFLIP_ID": {
                     "default": "DISABLE", 
                     "dir": "SET/GET", 
@@ -1045,7 +1115,7 @@
                             "value": 36
                         }
                     }, 
-                    "value": 71, 
+                    "value": 72, 
                     "description": "Vertically flip the output image. Values: {ENABLE} {DISABLE} Default Value: {DISABLE}"
                 }, 
                 "ORIENTATION_HFLIP_ID": {
@@ -1059,7 +1129,7 @@
                             "value": 36
                         }
                     }, 
-                    "value": 72, 
+                    "value": 73, 
                     "description": "Horizontally flip the output image. Values: {ENABLE} {DISABLE} Default Value: {DISABLE}"
                 }, 
                 "IMAGE_RESIZE_TYPE_ID": {
@@ -1076,14 +1146,14 @@
                             "value": 39
                         }
                     }, 
-                    "value": 73, 
+                    "value": 74, 
                     "description": "Sets the type of resize so api can switch between types to compensate the lacking read on api functionality Values: {CROP_FR} - Control the crop settings on the full resolution pipe. {CROP_DS} - Control the crop settings on the downscaler pipe. {SCALER} - Control the width and height of the output of the downscaler. Example: To set the DS crop type set value = CROP_FR. Default Value: CROP"
                 }, 
                 "IMAGE_RESIZE_ENABLE_ID": {
                     "description": "Enables or run corresponding crop or downscaler. Values: {RUN} - Apply all changes for sizes and offsets and enable module {DONE} - Done applying changes Default Value: {DONE}", 
                     "default": "DONE", 
                     "skip": true, 
-                    "value": 74, 
+                    "value": 75, 
                     "options": {
                         "DONE": {
                             "value": 15
@@ -1098,28 +1168,28 @@
                     "skip": true, 
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 75, 
+                    "value": 76, 
                     "description": "Set the width of the system for crop or downscaler. Example: To set width for DS downscaler select DS downscaler and set value = width."
                 }, 
                 "IMAGE_RESIZE_HEIGHT_ID": {
                     "skip": true, 
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 76, 
+                    "value": 77, 
                     "description": "Set the height of the system selected by IMAGE_CROP_AND_DS_SELECT. Example: To set height for DS downscaler select DS downscaler and set value = height."
                 }, 
                 "IMAGE_CROP_XOFFSET_ID": {
                     "skip": true, 
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 77, 
+                    "value": 78, 
                     "description": "Set the x-offset of the system selected by IMAGE_CROP_AND_DS_SELECT. Example: To set x-offset select crop and set value = offset."
                 }, 
                 "IMAGE_CROP_YOFFSET_ID": {
                     "skip": true, 
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 78, 
+                    "value": 79, 
                     "description": "Set the y-offset of the system selected by IMAGE_CROP_AND_DS_SELECT. Example: To set y-offset crop and set value = offset."
                 }
             }
@@ -1138,7 +1208,7 @@
                             "value": 42
                         }
                     }, 
-                    "value": 79, 
+                    "value": 80, 
                     "description": "Sets the mode of operation for the AF algorithm. Values: {LENS_SUCCESS} {LENS_FAILED} Default Value: {LENS_FAILED}"
                 }, 
                 "AF_MODE_ID": {
@@ -1158,14 +1228,14 @@
                             "value": 46
                         }
                     }, 
-                    "value": 80, 
+                    "value": 81, 
                     "description": "Sets the mode of operation for the AF algorithm. Values: {AF_AUTO_SINGLE} {AF_AUTO_CONTINUOUS} {AF_MANUAL} {AF_CALIBRATION} Default Value: {AF_AUTO_SINGLE}"
                 }, 
                 "AF_RANGE_LOW_ID": {
                     "description": "Sets the lowest value that the AF algorithm can select. Values: [0-256] Key: 0 - macro mechanical end 256 - infinity end Default Value: AF_RANGE_LOW = 0 AF_RANGE_HIGH = 256", 
                     "min": "0", 
                     "max": "256", 
-                    "value": 81, 
+                    "value": 82, 
                     "options": {}, 
                     "dir": "SET/GET"
                 }, 
@@ -1173,21 +1243,21 @@
                     "description": "Sets the highest value that the AF algorithm can select. Values: [0-256] Key: 0 - macro mechanical end 256 - infinity end Default Value: AF_RANGE_LOW = 0 AF_RANGE_HIGH = 256", 
                     "min": "0", 
                     "max": "256", 
-                    "value": 82, 
+                    "value": 83, 
                     "options": {}, 
                     "dir": "SET/GET"
                 }, 
                 "AF_ROI_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 83, 
+                    "value": 84, 
                     "description": "Select which zones are used to gather AF statistics. The region of interest is defined as a rectangle with top-left coordinates (AF_ROI_X1, AF_ROI_Y1) and bottom-right coordinates (AF_ROI_X2, AF_ROI_Y2), with (0,0) defined as the top-left of the image and (255,255) as the bottom right of the image. Values: Four 8 bit numbers concatenated into the 32 bit value. Format: AF_ROI_X1 [31:24] AF_ROI_Y1 [23:16] AF_ROI_X2 [15:8] AF_ROI_Y2 [7:0] Default Values: AF_ROI_X1 = 63 AF_ROI_Y1 = 63 AF_ROI_X2 = 191 AF_ROI_Y2 = 191"
                 }, 
                 "AF_MANUAL_CONTROL_ID": {
                     "description": "Manually set the focal length, only available when AF_MODE_ID is set to AF_MANUAL. Values: [0-255] Key: 0 - macro mechanical end 255 - infinity end", 
                     "min": "0", 
                     "max": "255", 
-                    "value": 84, 
+                    "value": 85, 
                     "options": {}, 
                     "dir": "SET/GET"
                 }, 
@@ -1207,7 +1277,7 @@
                             "value": 50
                         }
                     }, 
-                    "value": 85, 
+                    "value": 86, 
                     "description": "Set the AE mode Values: {AE_AUTO} {AE_FULL_MANUAL} {AE_MANUAL_GAIN} {AE_MANUAL_EXPOSURE_TIME} Default Value: {AE_AUTO}"
                 }, 
                 "AE_SPLIT_PRESET_ID": {
@@ -1220,31 +1290,31 @@
                             "value": 52
                         }
                     }, 
-                    "value": 86, 
+                    "value": 87, 
                     "description": "Set the AE preset Values: {AE_SPLIT_BALANCED} {AE_SPLIT_INTEGRATION_PRIORITY} Default Value: {AE_SPLIT_BALANCED}"
                 }, 
                 "AE_GAIN_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 87, 
+                    "value": 88, 
                     "description": "Control the total gain: (Analogue gain)*(Sensor digital gain)*(ISP digital gain). NOTE: Only gains of 1.0 or above are supported. Returns total gain Setting gain is only available when AE_MODE is set to AE_FULL_MANUAL or AE_MANUAL_GAIN Values: Unsigned 16 bit fixed point value (8.8) Format: Integer Part - [15:8] Fractional Part - [7:0] Example: To set a gain of 2.25, the integer part is set to 2 and the fractional part to 64 (0.25*256). The value 576 ((2 << 8) + 64) is then passed to AE_GAIN"
                 }, 
                 "AE_EXPOSURE_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 88, 
+                    "value": 89, 
                     "description": "Returns exposure in micro sec. Setting exposure is only available when AE_MODE is set to AE_FULL_MANUAL or AE_MANUAL_EXPOSURE_TIME Values: Unsigned 32 bit value"
                 }, 
                 "AE_ROI_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 89, 
+                    "value": 90, 
                     "description": "Select which zones are used to gather AE statistics. The region of interest is defined as a rectangle with top-left coordinates (AE_ROI_X1, AE_ROI_Y1) and bottom-right coordinates (AE_ROI_X2, AE_ROI_Y2), with (0,0) defined as the top-left of the image and (255,255) as the bottom right of the image. Values: Four 8 bit values concatenated into one 32 bit value. Format: AE_ROI_X1 [31:24] AE_ROI_Y1 [23:16] AE_ROI_X2 [15:8] AE_ROI_Y2 [7:0] Default Values: AE_ROI_X1 = 0 AE_ROI_Y1 = 0 AE_ROI_X2 = 255 AE_ROI_Y2 = 255"
                 }, 
                 "AE_COMPENSATION_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 90, 
+                    "value": 91, 
                     "description": "Adjust AE compensation to under/over-expose an image Values: Unsigned 8 bit value Description: A value of 128 is no compensation. Values below 128 are negative, Values above 128 are positive. A step of 4 corresponds to 0.5 dB gain. Example: For +1.5 dB compensation the value should be 140 (128+12). For -1.5 dB compensation the value should be 116 (128-12). Default Value: 128"
                 }, 
                 "AWB_MODE_ID": {
@@ -1279,21 +1349,21 @@
                             "value": 61
                         }
                     }, 
-                    "value": 91, 
+                    "value": 92, 
                     "description": "Select an AWB mode Values: {AWB_AUTO} {AWB_MANUAL} {AWB_DAY_LIGHT} {AWB_CLOUDY} {AWB_INCANDESCENT} {AWB_FLOURESCENT} {AWB_TWILIGHT} {AWB_SHADE} {AWB_WARM_FLOURESCENT} Default Value: {AWB_AUTO}"
                 }, 
                 "AWB_TEMPERATURE_ID": {
                     "description": "Returns the current color temperature being used by the AWB algorithm, in kelvin [K], divided by 100. Values: [0-255]", 
                     "min": "0", 
                     "max": "255", 
-                    "value": 92, 
+                    "value": 93, 
                     "options": {}, 
                     "dir": "GET"
                 }, 
                 "ANTIFLICKER_MODE_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 93, 
+                    "value": 94, 
                     "description": "Set the frequency for the anti-flicker to remove. (0 - disabled) Default Value: 50HZ"
                 }
             }
@@ -1315,13 +1385,13 @@
                 "REGISTERS_ADDRESS_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 99, 
+                    "value": 100, 
                     "description": "Set/get the registers address."
                 }, 
                 "REGISTERS_SIZE_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 100, 
+                    "value": 101, 
                     "description": "Set/get the size of the register in bits. Values: 8 16 32"
                 }, 
                 "REGISTERS_SOURCE_ID": {
@@ -1337,13 +1407,13 @@
                             "value": 69
                         }
                     }, 
-                    "value": 101, 
+                    "value": 102, 
                     "description": "Set/get the register source. Values: {SENSOR} {LENS} {ISP}"
                 }, 
                 "REGISTERS_VALUE_ID": {
                     "dir": "SET/GET", 
                     "options": {}, 
-                    "value": 102, 
+                    "value": 103, 
                     "description": "Set/get the register value. Example: To read an 8bit register at address 0x3c from the sensor set - SET REGISTERS_ADDRESS_ID to 0x3c - SET REGISTERS_SIZE_ID to 8 - SET REGISTERS_SOURCE_ID to SENSOR - GET REGISTERS_VALUE_ID To set a 32bit lens register at address 0x1d to be 0x3f0E2B03: - SET REGISTERS_ADDRESS_ID to 0x1d - SET REGISTERS_SIZE_ID to 32 - SET REGISTERS_SOURCE_ID to LENS - SET REGISTERS_VALUE_ID to 0x3f0E2B03"
                 }
             }
@@ -1371,14 +1441,14 @@
                             "value": 66
                         }
                     }, 
-                    "value": 94, 
+                    "value": 95, 
                     "description": "Select the color mode of the ISP. Values: {NORMAL} {BLACK_AND_WHITE} {NEGATIVE} {SEPIA} {VIVID} Default Value: {NORMAL}"
                 }, 
                 "BRIGHTNESS_STRENGTH_ID": {
                     "description": "Control the exact brightness value. Values: [0-255] Key: 128 - Standard Brightness <128 - Decreased Brightness >128 - Increased Brightness Default Value: 128", 
                     "min": "0", 
                     "max": "255", 
-                    "value": 95, 
+                    "value": 96, 
                     "options": {}, 
                     "dir": "SET/GET"
                 }, 
@@ -1386,7 +1456,7 @@
                     "description": "Control the exact contrast value. Values: [0-255] Key: 128 - Standard Contrast <128 - Decreased Contrast >128 - Increased Contrast Default Value: 128", 
                     "min": "0", 
                     "max": "255", 
-                    "value": 96, 
+                    "value": 97, 
                     "options": {}, 
                     "dir": "SET/GET"
                 }, 
@@ -1394,7 +1464,7 @@
                     "description": "Control the exact saturation strength. Values: [0-255] Key: 128 - Standard Saturation <128 - Decreased Saturation >128 - Increased Saturation Default Value: 128", 
                     "min": "0", 
                     "max": "255", 
-                    "value": 97, 
+                    "value": 98, 
                     "options": {}, 
                     "dir": "SET/GET"
                 }, 
@@ -1402,7 +1472,7 @@
                     "description": "Control the exact sharpening value. Values: [0-255] Key: 128 - Standard Sharpening <128 - Decreased Sharpening >128 - Increased Sharpening Default Value: 128", 
                     "min": "0", 
                     "max": "255", 
-                    "value": 98, 
+                    "value": 99, 
                     "options": {}, 
                     "dir": "SET/GET"
                 }

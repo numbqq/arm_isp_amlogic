@@ -432,10 +432,12 @@
             so that it is asserted till the the pipeline delay of internal acl signals.
         1 = When thiss set to 1, the soft reset will not be stretched internally. The SW must make sure its
             kept high enough."/>
-      <bit name="dma_writer_timeout_disable" addr="(80=00)64.5" mode="RW" default="1" tooltip="0=timeout is default enabled. At the end of the frame, if the last data is not drained out from DMA writer within 4000
-          AXI clock, cycle, DMA will flush the FIFO and ignore the remainign data. 
+      <bit name="dma_writer_timeout_disable" addr="(80=00)64.5" mode="RW" default="0" tooltip="0=timeout enabled. At the end of the frame, if the last data is not drained out from DMA writer within 4000
+          AXI clock, cycle, DMA will flush the FIFO and ignore the remainign data.
+
         1=timeout is disabled. If the last data is not drained out and the next frame starts coming in, DMA will drop the next frame and
-          give an interrupt."/>
+          give an interrupt.
+          If the timeout is disabled, its S/W responsibility to cancel the frame in all dma engines if frame drop interrupt comes."/>
     </device>
 
     <device name="isp global parameter status" addr="32">
