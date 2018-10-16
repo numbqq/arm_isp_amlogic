@@ -174,7 +174,7 @@ void color_matrix_shading_mesh_reload( color_matrix_fsm_ptr_t p_fsm )
     acamera_isp_mesh_shading_mesh_page_b_write( p_fsm->cmn.isp_base, 0x2 );
     acamera_isp_mesh_shading_mesh_width_write( p_fsm->cmn.isp_base, dim-1 );
     acamera_isp_mesh_shading_mesh_height_write( p_fsm->cmn.isp_base, dim-1 );
-    acamera_isp_mesh_shading_mesh_scale_write( p_fsm->cmn.isp_base, 1 );
+    //acamera_isp_mesh_shading_mesh_scale_write( p_fsm->cmn.isp_base, 1 );
     acamera_isp_mesh_shading_mesh_alpha_mode_write( p_fsm->cmn.isp_base, 2 );
 
 
