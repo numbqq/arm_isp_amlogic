@@ -69,6 +69,9 @@ case  TSENSOR:
 		case  SENSOR_FPS:
 			ret = sensor_fps(instance, value, direction, ret_value);
 			break;
+		case  SENSOR_NAME:
+			ret = sensor_name(instance, value, direction, ret_value);
+			break;
 		case  SENSOR_WIDTH:
 			ret = sensor_width(instance, value, direction, ret_value);
 			break;

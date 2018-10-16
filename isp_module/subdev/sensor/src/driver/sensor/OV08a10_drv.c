@@ -159,8 +159,10 @@ typedef struct _sensor_context_t {
 
 #if SENSOR_BINARY_SEQUENCE
 static const char p_sensor_data[] = SENSOR__OV08A10_SEQUENCE_DEFAULT;
+static const char p_isp_data[] = SENSOR__OV08A10_ISP_SEQUENCE_DEFAULT;
 #else
 static const acam_reg_t **p_sensor_data = seq_table;
+static const acam_reg_t **p_isp_data = isp_seq_table;
 #endif
 
 
@@ -541,6 +543,8 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void *sbp )
 	s_ctx.param.modes_num = array_size( supported_modes );
 	s_ctx.param.mode = 0;
 	s_ctx.param.sensor_ctx = &s_ctx;
+	s_ctx.param.isp_context_seq.sequence = p_isp_data;
+	s_ctx.param.isp_context_seq.seq_num = SENSOR_OV08A10_ISP_CONTEXT_SEQ;
 
 	ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
 	ctrl->alloc_digital_gain = sensor_alloc_digital_gain;

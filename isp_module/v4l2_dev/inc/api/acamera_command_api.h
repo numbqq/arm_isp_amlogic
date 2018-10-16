@@ -313,6 +313,7 @@
 #define SCALER_OUTPUT_MODE                                0x00000070
 #define SCALER_STREAMING_ON                               0x00000071
 #define SCALER_STREAMING_OFF                              0x00000072
+#define SENSOR_NAME                                       0x00000073
 
 // ------------------------------------------------------------------------------ //
 //		VALUE LIST

@@ -143,8 +143,17 @@ static void sensor_update_parameters( void *ctx )
 
             rc = v4l2_subdev_call( sd, core, ioctl, SOC_SENSOR_GET_PRESET_CUR, &settings );
             p_ctx->param.mode = settings.args.general.val_out;
+
             rc = v4l2_subdev_call(sd, core, ioctl, SOC_SENSOR_GET_BAYER_PATTERN, &settings);
             p_ctx->param.bayer = settings.args.general.val_out;
+
+            rc = v4l2_subdev_call(sd, core, ioctl, SOC_SENSOR_GET_SENSOR_NAME, &settings);
+            memcpy(p_ctx->param.s_name.name, settings.s_name.name, settings.s_name.name_len);
+            p_ctx->param.s_name.name_len = settings.s_name.name_len;
+
+            rc = v4l2_subdev_call(sd, core, ioctl, SOC_SENSOR_GET_CONTEXT_SEQ, &settings);
+            p_ctx->param.isp_context_seq.seq_num = settings.isp_context_seq.seq_num;
+            p_ctx->param.isp_context_seq.sequence = settings.isp_context_seq.sequence;
 
             if ( p_ctx->param.modes_num > V4L2_SENSOR_MAXIMUM_PRESETS_NUM ) {
                 p_ctx->param.modes_num = V4L2_SENSOR_MAXIMUM_PRESETS_NUM;

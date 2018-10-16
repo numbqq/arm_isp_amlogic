@@ -49,6 +49,8 @@ struct soc_sensor_ioctl_args {
             uint32_t val_out; // output value
         } general;
     } args;
+    sensor_name_t s_name;
+    isp_context_seq isp_context_seq;
 };
 
 // The enum declares the API commands ID which
@@ -257,6 +259,16 @@ enum SocCamera_ioctl {
     //input: sensor mode
     //output: val_out - current bayer pattern
     SOC_SENSOR_GET_BAYER_PATTERN,
+
+    // return current sensor name of setting
+    // input: sensor mode
+    // output: s_name - current sensor name
+    SOC_SENSOR_GET_SENSOR_NAME,
+
+    // return isp sequence of sensor
+    // input: sensor mode
+    // output: context_seq - current sensor's isp seq
+    SOC_SENSOR_GET_CONTEXT_SEQ,
 };
 
 

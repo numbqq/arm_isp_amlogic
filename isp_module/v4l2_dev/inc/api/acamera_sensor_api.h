@@ -21,6 +21,7 @@
 #define __ACAMERA_SENSOR_API_H__
 
 #include "acamera_types.h"
+#include "sensor_init.h"
 
 // this is the sensor bayer pattern,
 // it is used in arm isp color pattern
@@ -50,6 +51,15 @@ typedef struct _sensor_mode_t {
     uint8_t bits;                  // Bit depth of data from sensor
 } sensor_mode_t;
 
+typedef struct _sensor_name_t {
+    uint8_t name[32];
+    uint32_t name_len;
+} sensor_name_t;
+
+typedef struct _isp_context_seq {
+    const acam_reg_t **sequence;
+    uint32_t seq_num;
+} isp_context_seq;
 
 // sensor parameters structure keeps information about the current
 // sensor state.
@@ -76,6 +86,9 @@ typedef struct _sensor_param_t {
     uint8_t mode;                            // Current mode. This value is from the range [ 0 : modes_num - 1 ]
     void *sensor_ctx;                        // Conext to a sensor structure. This structure is not available to firmware
     uint8_t bayer;                           // sensor setting bayer pattern
+    sensor_name_t s_name;                    // sensor getting sensor name
+    isp_context_seq isp_context_seq;         // isp context seq
+
 } sensor_param_t;
 
 

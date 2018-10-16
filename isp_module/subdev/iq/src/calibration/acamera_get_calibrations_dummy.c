@@ -22,12 +22,18 @@
 #include "acamera_firmware_settings.h"
 #include "acamera_logger.h"
 
-extern uint32_t get_calibrations_static_linear_dummy( ACameraCalibrations *c );
+extern uint32_t get_calibrations_static_linear_imx227( ACameraCalibrations *c );
+extern uint32_t get_calibrations_dynamic_linear_imx227( ACameraCalibrations *c );
 extern uint32_t get_calibrations_static_fs_lin_dummy( ACameraCalibrations *c );
-extern uint32_t get_calibrations_dynamic_linear_dummy( ACameraCalibrations *c );
 extern uint32_t get_calibrations_dynamic_fs_lin_dummy( ACameraCalibrations *c );
 
-uint32_t get_calibrations_dummy( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c )
+extern uint32_t get_calibrations_static_linear_imx290( ACameraCalibrations *c );
+extern uint32_t get_calibrations_dynamic_linear_imx290( ACameraCalibrations *c );
+
+extern uint32_t get_calibrations_static_linear_os08a10( ACameraCalibrations *c );
+extern uint32_t get_calibrations_dynamic_linear_os08a10( ACameraCalibrations *c );
+
+uint32_t get_calibrations_imx227( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c )
 {
 
     uint8_t ret = 0;
@@ -43,7 +49,7 @@ uint32_t get_calibrations_dummy( uint32_t ctx_id, void *sensor_arg, ACameraCalib
     switch ( preset ) {
     case WDR_MODE_LINEAR:
         LOG( LOG_DEBUG, "calibration switching to WDR_MODE_LINEAR %d ", (int)preset );
-        ret += ( get_calibrations_dynamic_linear_dummy( c ) + get_calibrations_static_linear_dummy( c ) );
+        ret += ( get_calibrations_dynamic_linear_imx227( c ) + get_calibrations_static_linear_imx227( c ) );
         break;
     case WDR_MODE_NATIVE:
         LOG( LOG_DEBUG, "calibration switching to WDR_MODE_NATIVE %d ", (int)preset );
@@ -55,7 +61,75 @@ uint32_t get_calibrations_dummy( uint32_t ctx_id, void *sensor_arg, ACameraCalib
         break;
     default:
         LOG( LOG_DEBUG, "calibration defaults to WDR_MODE_LINEAR %d ", (int)preset );
-        ret += ( get_calibrations_dynamic_linear_dummy( c ) + get_calibrations_static_linear_dummy( c ) );
+        ret += ( get_calibrations_dynamic_linear_imx227( c ) + get_calibrations_static_linear_imx227( c ) );
+        break;
+    }
+
+    return ret;
+}
+
+uint32_t get_calibrations_imx290( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c )
+{
+
+    uint8_t ret = 0;
+    if ( !sensor_arg ) {
+        LOG( LOG_CRIT, "calibration sensor_arg is NULL" );
+        return ret;
+    }
+
+    int32_t preset = ( (sensor_mode_t *)sensor_arg )->wdr_mode;
+
+    //logic which calibration to apply
+    switch ( preset ) {
+    case WDR_MODE_LINEAR:
+        LOG( LOG_DEBUG, "calibration switching to WDR_MODE_LINEAR %d ", (int)preset );
+        ret += ( get_calibrations_dynamic_linear_imx290( c ) + get_calibrations_static_linear_imx290( c ) );
+        break;
+    case WDR_MODE_NATIVE:
+        LOG( LOG_DEBUG, "calibration switching to WDR_MODE_NATIVE %d ", (int)preset );
+        //ret += (get_calibrations_dynamic_wdr_dummy(c)+get_calibrations_static_wdr_dummy(c));
+        break;
+    case WDR_MODE_FS_LIN:
+        LOG( LOG_DEBUG, "calibration switching to WDR mode on mode %d ", (int)preset );
+        ret += ( get_calibrations_dynamic_fs_lin_dummy( c ) + get_calibrations_static_fs_lin_dummy( c ) );
+        break;
+    default:
+        LOG( LOG_DEBUG, "calibration defaults to WDR_MODE_LINEAR %d ", (int)preset );
+        ret += ( get_calibrations_dynamic_linear_imx290( c ) + get_calibrations_static_linear_imx290( c ) );
+        break;
+    }
+
+    return ret;
+}
+
+uint32_t get_calibrations_os08a10( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c )
+{
+
+    uint8_t ret = 0;
+    if ( !sensor_arg ) {
+        LOG( LOG_CRIT, "calibration sensor_arg is NULL" );
+        return ret;
+    }
+
+    int32_t preset = ( (sensor_mode_t *)sensor_arg )->wdr_mode;
+
+    //logic which calibration to apply
+    switch ( preset ) {
+    case WDR_MODE_LINEAR:
+        LOG( LOG_DEBUG, "calibration switching to WDR_MODE_LINEAR %d ", (int)preset );
+        ret += ( get_calibrations_dynamic_linear_os08a10( c ) + get_calibrations_static_linear_os08a10( c ) );
+        break;
+    case WDR_MODE_NATIVE:
+        LOG( LOG_DEBUG, "calibration switching to WDR_MODE_NATIVE %d ", (int)preset );
+        //ret += (get_calibrations_dynamic_wdr_dummy(c)+get_calibrations_static_wdr_dummy(c));
+        break;
+    case WDR_MODE_FS_LIN:
+        LOG( LOG_DEBUG, "calibration switching to WDR mode on mode %d ", (int)preset );
+        ret += ( get_calibrations_dynamic_fs_lin_dummy( c ) + get_calibrations_static_fs_lin_dummy( c ) );
+        break;
+    default:
+        LOG( LOG_DEBUG, "calibration defaults to WDR_MODE_LINEAR %d ", (int)preset );
+        ret += ( get_calibrations_dynamic_linear_os08a10( c ) + get_calibrations_static_linear_os08a10( c ) );
         break;
     }
 

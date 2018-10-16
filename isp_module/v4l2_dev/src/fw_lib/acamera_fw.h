@@ -106,6 +106,7 @@ typedef struct _acamera_isp_sw_regs_map {
 } acamera_isp_sw_regs_map;
 
 
+
 struct _acamera_context_t {
     uint32_t irq_flag;
 
@@ -137,6 +138,7 @@ struct _acamera_context_t {
     acamera_settings settings;
 
     const acam_reg_t **isp_sequence;
+    isp_context_seq isp_context_seq;
 
     int32_t isp_sequence_default;
 

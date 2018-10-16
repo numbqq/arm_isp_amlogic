@@ -24,8 +24,14 @@
 
 extern void sensor_init_dummy( void** ctx, sensor_control_t*) ;
 extern void sensor_deinit_dummy( void *ctx ) ;
-extern uint32_t get_calibrations_dummy( uint32_t ctx_num,void * sensor_arg,ACameraCalibrations *) ;
+extern uint32_t get_calibrations_imx227( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
+extern uint32_t get_calibrations_imx290( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
+extern uint32_t get_calibrations_os08a10( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
 
-#define SENSOR_INIT_SUBDEV_FUNCTIONS {sensor_init_dummy,}
-#define SENSOR_DEINIT_SUBDEV_FUNCTIONS {sensor_deinit_dummy,}
-#define CALIBRATION_SUBDEV_FUNCTIONS {get_calibrations_dummy,}
+
+#define SENSOR_INIT_SUBDEV_FUNCTIONS  sensor_init_dummy
+#define SENSOR_DEINIT_SUBDEV_FUNCTIONS  sensor_deinit_dummy
+#define CALIBRATION_SUBDEV_FUNCTIONS_IMX227  get_calibrations_imx227
+#define CALIBRATION_SUBDEV_FUNCTIONS_IMX290  get_calibrations_imx290
+#define CALIBRATION_SUBDEV_FUNCTIONS_OS08A10  get_calibrations_os08a10
+

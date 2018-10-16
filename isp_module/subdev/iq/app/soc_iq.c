@@ -20,6 +20,7 @@
 #include <linux/platform_device.h>
 #include <linux/device.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-async.h>
 #include "acamera_logger.h"
@@ -33,13 +34,25 @@
 #define ARGS_TO_PTR( arg ) ( (struct soc_iq_ioctl_args *)arg )
 
 #define __GET_LUT_SIZE( lut ) ( lut->rows * lut->cols * lut->width )
+#define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
 
 static struct v4l2_subdev soc_iq;
 
 static ACameraCalibrations g_luts_arr[FIRMWARE_CONTEXT_NUMBER];
 
+struct IqConversion {
+    uint32_t (*calibration_init)(uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c);
+    const char *sensor_name;
+};
 
-uint32_t ( *CALIBRATION_FUNC_ARR[] )( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c ) = CALIBRATION_SUBDEV_FUNCTIONS;
+
+struct IqConversion IqConversionTable[] = {
+    {CALIBRATION_SUBDEV_FUNCTIONS_OS08A10, "os08a10"},
+    {CALIBRATION_SUBDEV_FUNCTIONS_IMX290, "imx290"},
+    {CALIBRATION_SUBDEV_FUNCTIONS_IMX227, "imx227"},
+};
+
+uint32_t ( *CALIBRATION_FUNC_ARR[] )( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c ) = {CALIBRATION_SUBDEV_FUNCTIONS_IMX290};
 
 static int iq_log_status( struct v4l2_subdev *sd )
 {
@@ -144,11 +157,27 @@ static const struct v4l2_subdev_ops iq_ops = {
 static int32_t soc_iq_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
+    int rtn = 0;
+    int i;
+    const char *sensor_name;
+    struct device *dev = &pdev->dev;
+
     uint32_t total_functions = sizeof( CALIBRATION_FUNC_ARR ) / sizeof( CALIBRATION_FUNC_ARR[0] );
     if ( total_functions < FIRMWARE_CONTEXT_NUMBER ) {
         LOG( LOG_CRIT, "calibration functions mismatch total_functions:%d expected:%d", total_functions, FIRMWARE_CONTEXT_NUMBER );
     }
+    rtn = of_property_read_string(dev->of_node, "sensor-name", &sensor_name);
 
+    if (rtn != 0) {
+        pr_err("%s: iq failed to parse dts sensor name\n", __func__);
+    }
+    pr_err("iq name from dts config is ----> %s\n", sensor_name);
+
+    for (i = 0; i < NELEM(IqConversionTable); ++i) {
+        if (strcmp(IqConversionTable[i].sensor_name, sensor_name) == 0) {
+               CALIBRATION_FUNC_ARR[0] = IqConversionTable[i].calibration_init;
+        }
+    }
 
     v4l2_subdev_init( &soc_iq, &iq_ops );
 
@@ -173,12 +202,17 @@ static int soc_iq_remove( struct platform_device *pdev )
 
 static struct platform_device *soc_iq_dev;
 
+static const struct of_device_id sensor_dt_match[] = {
+    {.compatible = "soc, iq"},
+    {}};
+
 static struct platform_driver soc_iq_driver = {
     .probe = soc_iq_probe,
     .remove = soc_iq_remove,
     .driver = {
-        .name = "soc_iq_v4l2",
+        .name = "soc_iq",
         .owner = THIS_MODULE,
+        .of_match_table = sensor_dt_match,
     },
 };
 

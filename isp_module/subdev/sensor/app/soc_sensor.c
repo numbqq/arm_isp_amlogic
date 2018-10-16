@@ -34,16 +34,33 @@
 
 #define ARGS_TO_PTR( arg ) ( (struct soc_sensor_ioctl_args *)arg )
 
+#define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
 
-void ( *SOC_SENSOR_SENSOR_ENTRY_ARR[FIRMWARE_CONTEXT_NUMBER] )( void **ctx, sensor_control_t *ctrl, void* sbp ) = SENSOR_INIT_SUBDEV_FUNCTIONS;
-void ( *SOC_SENSOR_SENSOR_RESET_ARR[FIRMWARE_CONTEXT_NUMBER] )( void *ctx ) = SENSOR_DEINIT_SUBDEV_FUNCTIONS;
+struct SensorConversion {
+    void (*sensor_init)(void **ctx, sensor_control_t *ctrl, void* sbp);
+    void (*sensor_deinit)(void *ctx);
+    const char *sensor_name;
+};
+
+
+struct SensorConversion ConversionTable[] = {
+    {SENSOR_INIT_SUBDEV_FUNCTIONS_OS08A10, SENSOR_DEINIT_SUBDEV_FUNCTIONS_OS08A10, "os08a10"},
+    {SENSOR_INIT_SUBDEV_FUNCTIONS_IMX290, SENSOR_DEINIT_SUBDEV_FUNCTIONS_IMX290, "imx290"},
+    {SENSOR_INIT_SUBDEV_FUNCTIONS_IMX227, SENSOR_DEINIT_SUBDEV_FUNCTIONS_IMX227, "imx227"},
+};
+
+
+void ( *SOC_SENSOR_SENSOR_ENTRY_ARR[FIRMWARE_CONTEXT_NUMBER] )( void **ctx, sensor_control_t *ctrl, void* sbp ) = {SENSOR_INIT_SUBDEV_FUNCTIONS_IMX290};
+void ( *SOC_SENSOR_SENSOR_RESET_ARR[FIRMWARE_CONTEXT_NUMBER] )( void *ctx ) = {SENSOR_DEINIT_SUBDEV_FUNCTIONS_IMX290};
 
 static struct v4l2_subdev soc_sensor;
 sensor_bringup_t* sensor_bp = NULL;
+const char *sensor_name;
 
 typedef struct _subdev_camera_ctx {
     void *camera_context;
     sensor_control_t camera_control;
+    unsigned char *s_name;
 } subdev_camera_ctx;
 
 static subdev_camera_ctx s_ctx[FIRMWARE_CONTEXT_NUMBER];
@@ -280,6 +297,20 @@ static long camera_ioctl( struct v4l2_subdev *sd, unsigned int cmd, void *arg )
         ARGS_TO_PTR( arg )
             ->args.general.val_out = params->bayer;
     } break;
+    case SOC_SENSOR_GET_SENSOR_NAME: {
+        memcpy(ARGS_TO_PTR( arg )
+            ->s_name.name, sensor_name, strlen(sensor_name));
+        ARGS_TO_PTR( arg )
+            ->s_name.name_len = strlen(sensor_name);
+    } break;
+    case SOC_SENSOR_GET_CONTEXT_SEQ: {
+        ARGS_TO_PTR( arg )
+            ->isp_context_seq.sequence = params->isp_context_seq.sequence;
+        ARGS_TO_PTR( arg )
+            ->isp_context_seq.seq_num = params->isp_context_seq.seq_num;
+
+    } break;
+
     default:
         LOG( LOG_WARNING, "Unknown soc sensor ioctl cmd %d", cmd );
         rc = -1;
@@ -306,6 +337,8 @@ static const struct v4l2_subdev_ops camera_ops = {
 static int32_t soc_sensor_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
+    int rtn = 0;
+    int i;
     struct device *dev = &pdev->dev;
 
     sensor_bp = kzalloc( sizeof( *sensor_bp ), GFP_KERNEL );
@@ -313,6 +346,21 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
         LOG(LOG_ERR, "Failed to alloc mem\n");
         return -ENOMEM;
     }
+    rtn = of_property_read_string(dev->of_node, "sensor-name", &sensor_name);
+
+    if (rtn != 0) {
+        pr_err("%s: failed to get sensor name\n", __func__);
+    }
+
+    pr_err("sensor name from dts config is %s\n", sensor_name);
+
+    for (i = 0; i < NELEM(ConversionTable); ++i) {
+        if (strcmp(ConversionTable[i].sensor_name, sensor_name) == 0) {
+            SOC_SENSOR_SENSOR_ENTRY_ARR[FIRMWARE_CONTEXT_NUMBER-1] = ConversionTable[i].sensor_init;
+            SOC_SENSOR_SENSOR_RESET_ARR[FIRMWARE_CONTEXT_NUMBER-1] = ConversionTable[i].sensor_deinit;
+        }
+    }
+
     sensor_bp_init(sensor_bp, dev);
 
     v4l2_subdev_init( &soc_sensor, &camera_ops );

@@ -33,6 +33,8 @@
 #include "isp_config_seq.h"
 #include "system_am_sc.h"
 
+#define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
+
 #if ISP_HAS_FPGA_WRAPPER
 #include "acamera_fpga_config.h"
 #endif
@@ -272,6 +274,27 @@ int32_t acamera_init_calibrations( acamera_context_ptr_t p_ctx )
     return result;
 }
 
+int32_t acamera_init_context_seq( acamera_context_t *p_ctx )
+{
+    int32_t result = 0;
+
+    // if "p_ctx->initialized" is 1, that means we are changing the preset and wdr_mode,
+    // we need to update the calibration data and update some FSM variables which
+    // depends on calibration data.
+    const sensor_param_t *param = NULL;
+    result = acamera_fsm_mgr_get_param( &p_ctx->fsm_mgr, FSM_PARAM_GET_SENSOR_PARAM, NULL, 0, &param, sizeof( param ) );
+    if (result != 0) {
+        LOG(LOG_ERR, "WARNING:get isp context seq failed.\n");
+        return 0;
+    }
+    p_ctx->isp_context_seq.sequence = param->isp_context_seq.sequence;
+    p_ctx->isp_context_seq.seq_num = param->isp_context_seq.seq_num;
+    LOG(LOG_ERR, "load isp context sequence[%d]\n", param->isp_context_seq.seq_num);
+
+    acamera_load_sw_sequence( p_ctx->settings.isp_base, p_ctx->isp_context_seq.sequence, p_ctx->isp_context_seq.seq_num );
+    return result;
+}
+
 
 #if ISP_HAS_META_CB && defined( ISP_HAS_METADATA_FSM )
 static void internal_callback_metadata( void *ctx, const firmware_metadata_t *fw_metadata )
@@ -407,6 +430,14 @@ static void configure_all_frame_buffers( acamera_context_ptr_t p_ctx )
 
 }
 
+void acamera_fw_get_sensor_name(uint32_t *sname)
+{
+    acamera_command(TSENSOR, SENSOR_NAME, 0, COMMAND_GET, sname);
+    if (sname == NULL) {
+        LOG(LOG_ERR, "Error input param\n");
+    }
+}
+
 static void init_stab( acamera_context_ptr_t p_ctx )
 {
     p_ctx->stab.global_freeze_firmware = 0;
@@ -484,7 +515,6 @@ int32_t acamera_init_context( acamera_context_t *p_ctx, acamera_settings *settin
     // keep the context pointer for debug purposes
     p_ctx->context_ref = (uint32_t *)p_ctx;
     p_ctx->p_gfw = g_fw;
-
     if ( p_ctx->sw_reg_map.isp_sw_config_map != NULL ) {
 
         LOG( LOG_INFO, "Allocated memory for config space of size %d bytes", ACAMERA_ISP1_SIZE );
@@ -499,10 +529,6 @@ int32_t acamera_init_context( acamera_context_t *p_ctx, acamera_settings *settin
         p_ctx->isp_sequence = p_isp_data;
 
         acamera_load_isp_sequence( 0, p_ctx->isp_sequence, SENSOR_ISP_SEQUENCE_DEFAULT_SETTINGS );
-#if defined( SENSOR_ISP_SEQUENCE_DEFAULT_SETTINGS_CONTEXT )
-        acamera_load_sw_sequence( p_ctx->settings.isp_base, p_ctx->isp_sequence, SENSOR_ISP_SEQUENCE_DEFAULT_SETTINGS_CONTEXT );
-#endif
-
 
 #if defined( SENSOR_ISP_SEQUENCE_DEFAULT_SETTINGS_FPGA ) && ISP_HAS_FPGA_WRAPPER
         // these settings are loaded only for ARM FPGA demo platform and must be ignored on other systems
@@ -518,6 +544,8 @@ int32_t acamera_init_context( acamera_context_t *p_ctx, acamera_settings *settin
         p_ctx->isp_frame_counter = 0;
 
         acamera_fw_init( p_ctx );
+
+        acamera_init_context_seq(p_ctx);
 
         configure_all_frame_buffers( p_ctx );
 

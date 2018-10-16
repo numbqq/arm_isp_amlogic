@@ -357,6 +357,30 @@ uint8_t sensor_fps( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t directi
 }
 #endif
 
+#ifdef SENSOR_NAME
+uint8_t sensor_name( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
+{
+    uint32_t result = SUCCESS;
+    *ret_value = 0;
+    if ( direction == COMMAND_GET ) {
+        const sensor_param_t *param = NULL;
+        acamera_fsm_mgr_get_param( instance, FSM_PARAM_GET_SENSOR_PARAM, NULL, 0, &param, sizeof( param ) );
+
+        uint32_t cur_mode = param->mode;
+        if ( cur_mode < param->modes_num ) {
+            memcpy(ret_value, param->s_name.name, (param->s_name.name_len)*sizeof(char));
+            result = SUCCESS;
+        } else {
+            result = FAIL;
+        }
+    } else {
+        result = NOT_SUPPORTED;
+    }
+    return result;
+}
+#endif
+
+
 #ifdef SENSOR_WIDTH
 uint8_t sensor_width( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
 {
