@@ -313,6 +313,10 @@ static long camera_ioctl( struct v4l2_subdev *sd, unsigned int cmd, void *arg )
             ->isp_context_seq.seq_num = params->isp_context_seq.seq_num;
 
     } break;
+    case SOC_SENSOR_IR_CUT_SET: {
+        int32_t preset = ARGS_TO_PTR( arg )->args.general.val_in;
+        ctx->camera_control.ir_cut_set(ctx->camera_context,preset);
+    } break;
 
     default:
         LOG( LOG_WARNING, "Unknown soc sensor ioctl cmd %d", cmd );

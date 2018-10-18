@@ -187,17 +187,17 @@ static void sensor_hw_reset_disable( void )
 
 static int32_t sensor_alloc_analog_gain( void *ctx, int32_t gain )
 {
-	sensor_context_t *p_ctx = ctx;
+    sensor_context_t *p_ctx = ctx;
 
-	uint16_t again = (gain * 20) >> LOG2_GAIN_SHIFT;
+    uint16_t again = (gain * 20) >> LOG2_GAIN_SHIFT;
 
-	if (again > p_ctx->again_limit)
-		again = p_ctx->again_limit;
+    if (again > p_ctx->again_limit)
+        again = p_ctx->again_limit;
 
-	if (p_ctx->again[0] != again) {
-		p_ctx->gain_cnt = p_ctx->again_delay + 1;
-		p_ctx->again[0] = again;
-	}
+    if (p_ctx->again[0] != again) {
+        p_ctx->gain_cnt = p_ctx->again_delay + 1;
+        p_ctx->again[0] = again;
+    }
 
 	return (((int32_t)again) << LOG2_GAIN_SHIFT) / 20;
 }
@@ -244,6 +244,37 @@ static void sensor_alloc_integration_time( void *ctx, uint16_t *int_time_S, uint
         }
         break;
     }
+}
+
+static int32_t sensor_ir_cut_set( void *ctx, int32_t ir_cut_state )
+{
+    sensor_context_t *t_ctx = ctx;
+    int ret;
+    sensor_bringup_t* sensor_bp = t_ctx->sbp;
+
+    LOG( LOG_ERR, "ir_cut_state = %d", ir_cut_state);
+    LOG( LOG_INFO, "entry ir cut" );
+
+//ir_cut_GPIOZ_11, 0: open ir cut, 1: colse ir cut, 2: no operation
+    if (ir_cut_state == 1)
+        {
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_11", 0);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+        }
+    else if(ir_cut_state == 0)
+        {
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_11", 1);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+        }
+    else if(ir_cut_state == 2)
+        return 0;
+    else
+        LOG( LOG_ERR, "sensor ir cut set failed" );
+
+    LOG( LOG_INFO, "exit ir cut" );
+    return 0;
 }
 
 static void sensor_update( void *ctx )
@@ -561,6 +592,7 @@ void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void *sbp )
 	ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
 	ctrl->alloc_digital_gain = sensor_alloc_digital_gain;
 	ctrl->alloc_integration_time = sensor_alloc_integration_time;
+	ctrl->ir_cut_set= sensor_ir_cut_set;
 	ctrl->sensor_update = sensor_update;
 	ctrl->set_mode = sensor_set_mode;
 	ctrl->get_id = sensor_get_id;

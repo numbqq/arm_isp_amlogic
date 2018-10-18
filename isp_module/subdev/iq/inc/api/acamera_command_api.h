@@ -308,6 +308,15 @@
 #define REGISTERS_SIZE_ID                                 0x00000065
 #define REGISTERS_SOURCE_ID                               0x00000066
 #define REGISTERS_VALUE_ID                                0x00000067
+#define SCALER_WIDTH                                      0x00000068
+#define SCALER_HEIGHT                                     0x00000069
+#define SCALER_OUTPUT_MODE                                0x00000070
+#define SCALER_STREAMING_ON                               0x00000071
+#define SCALER_STREAMING_OFF                              0x00000072
+#define SENSOR_NAME                                       0x00000073
+#define SENSOR_TESTPATTERN                                0x00000074
+#define SENSOR_IR_CUT                                     0x00000075
+
 
 
 // ------------------------------------------------------------------------------ //

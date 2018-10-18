@@ -266,6 +266,15 @@ typedef struct _sensor_control_t {
     void ( *write_sensor_register )( void *ctx, uint32_t address, uint32_t data );
 
     void ( *sensor_test_pattern )( void *ctx, uint8_t mode );
+
+    /**
+    *	 ir_cut_set
+    *
+    *	 This function sets the sensor ir cut state.
+    *    ir_cut_state, 0: close ir cut, 1: open ir cut, 2: no operation
+    *
+    */
+    int32_t ( *ir_cut_set )( void *ctx, int32_t ir_cut_state );
 } sensor_control_t;
 
 

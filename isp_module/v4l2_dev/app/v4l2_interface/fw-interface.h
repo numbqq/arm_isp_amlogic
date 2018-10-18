@@ -79,6 +79,6 @@ int fw_intf_set_custom_sensor_wdr_mode( uint32_t ctrl_val );
 int fw_intf_set_custom_sensor_exposure( uint32_t ctrl_val );
 int fw_intf_set_custom_fr_fps(uint32_t ctrl_val);
 int fw_intf_set_custom_sensor_testpattern(uint32_t ctrl_val);
-
+int fw_intf_set_customer_sensor_ir_cut(uint32_t ctrl_val);
 
 #endif

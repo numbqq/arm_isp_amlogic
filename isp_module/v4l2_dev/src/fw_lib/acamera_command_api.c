@@ -102,6 +102,9 @@ case  TSENSOR:
 		case  SENSOR_INFO_EXPOSURES:
 			ret = sensor_info_exposures(instance, value, direction, ret_value);
 			break;
+		case  SENSOR_IR_CUT:
+			ret = sensor_ir_cut_set(instance, value, direction, ret_value);
+			break;
 	}//switch (command)
 	break;
 case  TSYSTEM:

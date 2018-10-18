@@ -73,6 +73,7 @@ static int fps_test_port = -1;
 static int open_port_cnt = 1;
 static int fb_buffer_cnt = 3;
 
+static int ir_cut_state = 1;
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
 
 /* config parameters */
@@ -204,8 +205,19 @@ static void set_manual_exposure(int videofd, int enable)
     }
 }
 
-void save_imgae(char *buff, unsigned int size, int flag, int count)
+static void do_sensor_ir_cut(int videofd, int ir_cut_state)
 {
+    struct v4l2_control ctrl;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SENSOR_IR_CUT;
+    ctrl.value = ir_cut_state;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("do_sensor_ir_cut failed\n");
+    }
+}
+
+void save_imgae(char *buff, unsigned int size, int flag)
+{
+    static int num;
     char name[60] = {'\0'};
     int fd = -1;
 
@@ -214,10 +226,11 @@ void save_imgae(char *buff, unsigned int size, int flag, int count)
         return;
     }
 
-    if (count % 10 != 0)
+    num++;
+    if (num % 100 != 0)
         return;
 
-    sprintf(name, "/media/ca_%d_dump-%d.raw", flag, count);
+    sprintf(name, "/media/ca_%d_dump-%d.raw", flag, num);
 
     fd = open(name, O_RDWR | O_CREAT, 0666);
     if (fd < 0) {
@@ -477,6 +490,7 @@ void * video_thread(void *arg)
         do_sensor_exposure(videofd, tparm->exposure);
     }
 
+     do_sensor_ir_cut(videofd, ir_cut_state);
     /**************************************************
      * format configuration
      *************************************************/
@@ -764,7 +778,7 @@ void * video_thread(void *arg)
                                 memcpy(gdc_ctx.i_buff + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
                                                         v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
                                 gdc_process(&gdc_ctx);
-                                save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type, tparm->capture_count);
+                                save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type);
                         }
                 } else {
                         memcpy(displaybuf, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
@@ -785,6 +799,7 @@ void * video_thread(void *arg)
         if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
             int fb_offset = display_count % fb_buffer_cnt;
             renderImage(tparm->fbp + (src.width * src.height * 3 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
+            //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
         //do nothing
         } else if (stream_type == ARM_V4L2_TEST_STREAM_DS1) {
@@ -818,6 +833,8 @@ void * video_thread(void *arg)
     release_capture_module_stream(&g_cap_mod, stream_type);
     /* stream off */
     rc = ioctl (videofd, VIDIOC_STREAMOFF, &type);
+    int ir_cut_state = 2;
+    do_sensor_ir_cut(videofd, ir_cut_state);
     if (rc < 0) {
         printf("Error: streamoff.\n");
         goto fatal;
@@ -1012,13 +1029,14 @@ int main(int argc, char *argv[])
         printf("    t : run the port count, default is 1\n");
         printf("    x : fps print port. default: -1, no print. 0:  fr, 1: meta, 2: ds1, 3: ds2\n");
         printf("    g : enable or disable gdc module: 0: disable, 1: enable\n");
+        printf("    I : set sensor ir cut state, 0: close, 1: open\n");
         return -1;
     }
 
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -1070,6 +1088,9 @@ int main(int argc, char *argv[])
                 break;
             case 'g':
                 ds_gdc_ctrl = atoi(optarg);
+                break;
+            case 'I':
+                ir_cut_state = atoi(optarg);
                 break;
             case '?':
                 usage(argv[0]);

@@ -604,6 +604,14 @@ uint8_t sensor_info_exposures( acamera_fsm_mgr_t *instance, uint32_t value, uint
 }
 #endif
 
+#ifdef SENSOR_IR_CUT
+uint8_t sensor_ir_cut_set( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
+{
+	uint32_t ir_cut_state = *ret_value;
+	acamera_fsm_mgr_set_param( instance, FSM_PARAM_SET_SENSOR_SENSOR_IR_CUT, &ir_cut_state, sizeof( ir_cut_state ) );
+	return 0;
+}
+#endif
 
 #ifdef SYSTEM_FREEZE_FIRMWARE
 uint8_t system_freeze_firmware( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )

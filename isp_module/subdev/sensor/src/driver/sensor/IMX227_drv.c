@@ -214,6 +214,13 @@ static void sensor_alloc_integration_time( void *ctx, uint16_t *int_time, uint16
     }
 }
 
+static int32_t sensor_ir_cut_set( void *ctx, int32_t ir_cut_state )
+{
+
+    return 0;
+
+}
+
 static void sensor_update( void *ctx )
 {
     sensor_context_t *p_ctx = ctx;
@@ -514,6 +521,7 @@ void sensor_init_imx227( void **ctx, sensor_control_t *ctrl, void* sbp)
     ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
     ctrl->alloc_digital_gain = sensor_alloc_digital_gain;
     ctrl->alloc_integration_time = sensor_alloc_integration_time;
+    ctrl->ir_cut_set= sensor_ir_cut_set;
     ctrl->sensor_update = sensor_update;
     ctrl->set_mode = sensor_set_mode;
     ctrl->get_id = sensor_get_id;

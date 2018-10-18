@@ -292,6 +292,17 @@ int sensor_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_t in
         p_fsm->ctrl.sensor_test_pattern( p_fsm->sensor_ctx, mode);
 
         break;
+    case FSM_PARAM_SET_SENSOR_SENSOR_IR_CUT: {
+        if ( !input || input_size != sizeof( uint32_t ) ) {
+            LOG( LOG_ERR, "Invalid param, param_id: %d.", param_id );
+            rc = -1;
+            break;
+        }
+        int32_t ir_cut_state = *(uint32_t *)input;
+        p_fsm->ctrl.ir_cut_set( p_fsm->sensor_ctx, ir_cut_state);
+
+        break;
+    }
 
     default:
         rc = -1;

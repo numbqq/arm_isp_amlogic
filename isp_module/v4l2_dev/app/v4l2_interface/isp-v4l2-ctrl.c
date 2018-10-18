@@ -164,7 +164,10 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         LOG( LOG_INFO, "set sensor test pattern: 0x%x.\n", ctrl->val );
         ret = fw_intf_set_custom_sensor_testpattern(ctrl->val);
         break;
-
+    case ISP_V4L2_CID_CUSTOM_SENSOR_IR_CUT:
+        LOG( LOG_ERR, "set_customer_sensor_ir_cut = %d\n", ctrl->val );
+        ret = fw_intf_set_customer_sensor_ir_cut(ctrl->val);
+        break;
     }
 
     return ret;
@@ -299,6 +302,17 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_testpattern = {
     .def = 0,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_ir_cut = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SENSOR_IR_CUT,
+    .name = "sensor ir cut set",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = -1,
+    .max = 2,
+    .step = 1,
+    .def = -1,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -398,6 +412,8 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_fr_fps, NULL);
     ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_SENSOR_TESTPATTERN,
                   &isp_v4l2_ctrl_sensor_testpattern, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SENSOR_IR_CUT,
+                  &isp_v4l2_ctrl_sensor_ir_cut, NULL);
 
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );

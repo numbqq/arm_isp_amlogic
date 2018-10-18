@@ -714,6 +714,13 @@ static int fw_intf_set_sensor_testpattern(uint32_t val)
     return 0;
 }
 
+static int fw_intf_set_sensor_ir_cut_set(uint32_t ctrl_val)
+{
+    uint32_t ir_cut_state = ctrl_val;
+    acamera_command(TSENSOR, SENSOR_IR_CUT, 0, COMMAND_SET, &ir_cut_state);
+    return 0;
+}
+
 /* ----------------------------------------------------------------
  * Internal handler for control interface functions
  */
@@ -1554,4 +1561,11 @@ int fw_intf_set_custom_sensor_testpattern(uint32_t ctrl_val)
     return rtn;
 }
 
+int fw_intf_set_customer_sensor_ir_cut(uint32_t ctrl_val)
+{
+    int rtn = -1;
 
+    rtn = fw_intf_set_sensor_ir_cut_set(ctrl_val);
+
+    return rtn;
+}

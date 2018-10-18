@@ -272,6 +272,11 @@ enum SocCamera_ioctl {
     SOC_SENSOR_GET_CONTEXT_SEQ,
 
     SOC_SENSOR_SET_TEST_PATTERN,
+
+    // return sensor ir cut set
+    // input: ir cut mode
+    // output: val_out - ir cut mode
+    SOC_SENSOR_IR_CUT_SET,
 };
 
 

@@ -17,6 +17,7 @@
 *
 */
 
+#include <linux/delay.h>
 #include "acamera_types.h"
 #include "system_spi.h"
 #include "system_sensor.h"
@@ -259,6 +260,58 @@ static void sensor_alloc_integration_time( void *ctx, uint16_t *int_time_S, uint
 #endif
         break;
     }
+}
+
+static int32_t sensor_ir_cut_set( void *ctx, int32_t ir_cut_state )
+{
+    sensor_context_t *t_ctx = ctx;
+    int ret;
+    sensor_bringup_t* sensor_bp = t_ctx->sbp;
+
+    LOG( LOG_ERR, "ir_cut_state = %d", ir_cut_state);
+    LOG( LOG_INFO, "entry ir cut" );
+
+//ir_cut_GPIOZ_7 =1 & ir_cut_GPIOZ_11=0, open ir cut
+//ir_cut_GPIOZ_7 =0 & ir_cut_GPIOZ_11=1, close ir cut
+//ir_cut_srate, 2: no operation
+   if (ir_cut_state == 1)
+
+        {
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_7", 1);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_11", 0);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+
+            mdelay(500);
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_11", 1);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+        }
+    else if(ir_cut_state == 0)
+        {
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_7", 0);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_11", 1);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+
+            mdelay(500);
+            ret = pwr_am_enable(sensor_bp, "ir_cut_GPIOZ_7", 1);
+            if (ret < 0 )
+            pr_err("set power fail\n");
+       }
+    else if(ir_cut_state == 2)
+        return 0;
+    else
+        LOG( LOG_ERR, "sensor ir cut set failed" );
+
+    LOG( LOG_INFO, "exit ir cut" );
+    return 0;
 }
 
 static void sensor_update( void *ctx )
@@ -621,6 +674,7 @@ void sensor_init_imx290( void **ctx, sensor_control_t *ctrl, void* sbp)
     ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
     ctrl->alloc_digital_gain = sensor_alloc_digital_gain;
     ctrl->alloc_integration_time = sensor_alloc_integration_time;
+    ctrl->ir_cut_set= sensor_ir_cut_set;
     ctrl->sensor_update = sensor_update;
     ctrl->set_mode = sensor_set_mode;
     ctrl->get_id = sensor_get_id;
