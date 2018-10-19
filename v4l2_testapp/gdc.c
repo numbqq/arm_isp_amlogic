@@ -134,12 +134,24 @@ int gdc_alloc_dma_buffer (struct gdc_usr_ctx_s *ctx,
 
 int gdc_process(struct gdc_usr_ctx_s *ctx)
 {
-	int ret = 0;
+    int ret = 0;
     struct gdc_settings *gs = &ctx->gs;
 
     ret = ioctl(ctx->gdc_client, GDC_RUN, gs);
     if (ret < 0)
         printf("GDC_PROCESS ioctl failed\n");
 
-    return 0;
+    return ret;
+}
+
+int gdc_handle(struct gdc_usr_ctx_s *ctx)
+{
+    int ret = 0;
+    struct gdc_settings *gs = &ctx->gs;
+
+    ret = ioctl(ctx->gdc_client, GDC_HANDLE, gs);
+    if (ret < 0)
+        printf("GDC_HANDLE ioctl failed\n");
+
+    return ret;
 }

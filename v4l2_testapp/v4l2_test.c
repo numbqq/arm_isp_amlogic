@@ -409,6 +409,112 @@ int gdc_init_cfg(struct gdc_usr_ctx_s *ctx, struct thread_param *tparm, char *f_
     return ret;
 }
 
+int gdc_handle_init_cfg(struct gdc_usr_ctx_s *ctx, struct thread_param *tparm, char *f_name)
+{
+    struct gdc_settings *gdc_gs = NULL;
+    int ret = -1;
+    uint32_t format = 0;
+    uint32_t i_width = 0;
+    uint32_t i_height = 0;
+    uint32_t o_width = 0;
+    uint32_t o_height = 0;
+    uint32_t i_y_stride = 0;
+    uint32_t i_c_stride = 0;
+    uint32_t o_y_stride = 0;
+    uint32_t o_c_stride = 0;
+    uint32_t i_len = 0;
+    uint32_t o_len = 0;
+    uint32_t c_len = 0;
+
+    if (ctx == NULL || tparm == NULL || f_name == NULL) {
+        printf("Error invalid input param\n");
+        return ret;
+    }
+
+    memset(ctx, 0, sizeof(*ctx));
+
+    i_width = tparm->width;
+    i_height = tparm->height;
+    o_width = tparm->width;
+    o_height = tparm->height;
+
+    if (tparm->pixformat == V4L2_PIX_FMT_NV12)
+        format = NV12;
+    else if (tparm->pixformat == V4L2_PIX_FMT_GREY)
+        format = Y_GREY;
+    else {
+        printf("Error format\n");
+        return ret;
+    }
+
+    i_y_stride = i_width;
+    o_y_stride = o_width;
+
+    if (format == NV12) {
+        i_c_stride = i_width;
+        o_c_stride = o_width;
+    } else if (format == YV12) {
+        i_c_stride = i_width / 2;
+        o_c_stride = o_width / 2;
+    } else if (format == Y_GREY) {
+        i_c_stride = 0;
+        o_c_stride = 0;
+    } else {
+        printf("Error unknow format\n");
+        return ret;
+    }
+
+    gdc_gs = &ctx->gs;
+
+    gdc_gs->base_gdc = 0;
+
+    gdc_gs->gdc_config.input_width = i_width;
+    gdc_gs->gdc_config.input_height = i_height;
+    gdc_gs->gdc_config.input_y_stride = i_y_stride;
+    gdc_gs->gdc_config.input_c_stride = i_c_stride;
+    gdc_gs->gdc_config.output_width = o_width;
+    gdc_gs->gdc_config.output_height = o_height;
+    gdc_gs->gdc_config.output_y_stride = o_y_stride;
+    gdc_gs->gdc_config.output_c_stride = o_c_stride;
+    gdc_gs->gdc_config.format = format;
+    gdc_gs->magic = sizeof(*gdc_gs);
+
+    gdc_create_ctx(ctx);
+
+    c_len = get_file_size(f_name);
+    if (c_len <= 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error gdc config file size\n");
+        return ret;
+    }
+
+    ret = gdc_alloc_dma_buffer(ctx, CONFIG_BUFF_TYPE, c_len);
+    if (ret < 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error alloc gdc cfg buff\n");
+        return ret;
+    }
+
+    ret = gdc_set_config_param(ctx, f_name, c_len);
+    if (ret < 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error cfg gdc param buff\n");
+        return ret;
+    }
+
+    gdc_gs->gdc_config.config_size = c_len / 4;
+
+    o_len = o_y_stride * o_height * 2;
+    ret = gdc_alloc_dma_buffer(ctx, OUTPUT_BUFF_TYPE, o_len);
+    if (ret < 0) {
+        gdc_destroy_ctx(ctx);
+        printf("Error alloc gdc input buff\n");
+        return ret;
+    }
+
+    return ret;
+}
+
 /**********
  * thread function
  */
@@ -420,9 +526,11 @@ void * video_thread(void *arg)
     struct v4l2_format          v4l2_fmt;
     struct v4l2_requestbuffers  v4l2_rb;
     int                         v4l2_buf_length = 0;
+    unsigned int phy_addr = 0;
     //void                        *v4l2_mem[NB_BUFFER];
     //number of buffer* max num of planes
     void                        *v4l2_mem[NB_BUFFER*VIDEO_MAX_PLANES];
+    unsigned int v4l2_phy_mem[NB_BUFFER * VIDEO_MAX_PLANES] = {0};
     int total_mapped_mem=0;
 
     /* thread parameters */
@@ -598,9 +706,12 @@ void * video_thread(void *arg)
         else if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
             for (j=0;j<v4l2_fmt.fmt.pix_mp.num_planes;j++) {
                 v4l2_buf_length = v4l2_buf.m.planes[j].length;
-                INFO("[T#%d] plane:%d multiplanar length: %u offset: %u\n", stream_type, j, v4l2_buf.m.planes[j].length, v4l2_buf.m.planes[j].m.mem_offset);
+                phy_addr = v4l2_buf.m.planes[j].reserved[0];
+                INFO("[T#%d] plane:%d multiplanar length: %u offset: %u, phy_addr:0x%x\n",
+                    stream_type, j, v4l2_buf.m.planes[j].length, v4l2_buf.m.planes[j].m.mem_offset, phy_addr);
                 v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j] = mmap (0, v4l2_buf.m.planes[j].length, PROT_READ, MAP_SHARED,
                     videofd, v4l2_buf.m.planes[j].m.mem_offset);
+                v4l2_phy_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j] = phy_addr;
                 ++total_mapped_mem;
                 INFO("[T#%d] Buffer[%d] mapped at address %p total_mapped_mem:%d.\n", stream_type,i*v4l2_fmt.fmt.pix_mp.num_planes + j, v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j],total_mapped_mem);
             }
@@ -633,7 +744,7 @@ void * video_thread(void *arg)
     DBG("[T#%d] Queue buf done.\n", stream_type);
 
     if (stream_type == ARM_V4L2_TEST_STREAM_DS1 && tparm->gdc_ctrl == 1) {
-        gdc_ret = gdc_init_cfg(&gdc_ctx, tparm, GDC_CFG_FILE_NAME);
+        gdc_ret = gdc_handle_init_cfg(&gdc_ctx, tparm, GDC_CFG_FILE_NAME);
         if (gdc_ret < 0)
             ERR("Failed to init gdc cfg\n");
     }
@@ -774,10 +885,13 @@ void * video_thread(void *arg)
         if (src.fmt == V4L2_PIX_FMT_NV12) {
                 if (stream_type == ARM_V4L2_TEST_STREAM_DS1 && tparm->gdc_ctrl == 1) {
                         if (gdc_ret >= 0) {
-                                memcpy(gdc_ctx.i_buff, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
-                                memcpy(gdc_ctx.i_buff + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
-                                                        v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
-                                gdc_process(&gdc_ctx);
+                                //memcpy(gdc_ctx.i_buff, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
+                                //memcpy(gdc_ctx.i_buff + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
+                                                        //v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
+                                gdc_ctx.gs.y_base_addr = v4l2_phy_mem[idx * 2];
+                                gdc_ctx.gs.uv_base_addr = v4l2_phy_mem[idx * 2 + 1];
+
+                                gdc_handle(&gdc_ctx);
                                 save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type);
                         }
                 } else {
