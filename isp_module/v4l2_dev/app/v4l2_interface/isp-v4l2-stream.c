@@ -16,7 +16,6 @@
 * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 *
 */
-
 #include <linux/device.h>
 #include <linux/kthread.h>
 #include <linux/slab.h>
@@ -155,6 +154,8 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
 
 extern uint8_t *isp_kaddr;
 extern resource_size_t isp_paddr;
+
+extern void cache_flush(uint32_t buf_start, uint32_t buf_size);
 
 /* ----------------------------------------------------------------
  * temporal frame sync before DDR access is available
@@ -699,7 +700,6 @@ int isp_v4l2_stream_init_static_resources(struct platform_device *pdev)
 {
     isp_v4l2_stream_common *sc = &g_stream_common;
     int i;
-
     /* initialize stream common field */
     memset( sc, 0, sizeof( isp_v4l2_stream_common ) );
     fw_intf_isp_get_sensor_info( &sc->sensor_info );
@@ -1001,6 +1001,8 @@ static int isp_v4l2_stream_copy_thread( void *data )
             continue;
         }
         spin_unlock( &pstream->slock );
+
+        cache_flush(tframe.primary.address, tframe.primary.size + tframe.secondary.size);
 
         vvb = &pbuf->vvb;
         vb = &vvb->vb2_buf;

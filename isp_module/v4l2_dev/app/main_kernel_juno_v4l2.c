@@ -55,6 +55,7 @@
 #define HHI_CSI_PHY_CNTL0		(0xff630000 + 0xd3 * 4)
 #define HHI_CSI_PHY_CNTL1		(0xff630000 + 0x114 * 4)
 
+
 struct device_info {
     struct clk* clk_isp_0;
     struct clk* clk_mipi_0;
@@ -208,6 +209,18 @@ static int acamera_camera_async_complete( struct v4l2_async_notifier *notifier )
 }
 
 #endif
+
+void cache_flush(uint32_t buf_start, uint32_t buf_size)
+{
+    if ((buf_start == 0) || (buf_size == 0))
+        return;
+    if ( isp_pdev != NULL)
+        dma_sync_single_for_cpu(&isp_pdev->dev, buf_start, buf_size, DMA_FROM_DEVICE);
+    else {
+        pr_err("%s: isp_pdev is null, cache_flush failed!\n", __func__);
+        return;
+    }
+}
 
 int  write_to_file (char *fname, char *buf, int size)
 {
@@ -640,6 +653,7 @@ free_res:
 
     return rc;
 }
+
 
 static int isp_platform_remove(struct platform_device *pdev)
 {
