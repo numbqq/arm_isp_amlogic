@@ -94,7 +94,7 @@ static void *vb2_cmalloc_alloc(struct device *dev, unsigned long attrs,
 	if (!buf)
 		return ERR_PTR(-ENOMEM);
 
-	buf->size = size;
+	buf->size = PAGE_ALIGN(size);
 	buf->vaddr = cma_alloc(dev, buf->size);
 	buf->dma_dir = dma_dir;
 	buf->handler.refcount = &buf->refcount;
