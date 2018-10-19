@@ -24,6 +24,7 @@
 #include <media/videobuf2-core.h>
 
 #include "isp-v4l2-stream.h"
+#include "isp-vb2-cmalloc.h"
 
 /* VB2 control interfaces */
 int isp_vb2_queue_init( struct vb2_queue *q, struct mutex *mlock, isp_v4l2_stream_t *pstream );

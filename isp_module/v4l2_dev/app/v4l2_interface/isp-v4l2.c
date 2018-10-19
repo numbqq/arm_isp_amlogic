@@ -491,9 +491,22 @@ static int isp_v4l2_querybuf( struct file *file, void *priv, struct v4l2_buffer 
 {
     struct isp_v4l2_fh *sp = fh_to_private( file->private_data );
     int rc = 0;
+    int i = 0;
+    struct vb2_cmalloc_buf *buf = NULL;
 
     rc = vb2_querybuf( &sp->vb2_q, p );
-    LOG( LOG_DEBUG, "sid:%d querybuf p->type:%d p->index:%d , rc %d", sp->stream_id, p->type, p->index, rc );
+
+    if (p->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
+                    sp->stream_id != V4L2_STREAM_TYPE_META) {
+        for (i = 0; i < p->length; i++) {
+            buf = sp->vb2_q.bufs[p->index]->planes[i].mem_priv;
+            p->m.planes[i].reserved[0] = virt_to_phys(buf->vaddr);
+        }
+    }
+
+    LOG( LOG_DEBUG, "sid:%d querybuf p->type:%d p->index:%d , rc %d",
+            sp->stream_id, p->type, p->index, rc );
+
     return rc;
 }
 

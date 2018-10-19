@@ -19,18 +19,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/dma-contiguous.h>
 
-#include <media/videobuf2-v4l2.h>
-#include <media/videobuf2-memops.h>
-
-struct vb2_cmalloc_buf {
-	void				*vaddr;
-	struct frame_vector		*vec;
-	enum dma_data_direction		dma_dir;
-	unsigned long			size;
-	atomic_t			refcount;
-	struct vb2_vmarea_handler	handler;
-	struct dma_buf			*dbuf;
-};
+#include "isp-vb2-cmalloc.h"
 
 static void *cma_alloc(struct device *dev, unsigned long size)
 {

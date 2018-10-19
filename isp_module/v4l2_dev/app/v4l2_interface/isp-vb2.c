@@ -28,7 +28,6 @@
 #include "isp-v4l2-stream.h"
 #include "isp-vb2.h"
 #include "system_am_sc.h"
-#include "isp-vb2-cmalloc.h"
 
 /* ----------------------------------------------------------------
  * VB2 operations
