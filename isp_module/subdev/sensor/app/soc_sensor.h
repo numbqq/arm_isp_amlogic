@@ -270,6 +270,8 @@ enum SocCamera_ioctl {
     // input: sensor mode
     // output: context_seq - current sensor's isp seq
     SOC_SENSOR_GET_CONTEXT_SEQ,
+
+    SOC_SENSOR_SET_TEST_PATTERN,
 };
 
 

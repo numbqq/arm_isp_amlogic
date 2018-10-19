@@ -304,6 +304,28 @@ static void sensor_update( void *ctx )
     }
 }
 
+static void sensor_test_pattern( void *ctx, uint8_t mode )
+{
+    sensor_context_t *p_ctx = ctx;
+    if ( p_ctx != NULL ) {
+        struct soc_sensor_ioctl_args settings;
+        struct v4l2_subdev *sd = p_ctx->soc_sensor;
+        uint32_t ctx_num = get_ctx_num( ctx );
+        if ( sd != NULL && ctx_num < FIRMWARE_CONTEXT_NUMBER ) {
+            settings.ctx_num = ctx_num;
+            settings.args.general.val_in = mode;
+            int rc = v4l2_subdev_call( sd, core, ioctl, SOC_SENSOR_SET_TEST_PATTERN, &settings );
+            if ( rc != 0 ) {
+                LOG( LOG_ERR, "Failed to update sensor exposure. rc = %d", rc );
+            }
+        } else {
+            LOG( LOG_CRIT, "SOC sensor subdev pointer is NULL" );
+        }
+    } else {
+        LOG( LOG_CRIT, "Sensor context pointer is NULL" );
+    }
+}
+
 
 static uint16_t sensor_get_id( void *ctx )
 {
@@ -378,7 +400,6 @@ static uint32_t read_register( void *ctx, uint32_t address )
     }
     return result;
 }
-
 
 static void write_register( void *ctx, uint32_t address, uint32_t data )
 {
@@ -479,6 +500,7 @@ void sensor_init_v4l2( void **ctx, sensor_control_t *ctrl )
         ctrl->alloc_digital_gain = sensor_alloc_digital_gain;
         ctrl->alloc_integration_time = sensor_alloc_integration_time;
         ctrl->sensor_update = sensor_update;
+        ctrl->sensor_test_pattern = sensor_test_pattern;
         ctrl->set_mode = sensor_set_mode;
         ctrl->get_id = sensor_get_id;
         ctrl->get_parameters = sensor_get_parameters;

@@ -49,6 +49,7 @@ static int custom_exp = 0;
 
 void custom_initialization( uint32_t ctx_num )
 {
+
 }
 
 
@@ -698,6 +699,18 @@ static int fw_intf_set_fr_fps(uint32_t fps)
 
     acamera_api_set_fps(dma_fr, cur_fps, fps);
 
+    return 0;
+}
+
+static int fw_intf_set_sensor_testpattern(uint32_t val)
+{
+    uint32_t mode = val;
+    uint32_t ret_val;
+    acamera_command(TSENSOR, SENSOR_TESTPATTERN, mode, COMMAND_SET, &ret_val);
+    if (mode <= 0) {
+        LOG(LOG_ERR, "Error input param\n");
+        return -1;
+    }
     return 0;
 }
 
@@ -1531,4 +1544,14 @@ int fw_intf_set_custom_fr_fps(uint32_t ctrl_val)
 
     return rtn;
 }
+
+int fw_intf_set_custom_sensor_testpattern(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    rtn = fw_intf_set_sensor_testpattern(ctrl_val);
+
+    return rtn;
+}
+
 

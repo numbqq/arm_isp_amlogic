@@ -697,6 +697,15 @@ static acam_reg_t dol_1080p_30fps_4lane_10bits[] = {
     {0x0000, 0x0000, 0x0000, 0x0000},
 };
 
+static acam_reg_t imx290_test_pattern[] = {
+	{0x3000, 0x01, 0xff, 1}, /* standby */
+	{0x300a, 0x00, 0xff, 1},
+	{0x300e, 0x00, 0xff, 1},
+	{0x300f, 0x00, 0xff, 1},
+	{0x308c, 0x21, 0xff, 1},
+	{0x0000, 0x0000, 0x0000, 0x0000},
+};
+
 static acam_reg_t settings_context_imx290[] = {
     { 0x19000, 0xf000f0L, 0xfff0fff,4 },
     { 0x1ae7c, 0xb2b4b4c8L, 0x0,4 },
@@ -1045,6 +1054,7 @@ static const acam_reg_t *imx290_seq_table[] = {
 	linear_1080p_60fps_446Mbps_4lane_10bits,
 	dol_1080p_25fps_4lane_10bits,
 	dol_1080p_30fps_4lane_10bits,
+	imx290_test_pattern,
 };
 
 static const acam_reg_t *isp_seq_table[] = {
@@ -1056,6 +1066,8 @@ static const acam_reg_t *isp_seq_table[] = {
 #define SENSOR_IMX290_SEQUENCE_DEFAULT_LINEAR    0
 #define SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_720P    3
 #define SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_1080P    4
-#define SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_1080P_DIFF    5
+//#define SENSOR_IMX290_SEQUENCE_DEFAULT_WDR_1080P_DIFF    5
+#define SENSOR_IMX290_SEQUENCE_DEFAULT_TEST_PATTERN    5
+
 #define SENSOR_IMX290_CONTEXT_SEQ 0
 #endif /* __IMX290_SENSOR_H__ */

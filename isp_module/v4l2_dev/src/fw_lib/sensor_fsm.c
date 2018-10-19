@@ -281,6 +281,17 @@ int sensor_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_t in
         p_fsm->ctrl.write_sensor_register( p_fsm->sensor_ctx, p_cfg->reg_addr, p_cfg->reg_value );
         break;
     }
+    case FSM_PARAM_SET_SENSOR_TEST_PATTERN:
+        if ( !input ) {
+            LOG( LOG_ERR, "Invalid param, param_id: %d.", param_id );
+            rc = -1;
+            break;
+        }
+        uint8_t mode = *( (uint8_t *)input );
+
+        p_fsm->ctrl.sensor_test_pattern( p_fsm->sensor_ctx, mode);
+
+        break;
 
     default:
         rc = -1;

@@ -160,6 +160,11 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         ret = fw_intf_set_custom_fr_fps(ctrl->val);
         *(ctrl->p_new.p_s32) = 0;
         break;
+    case ISP_V4L2_CID_CUSTOM_SET_SENSOR_TESTPATTERN:
+        LOG( LOG_INFO, "set sensor test pattern: 0x%x.\n", ctrl->val );
+        ret = fw_intf_set_custom_sensor_testpattern(ctrl->val);
+        break;
+
     }
 
     return ret;
@@ -283,6 +288,17 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_fr_fps = {
     .def = 0,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_testpattern = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SET_SENSOR_TESTPATTERN,
+    .name = "ISP Sensor test pattern",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 0,
+    .max = 10,
+    .step = 1,
+    .def = 0,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -380,6 +396,8 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_sensor_exposure, NULL );
     ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_FR_FPS,
                   &isp_v4l2_ctrl_fr_fps, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_SENSOR_TESTPATTERN,
+                  &isp_v4l2_ctrl_sensor_testpattern, NULL);
 
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );

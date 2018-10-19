@@ -261,6 +261,7 @@ typedef struct _sensor_control_t {
      */
     void ( *write_sensor_register )( void *ctx, uint32_t address, uint32_t data );
 
+    void ( *sensor_test_pattern )( void *ctx, uint8_t mode );
 } sensor_control_t;
 
 

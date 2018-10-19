@@ -380,6 +380,20 @@ uint8_t sensor_name( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direct
 }
 #endif
 
+#ifdef SENSOR_NAME
+uint8_t sensor_test_pattern( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
+{
+    uint32_t result = SUCCESS;
+    if ( direction == COMMAND_SET ) {
+        acamera_fsm_mgr_set_param( instance, FSM_PARAM_SET_SENSOR_TEST_PATTERN, &value, sizeof( value ) );
+        return SUCCESS;
+    } else {
+        result = NOT_SUPPORTED;
+    }
+    return result;
+}
+#endif
+
 
 #ifdef SENSOR_WIDTH
 uint8_t sensor_width( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )

@@ -827,7 +827,6 @@ static acam_reg_t settings_context[] = {
     { 0x0000, 0x0000, 0x0000, 0x0000 }
 };
 
-
 static acam_reg_t fpga_linear[] = {
     { 0x209550, 0x50000L, 0x70007,4 },
     { 0x209554, 0x0L, 0x3,1 },
@@ -846,7 +845,7 @@ static const acam_reg_t *seq_table[] = {
     settings_fpga,
     fs_lin_4exp,
     settings_context,
-    fpga_linear
+    fpga_linear,
 };
 
 #define SENSOR_ISP_SEQUENCE_DEFAULT seq_table
@@ -860,4 +859,5 @@ static const acam_reg_t *seq_table[] = {
 #define SENSOR_ISP_SEQUENCE_DEFAULT_FS_LIN_4EXP    6
 #define SENSOR_ISP_SEQUENCE_DEFAULT_SETTINGS_CONTEXT    7
 #define SENSOR_ISP_SEQUENCE_DEFAULT_FPGA_LINEAR    8
+
 #endif /* __ISP_SENSOR_H__ */

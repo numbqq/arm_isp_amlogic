@@ -441,6 +441,11 @@ static void start_streaming( void *ctx )
     LOG(LOG_ERR, "%s: Stream On\n", __func__);
 }
 
+static void sensor_test_pattern( void *ctx, uint8_t mode )
+{
+
+}
+
 void sensor_deinit_imx227( void *ctx )
 {
     sensor_context_t *t_ctx = ctx;
@@ -518,6 +523,7 @@ void sensor_init_imx227( void **ctx, sensor_control_t *ctrl, void* sbp)
     ctrl->write_sensor_register = write_register;
     ctrl->start_streaming = start_streaming;
     ctrl->stop_streaming = stop_streaming;
+    ctrl->sensor_test_pattern = sensor_test_pattern;
 
     // Reset sensor during initialization
     sensor_hw_reset_enable();

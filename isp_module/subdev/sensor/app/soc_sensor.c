@@ -155,6 +155,9 @@ static long camera_ioctl( struct v4l2_subdev *sd, unsigned int cmd, void *arg )
     case SOC_SENSOR_SET_PRESET:
         ctx->camera_control.set_mode( ctx->camera_context, ARGS_TO_PTR( arg )->args.general.val_in );
         break;
+    case SOC_SENSOR_SET_TEST_PATTERN:
+        ctx->camera_control.sensor_test_pattern( ctx->camera_context, ARGS_TO_PTR( arg )->args.general.val_in );
+        break;
     case SOC_SENSOR_ALLOC_AGAIN:
         ARGS_TO_PTR( arg )
             ->args.general.val_out = ctx->camera_control.alloc_analog_gain( ctx->camera_context, ARGS_TO_PTR( arg )->args.general.val_in );
@@ -352,7 +355,7 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
         pr_err("%s: failed to get sensor name\n", __func__);
     }
 
-    pr_err("sensor name from dts config is %s\n", sensor_name);
+    pr_err("config sensor %s driver.\n", sensor_name);
 
     for (i = 0; i < NELEM(ConversionTable); ++i) {
         if (strcmp(ConversionTable[i].sensor_name, sensor_name) == 0) {
