@@ -248,14 +248,14 @@ static void sensor_alloc_integration_time( void *ctx, uint16_t *int_time_S, uint
         if ( *int_time_L < 2 ) *int_time_L = 2;
         if ( *int_time_L > p_ctx->max_L ) *int_time_L = p_ctx->max_L;
 
-        if ( p_ctx->int_time_S != *int_time_S || p_ctx->int_time_M != *int_time_M || p_ctx->int_time_L != *int_time_L ) {
+        if ( p_ctx->int_time_S != *int_time_S || p_ctx->int_time_L != *int_time_L ) {
             p_ctx->int_cnt = 2;
 
             p_ctx->int_time_S = *int_time_S;
             p_ctx->int_time_L = *int_time_L;
 
             p_ctx->shs2 = p_ctx->frame - *int_time_L - 1;
-            p_ctx->shs1 = p_ctx->rhs2 - *int_time_S - 1;
+            p_ctx->shs1 = p_ctx->rhs1 - *int_time_S - 1;
         }
 #endif
         break;
@@ -394,6 +394,7 @@ static void sensor_set_iface(sensor_mode_t *mode)
     }
 
     memset(&mipi_info, 0, sizeof(mipi_info));
+    memset(&info, 0, sizeof(struct am_adap_info));
     mipi_info.lanes = mode->lanes;
     mipi_info.ui_val = 1000 / mode->bps;
 
@@ -420,6 +421,10 @@ static void sensor_set_iface(sensor_mode_t *mode)
     if (mode->wdr_mode == WDR_MODE_FS_LIN) {
         info.mode = DOL_MODE;
         info.type = mode->dol_type;
+        if (info.type == DOL_LINEINFO) {
+           info.offset.long_offset = 15;
+           info.offset.short_offset = 20;
+        }
     } else
         info.mode = DIR_MODE;
     am_adap_set_info(&info);
@@ -498,11 +503,11 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     case 0: // HD 1080p
         param->active.width = 1920;
         param->active.height = 1080;
-        p_ctx->max_L = 3936;
-        p_ctx->max_M = 486 + 30;
-        p_ctx->max_S = 60 - 30;
-        p_ctx->rhs1 = 523;
-        p_ctx->rhs2 = 560;
+        p_ctx->max_L = 2236;
+        //p_ctx->max_M = 486 + 30;
+        p_ctx->max_S = 198;
+        p_ctx->rhs1 = 201;
+        //p_ctx->rhs2 = 560;
         // p_ctx->vmax=1125;
         break;
     case 1:
@@ -531,8 +536,8 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     if (param->modes_table[mode].exposures == 1) {
         acamera_sbus_write_u8( p_sbus, 0x3031, ( p_ctx->rhs1 >> 8 ) & 0xFF );
         acamera_sbus_write_u8( p_sbus, 0x3030, ( p_ctx->rhs1 >> 0 ) & 0xFF );
-        acamera_sbus_write_u8( p_sbus, 0x3035, ( p_ctx->rhs2 >> 8 ) & 0xFF );
-        acamera_sbus_write_u8( p_sbus, 0x3034, ( p_ctx->rhs2 >> 0 ) & 0xFF );
+        //acamera_sbus_write_u8( p_sbus, 0x3035, ( p_ctx->rhs2 >> 8 ) & 0xFF );
+        //acamera_sbus_write_u8( p_sbus, 0x3034, ( p_ctx->rhs2 >> 0 ) & 0xFF );
     }
 
     param->total.width = ( (uint16_t)acamera_sbus_read_u8( p_sbus, 0x301D ) << 8 ) | acamera_sbus_read_u8( p_sbus, 0x301C );

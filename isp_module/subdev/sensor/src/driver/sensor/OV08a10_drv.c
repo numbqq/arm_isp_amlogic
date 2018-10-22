@@ -339,6 +339,7 @@ static void sensor_set_iface(sensor_mode_t *mode)
     }
 
     memset(&mipi_info, 0, sizeof(mipi_info));
+    memset(&info, 0, sizeof(struct am_adap_info));
     mipi_info.lanes = mode->lanes;
     mipi_info.ui_val = 1000 / mode->bps;
 

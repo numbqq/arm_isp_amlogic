@@ -136,6 +136,11 @@ typedef enum {
 	DOL_LINEINFO,
 } dol_type_t;
 
+typedef struct exp_offset {
+	int long_offset;
+	int short_offset;
+} exp_offset_t;
+
 struct am_adap {
 	struct device_node *of_node;
 	struct platform_device *p_dev;
@@ -151,6 +156,7 @@ struct am_adap_info {
 	adap_img_t img;
 	img_fmt_t fmt;
 	dol_type_t type;
+	exp_offset_t offset;
 };
 
 

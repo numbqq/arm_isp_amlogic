@@ -428,6 +428,8 @@ void am_adap_frontend_start(void)
 
 int am_adap_frontend_init(void)
 {
+	int long_exp_offset = para.offset.long_offset;
+	int short_exp_offset = para.offset.short_offset;
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x0);//release from reset
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x6);//enable frontend module clock and disable auto clock gating
 
@@ -458,10 +460,16 @@ int am_adap_frontend_init(void)
 			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_TO_VC_H, FRONTEND_IO, 0x55);
 			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_TO_IGNORE_L, FRONTEND_IO, 0x80808080);
 			mipi_adap_reg_wr(CSI2_VC_MODE2_MATCH_TO_IGNORE_H, FRONTEND_IO, 0x0);
-			mipi_adap_reg_wr(CSI2_X_START_END_MEM, FRONTEND_IO, 0x078b000c);
-			mipi_adap_reg_wr(CSI2_Y_START_END_MEM, FRONTEND_IO, 0x044c0015);
-			mipi_adap_reg_wr(CSI2_X_START_END_ISP, FRONTEND_IO, 0x078b000c);
-			mipi_adap_reg_wr(CSI2_Y_START_END_ISP, FRONTEND_IO, 0x044c0015);
+			//set long exposure offset
+			adap_wr_reg_bits(CSI2_X_START_END_MEM, FRONTEND_IO, 12, 0, 16);
+			adap_wr_reg_bits(CSI2_X_START_END_MEM, FRONTEND_IO, 12 + para.img.width - 1, 16, 16);
+			adap_wr_reg_bits(CSI2_Y_START_END_MEM, FRONTEND_IO, long_exp_offset, 0, 16);
+			adap_wr_reg_bits(CSI2_Y_START_END_MEM, FRONTEND_IO, long_exp_offset + para.img.height - 1, 16, 16);
+			//set short exposure offset
+			adap_wr_reg_bits(CSI2_X_START_END_ISP, FRONTEND_IO, 12, 0, 16);
+			adap_wr_reg_bits(CSI2_X_START_END_ISP, FRONTEND_IO, 12 + para.img.width - 1, 16, 16);
+			adap_wr_reg_bits(CSI2_Y_START_END_ISP, FRONTEND_IO, short_exp_offset, 0, 16);
+			adap_wr_reg_bits(CSI2_Y_START_END_ISP, FRONTEND_IO, short_exp_offset + para.img.height - 1, 16, 16);
 		} else {
 			pr_err("Not support DOL type\n");
 		}
@@ -616,7 +624,7 @@ int am_adap_alig_init(void)
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL7, ALIGN_IO, 0x0);
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL8, ALIGN_IO, 0x80000020);
 	} else if (para.mode == DOL_MODE) {
-		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL6, ALIGN_IO, 0x00fff31d);
+		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL6, ALIGN_IO, 0x00ff541d);
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL7, ALIGN_IO, 0xffffe000);
 		mipi_adap_reg_wr(MIPI_ADAPT_ALIG_CNTL8, ALIGN_IO, 0x87881020);
 	} else {
