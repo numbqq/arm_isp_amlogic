@@ -76,6 +76,11 @@ static int fb_buffer_cnt = 3;
 static int ir_cut_state = 1;
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
 
+#define LINE_SIZE 128
+#define LINE_MASK (~(LINE_SIZE - 1))
+#define LINE_ALIGN(size) ((size + LINE_SIZE - 1) & LINE_MASK)
+
+
 /* config parameters */
 struct thread_param {
     /* video device info */
@@ -97,6 +102,8 @@ struct thread_param {
     int32_t                     capture_count;
     int32_t                     gdc_ctrl;
     int                         videofd;
+    uint32_t  c_width;
+    uint32_t  c_height;
 };
 
 pthread_t tid[STATIC_STREAM_COUNT];
@@ -215,9 +222,8 @@ static void do_sensor_ir_cut(int videofd, int ir_cut_state)
     }
 }
 
-void save_imgae(char *buff, unsigned int size, int flag)
+void save_imgae(char *buff, unsigned int size, int flag, int num)
 {
-    static int num;
     char name[60] = {'\0'};
     int fd = -1;
 
@@ -226,8 +232,7 @@ void save_imgae(char *buff, unsigned int size, int flag)
         return;
     }
 
-    num++;
-    if (num % 100 != 0)
+    if (num % 20 != 0)
         return;
 
     sprintf(name, "/media/ca_%d_dump-%d.raw", flag, num);
@@ -515,6 +520,51 @@ int gdc_handle_init_cfg(struct gdc_usr_ctx_s *ctx, struct thread_param *tparm, c
     return ret;
 }
 
+static void do_crop(int type, int videofd, int width, int height)
+{
+    struct v4l2_cropcap c_cap;
+    struct v4l2_crop s_crop;
+    struct v4l2_crop g_crop;
+    int rc = -1;
+
+    memset(&c_cap, 0, sizeof(c_cap));
+    memset(&s_crop, 0, sizeof(s_crop));
+
+    /* use this ioctl to get crop capability */
+    c_cap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    rc = ioctl (videofd, VIDIOC_CROPCAP, &c_cap);
+    if (rc != 0) {
+        printf("Error get crop cap\n");
+        return;
+    }
+
+    if (width == 0 || height == 0) {
+        width = c_cap.bounds.width;
+        height = c_cap.bounds.height;
+    }
+
+    /* default: crop the center of image */
+    s_crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    s_crop.c.left = (c_cap.bounds.width - width) / 2;
+    s_crop.c.top = (c_cap.bounds.height - height) / 2;
+    s_crop.c.width = width;
+    s_crop.c.height = height;
+    rc = ioctl(videofd, VIDIOC_S_CROP, &s_crop);
+    if (rc != 0) {
+        printf("Error set crop\n");
+        return;
+    }
+
+    /* use this ioctl to check crop setting */
+    memset(&g_crop, 0, sizeof(g_crop));
+    g_crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    rc = ioctl(videofd, VIDIOC_G_CROP, &g_crop);
+    if (rc != 0) {
+        printf("Error get crop\n");
+        return;
+    }
+}
+
 /**********
  * thread function
  */
@@ -645,6 +695,11 @@ void * video_thread(void *arg)
     if(v4l2_fmt.type==V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
         INFO("[T#%d] multiplanar support planes=%d\n",
             stream_type, v4l2_fmt.fmt.pix_mp.num_planes);
+    }
+
+    if (stream_type == ARM_V4L2_TEST_STREAM_FR ||
+            stream_type == ARM_V4L2_TEST_STREAM_DS1) {
+        do_crop(stream_type, videofd, tparm->c_width, tparm->c_height);
     }
 
     int fr_bitdepth;
@@ -892,7 +947,7 @@ void * video_thread(void *arg)
                                 gdc_ctx.gs.uv_base_addr = v4l2_phy_mem[idx * 2 + 1];
 
                                 gdc_handle(&gdc_ctx);
-                                save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type);
+                                save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type, tparm->capture_count);
                         }
                 } else {
                         memcpy(displaybuf, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
@@ -913,11 +968,11 @@ void * video_thread(void *arg)
         if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
             int fb_offset = display_count % fb_buffer_cnt;
             renderImage(tparm->fbp + (src.width * src.height * 3 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
-            //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
+            //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage * 2, stream_type, tparm->capture_count);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
         //do nothing
         } else if (stream_type == ARM_V4L2_TEST_STREAM_DS1) {
-        //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
+         //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage * 2, stream_type, tparm->capture_count);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_DS2) {
         //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
         }
@@ -1121,6 +1176,11 @@ int main(int argc, char *argv[])
     int i;
     int command = -1;
     int ds_gdc_ctrl = 0;
+    uint32_t fr_c_width = 0;
+    uint32_t fr_c_height = 0;
+
+    uint32_t ds_c_width = 0;
+    uint32_t ds_c_height = 0;
 
     if (argc < 25) {
         printf("v4l test API\n");
@@ -1144,13 +1204,17 @@ int main(int argc, char *argv[])
         printf("    x : fps print port. default: -1, no print. 0:  fr, 1: meta, 2: ds1, 3: ds2\n");
         printf("    g : enable or disable gdc module: 0: disable, 1: enable\n");
         printf("    I : set sensor ir cut state, 0: close, 1: open\n");
+        printf("    W : FR crop width\n");
+        printf("    H : FR crop height\n");
+        printf("    Y : DS1 crop width\n");
+        printf("    Z : DS1 crop height\n");
         return -1;
     }
 
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -1205,6 +1269,18 @@ int main(int argc, char *argv[])
                 break;
             case 'I':
                 ir_cut_state = atoi(optarg);
+                break;
+            case 'W':
+                fr_c_width = atoi(optarg);
+                break;
+            case 'H':
+                fr_c_height = atoi(optarg);
+                break;
+            case 'Y':
+                ds_c_width = atoi(optarg);
+                break;
+            case 'Z':
+                ds_c_height = atoi(optarg);
                 break;
             case '?':
                 usage(argv[0]);
@@ -1293,6 +1369,8 @@ int main(int argc, char *argv[])
             .gdc_ctrl = 0,
 
             .capture_count = fr_num,
+            .c_width = fr_c_width,
+            .c_height = fr_c_height,
         },
 #if ARM_V4L2_TEST_HAS_META
         {
@@ -1325,6 +1403,8 @@ int main(int argc, char *argv[])
             .gdc_ctrl = ds_gdc_ctrl,
 
             .capture_count = ds_num,
+            .c_width = ds_c_width,
+            .c_height = ds_c_height,
         },
         {
             .devname    = v4ldevname,
