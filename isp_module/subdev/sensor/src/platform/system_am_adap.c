@@ -62,13 +62,21 @@ static resource_size_t ddr_buf[DDR_BUF_SIZE];
 #define DOL_BUF_SIZE 2
 static resource_size_t dol_buf[DOL_BUF_SIZE];
 
-static resource_size_t dump_buf_addr;
 static int dump_width;
 static int dump_height;
 static int dump_flag;
-
+static int dump_cur_flag;
+static int dump_buf_index;
+static int irq_count;
+static int cur_buf_index;
+static int current_flag;
 static int control_flag;
 static int wbuf_index;
+
+
+static unsigned int data_process_para;
+module_param(data_process_para, uint, 0664);
+MODULE_PARM_DESC(data_process_para, "\n control inject or dump data parameter from adapter\n");
 
 static int ceil_upper(int val, int mod)
 {
@@ -86,7 +94,26 @@ static int ceil_upper(int val, int mod)
 	return ret;
 }
 
-int  write_to_file (char *buf, int size)
+static void parse_param(char *buf_orig, char **parm)
+{
+	char *ps, *token;
+	unsigned int n = 0;
+	char delim1[3] = " ";
+	char delim2[2] = "\n";
+
+	ps = buf_orig;
+	strcat(delim1, delim2);
+	while (1) {
+		token = strsep(&ps, delim1);
+		if (token == NULL)
+			break;
+		if (*token == '\0')
+			continue;
+		parm[n++] = token;
+	}
+}
+
+int write_index_to_file(char *path, char *buf, int index, int size)
 {
 	int ret = 0;
 	struct file *fp = NULL;
@@ -94,13 +121,15 @@ int  write_to_file (char *buf, int size)
 	loff_t pos = 0;
 	int nwrite = 0;
 	int offset = 0;
+	char file_name[150];
 
+	sprintf(file_name, "%s%s%d%s", path, "adapt_img_", index, ".raw");
 	/* change to KERNEL_DS address limit */
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 
 	/* open file to write */
-	fp = filp_open("/media/adapt_img.raw", O_WRONLY|O_CREAT, 0640);
+	fp = filp_open(file_name, O_WRONLY|O_CREAT, 0640);
 	if (!fp) {
 	   printk("%s: open file error\n", __FUNCTION__);
 	   ret = -1;
@@ -127,35 +156,175 @@ static ssize_t adapt_frame_read(struct device *dev,
 {
 	pr_info("adapt-read.\n");
 	uint8_t buf1[100];
-	uint32_t size;
-	int depth;
-	depth = am_adap_get_depth();
-	if (dump_buf_addr != 0)
-		buf = phys_to_virt(dump_buf_addr);
-	size = ((dump_width * depth)/8) * dump_height;
-	pr_info("dump width = %d, height = %d, size = %d\n", dump_width, dump_height, size);
-	write_to_file(buf, size);
-	return sprintf(buf1,"dump flag:%d", dump_flag);
+
+	return sprintf(buf1,"dump flag:%d", 0);
 }
 
 static ssize_t adapt_frame_write(struct device *dev,
 	struct device_attribute *attr, char const *buf, size_t size)
 {
-	unsigned long write_flag = 0;
-	int retval = 0;
+	long val = 0;
+	ssize_t ret = size;
+	char *virt_buf = NULL;
+	int depth;
+	uint32_t frame_size;
+	char *buf_orig, *parm[10] = {NULL};
+	unsigned int frame_index = 0;
+	resource_size_t dump_buf_addr;
 
-	retval = kstrtoul(buf, 10, &write_flag);
+	if (!buf)
+		return ret;
 
-	if (retval) {
-		pr_err("Error to count strtoul\n");
-		return retval;
+	buf_orig = kstrdup(buf, GFP_KERNEL);
+	if (!buf_orig)
+		return ret;
+
+	parse_param(buf_orig, (char **)&parm);
+
+	if (!parm[0]) {
+		ret = -EINVAL;
+		goto Err;
 	}
 
-	dump_flag = write_flag;
+	if (!parm[1] || (kstrtoul(parm[1], 10, &val) < 0)) {
+		ret = -EINVAL;
+		goto Err;
+	} else {
+		dump_cur_flag = val;
+	}
 
-	return size;
+	if (!parm[2] || (kstrtoul(parm[2], 10, &val) < 0)) {
+		ret = -EINVAL;
+		goto Err;
+	} else {
+		cur_buf_index = val;
+		if (cur_buf_index >= DDR_BUF_SIZE) {
+			pr_info("dump current index is invalid.\n");
+			ret = -EINVAL;
+			goto Err;
+		}
+	}
+	frame_index = ((data_process_para) & (0xfffffff));
+	depth = am_adap_get_depth();
+	frame_size = ((dump_width * depth)/8) * dump_height;
+	pr_info("dump width = %d, height = %d, size = %d\n",
+		dump_width, dump_height, frame_size);
+
+	if (dump_cur_flag) {
+		dump_buf_addr = ddr_buf[cur_buf_index];
+		pr_info("dump current buffer index %d.\n", cur_buf_index);
+		if (dump_buf_addr)
+			virt_buf = phys_to_virt(dump_buf_addr);
+		write_index_to_file(parm[0], virt_buf, cur_buf_index, frame_size);
+		dump_cur_flag = 0;
+		current_flag = 0;
+	} else if (frame_index > 0) {
+		pr_info("dump the buf_index = %d\n", dump_buf_index);
+		dump_buf_addr = ddr_buf[dump_buf_index];
+		if (dump_buf_addr)
+			virt_buf = phys_to_virt(dump_buf_addr);
+		write_index_to_file(parm[0], virt_buf, dump_buf_index, frame_size);
+		dump_flag = 0;
+	} else {
+		pr_info("No match condition to dump file.\n");
+	}
+
+Err:
+	kfree(buf_orig);
+	return ret;
+
 }
 static DEVICE_ATTR(adapt_frame, S_IRUGO | S_IWUSR, adapt_frame_read, adapt_frame_write);
+
+static int write_data_to_buf(char *path, char *buf, int size)
+{
+	int ret = 0;
+	struct file *fp = NULL;
+	mm_segment_t old_fs;
+	loff_t pos = 0;
+	unsigned int r_size = 0;
+
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+	fp = filp_open(path, O_RDONLY, 0);
+	if (IS_ERR(fp)) {
+		pr_info("read error.\n");
+		return -1;
+	}
+	r_size = vfs_read(fp, buf, size, &pos);
+	pr_info("read r_size = %u, size = %u\n", r_size, size);
+
+	vfs_fsync(fp, 0);
+	filp_close(fp, NULL);
+	set_fs(old_fs);
+
+	return ret;
+}
+
+static ssize_t inject_frame_read(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	uint8_t buf1[100];
+
+	return sprintf(buf1,"dump flag:%d", 0);
+}
+
+static ssize_t inject_frame_write(struct device *dev,
+	struct device_attribute *attr, char const *buf, size_t size)
+{
+	char *buf_orig, *parm[100] = {NULL};
+	long frame_width = 0;
+	long frame_height = 0;
+	long bit_depth = 0;
+	char *virt_buf = NULL;
+	uint32_t file_size;
+	ssize_t ret = size;
+
+	if (!buf)
+		return ret;
+
+	buf_orig = kstrdup(buf, GFP_KERNEL);
+	if (!buf_orig)
+		return ret;
+
+	parse_param(buf_orig, (char **)&parm);
+
+	if (!parm[0]) {
+		ret = -EINVAL;
+		goto Err;
+	}
+
+	pr_info("file_path = %s\n", parm[0]);
+
+	if (!parm[1] || (kstrtoul(parm[1], 10, &frame_width) < 0)) {
+		ret = -EINVAL;
+		goto Err;
+	}
+
+	if (!parm[2] || (kstrtoul(parm[2], 10, &frame_height) < 0)) {
+		ret = -EINVAL;
+		goto Err;
+	}
+
+	if (!parm[3] || (kstrtoul(parm[3], 10, &bit_depth) < 0)) {
+		ret = -EINVAL;
+		goto Err;
+	}
+
+	if (ddr_buf[DDR_BUF_SIZE - 1] != 0)
+		virt_buf = phys_to_virt(ddr_buf[DDR_BUF_SIZE - 1]);
+	file_size = ((frame_width * bit_depth)/8)* frame_height;
+	pr_info("inject frame width = %ld, height = %ld, bitdepth = %ld, size = %d\n",
+		frame_width, frame_height,
+		bit_depth, file_size);
+	write_data_to_buf(parm[0], virt_buf, file_size);
+
+Err:
+	kfree(buf_orig);
+	return ret;
+}
+
+static DEVICE_ATTR(inject_frame, S_IRUGO | S_IWUSR, inject_frame_read, inject_frame_write);
 
 int am_adap_parse_dt(struct device_node *node)
 {
@@ -214,6 +383,7 @@ int am_adap_parse_dt(struct device_node *node)
 	}
 
 	device_create_file(&(t_adap->p_dev->dev), &dev_attr_adapt_frame);
+	device_create_file(&(t_adap->p_dev->dev), &dev_attr_inject_frame);
 
 	g_adap = t_adap;
 
@@ -243,6 +413,7 @@ void am_adap_deinit_parse_dt(void)
 	}
 
 	device_remove_file(&(t_adap->p_dev->dev), &dev_attr_adapt_frame);
+	device_remove_file(&(t_adap->p_dev->dev), &dev_attr_inject_frame);
 
 	iounmap(t_adap->base_addr);
 	t_adap->base_addr = NULL;
@@ -365,8 +536,20 @@ static inline void mipi_adap_reg_rd(int addr, adap_io_type_t io_type, uint32_t *
 
 void am_adap_set_info(struct am_adap_info *info)
 {
+	int inject_data_flag;
+	int dump_data_flag;
+
 	memset(&para, 0, sizeof(struct am_adap_info));
 	memcpy(&para, info, sizeof(struct am_adap_info));
+	inject_data_flag = ((data_process_para >> 29) & 0x1);
+	dump_data_flag = ((data_process_para >> 28) & 0x1);
+
+	pr_info("inject_data_flag = %x, dump_data_flag = %x\n",
+		 inject_data_flag, dump_data_flag);
+
+	if ((inject_data_flag) || (dump_data_flag)) {
+		para.mode = DDR_MODE;
+	}
 	dump_width = para.img.width;
 	dump_height = para.img.height;
 }
@@ -483,12 +666,6 @@ int am_adap_frontend_init(void)
 		adap_wr_reg_bits(CSI2_DDR_START_PIX_ALT, FRONTEND_IO, dol_buf[1], 0, 32);
 	}
 
-	//set frame size
-	if (para.mode == DOL_MODE) {
-		mipi_adap_reg_wr(CSI2_DDR_STRIDE_PIX, FRONTEND_IO, 0x00000960);
-	} else {
-		mipi_adap_reg_wr(CSI2_DDR_STRIDE_PIX, FRONTEND_IO, 0x00000780);
-	}
 	//enable vs_rise_isp interrupt & enable ddr_wdone interrupt
 	mipi_adap_reg_wr(CSI2_INTERRUPT_CTRL_STAT, FRONTEND_IO, 0x5);
 
@@ -639,34 +816,71 @@ int am_adap_alig_init(void)
  *========================AM ADAPTER INTERFACE==========================
  */
 
+static int get_next_wr_buf_index(int inject_flag)
+{
+	int index = 0;
+	wbuf_index = wbuf_index + 1;
+
+	if (inject_flag) {
+		index = wbuf_index % (DDR_BUF_SIZE - 1);
+	} else {
+		if (dump_flag) {
+			index = wbuf_index % DDR_BUF_SIZE;
+			if (index == dump_buf_index) {
+				wbuf_index = wbuf_index + 1;
+				index = wbuf_index % DDR_BUF_SIZE;
+			}
+		} else if (current_flag){
+			index = wbuf_index % DDR_BUF_SIZE;
+			if (index == cur_buf_index) {
+				wbuf_index = wbuf_index + 1;
+				index = wbuf_index % DDR_BUF_SIZE;
+			}
+		} else {
+			index = wbuf_index % DDR_BUF_SIZE;
+		}
+	}
+
+	return index;
+}
+
+static resource_size_t read_buf;
+static int next_buf_index;
 static irqreturn_t adpapter_isr(int irq, void *para)
 {
 	uint32_t data = 0;
 	resource_size_t val = 0;
 	int kfifo_ret = 0;
+	int inject_data_flag = ((data_process_para >> 29) & 0x1);
+	int frame_index = ((data_process_para) & (0xfffffff));
+
 	mipi_adap_reg_rd(MIPI_ADAPT_IRQ_PENDING0, ALIGN_IO, &data);
 
 	if (data & (1 << 19)) {
 		adap_wr_reg_bits(MIPI_ADAPT_IRQ_PENDING0, ALIGN_IO, 1, 19, 1); //clear write done irq
-		if (dump_flag) {
-			mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x10000);
-			dump_buf_addr = ddr_buf[wbuf_index];
+		if ((dump_cur_flag) && (next_buf_index == cur_buf_index)) {
+			current_flag = 1;
 		}
+		if (!control_flag) {
+			if (!kfifo_is_full(&adapt_fifo)) {
+				kfifo_in(&adapt_fifo, &ddr_buf[next_buf_index], sizeof(resource_size_t));
+				irq_count = irq_count + 1;
+				if (irq_count == frame_index) {
+					dump_buf_index = next_buf_index;
+					dump_flag = 1;
+				}
+			} else {
+				pr_info("adapt fifo is full .\n");
+			}
 
-		if (!kfifo_is_full(&adapt_fifo)) {
-			kfifo_in(&adapt_fifo, &ddr_buf[wbuf_index], sizeof(resource_size_t));
-		} else {
-			pr_info("adapt fifo is full .\n");
+			next_buf_index = get_next_wr_buf_index(inject_data_flag);
+			val = ddr_buf[next_buf_index];
+			adap_wr_reg_bits(CSI2_DDR_START_PIX, FRONTEND_IO, val, 0, 32);
 		}
-
-		wbuf_index++;
-		wbuf_index = wbuf_index % DDR_BUF_SIZE;
-		val = ddr_buf[wbuf_index];
-		adap_wr_reg_bits(CSI2_DDR_START_PIX, FRONTEND_IO, val, 0, 32);
-
 		if ((!control_flag) && (kfifo_len(&adapt_fifo) > 0)) {
 			adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL0, RD_IO, 1, 31, 1);
 			kfifo_ret = kfifo_out(&adapt_fifo, &val, sizeof(val));
+			read_buf = val;
 			control_flag = 1;
 		}
 
@@ -674,7 +888,11 @@ static irqreturn_t adpapter_isr(int irq, void *para)
 
 	if (data & (1 << 13)) {
 		adap_wr_reg_bits(MIPI_ADAPT_IRQ_PENDING0, ALIGN_IO, 1, 13, 1);
-		adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, ddr_buf[wbuf_index], 0, 32);
+		if (inject_data_flag) {
+			adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, ddr_buf[DDR_BUF_SIZE - 1], 0, 32);
+		} else {
+			adap_wr_reg_bits(MIPI_ADAPT_DDR_RD0_CNTL2, RD_IO, read_buf, 0, 32);
+		}
 		control_flag = 0;
 	}
 
@@ -745,10 +963,17 @@ int am_adap_init(void)
 	int i;
 	int kfifo_ret = 0;
 	resource_size_t temp_buf;
+	char *buf = NULL;
 
 	control_flag = 0;
 	wbuf_index = 0;
 	dump_flag = 0;
+	dump_cur_flag = 0;
+	dump_buf_index = 0;
+	next_buf_index = 0;
+	irq_count = 0;
+	cur_buf_index = 0;
+	current_flag = 0;
 
 	if (cma_pages) {
 		am_adap_free_mem();
@@ -762,21 +987,27 @@ int am_adap_init(void)
 		if ((cma_pages) && (para.mode == DDR_MODE)) {
 			//note important : ddr_buf[0] and ddr_buf[1] address should alignment 16 byte
 			ddr_buf[0] = buffer_start;
+			ddr_buf[0] = (ddr_buf[0] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 			temp_buf = ddr_buf[0];
+			buf = phys_to_virt(ddr_buf[0]);
+			memset(buf, 0x0, (para.img.width * para.img.height * depth)/8);
 			pr_info("ddr_buf 0 = %llx.\n", ddr_buf[0]);
 			for (i = 1; i < DDR_BUF_SIZE; i++) {
 				ddr_buf[i] = temp_buf + ((para.img.width) * (para.img.height) * depth)/8;
-				ddr_buf[i] = (ddr_buf[i] + 15) & (~15);
+				ddr_buf[i] = (ddr_buf[i] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 				temp_buf = ddr_buf[i];
+				buf = phys_to_virt(ddr_buf[i]);
+				memset(buf, 0x0, (para.img.width * para.img.height * depth)/8);
 				pr_info("ddr_buf %d = %llx.\n", i, ddr_buf[i]);
 			}
 		} else if ((cma_pages) && (para.mode == DOL_MODE)) {
 			dol_buf[0] = buffer_start;
+			dol_buf[0] = (dol_buf[0] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 			temp_buf = dol_buf[0];
 			pr_info("dol_buf 0 = %llx.\n", dol_buf[0]);
 			for (i = 1; i < DOL_BUF_SIZE; i++) {
 				dol_buf[i] = temp_buf + ((para.img.width) * (para.img.height) * depth)/8;
-				dol_buf[i] = (dol_buf[i] + 15) & (~15);
+				dol_buf[i] = (dol_buf[i] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 				temp_buf = dol_buf[i];
 				pr_info("dol_buf %d = %llx.\n", i, dol_buf[i]);
 			}
@@ -839,10 +1070,15 @@ int am_adap_deinit(void)
 		am_adap_free_mem();
 	}
 	am_adap_reset();
-	dump_buf_addr = 0;
 	control_flag = 0;
 	wbuf_index = 0;
 	dump_flag = 0;
+	dump_cur_flag = 0;
+	dump_buf_index = 0;
+	next_buf_index = 0;
+	irq_count = 0;
+	cur_buf_index = 0;
+	current_flag = 0;
 	return 0;
 }
 
