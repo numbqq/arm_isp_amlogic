@@ -68,8 +68,6 @@ void crop_fsm_init( void *fsm, fsm_init_param_t *init_param )
     p_fsm->p_fsm_mgr = init_param->p_fsm_mgr;
 
     crop_fsm_clear( p_fsm );
-
-    crop_initialize( p_fsm );
 }
 
 #ifdef IMAGE_RESIZE_TYPE_ID
@@ -531,8 +529,6 @@ uint8_t crop_fsm_process_event( crop_fsm_t *p_fsm, event_id_t event_id )
         break;
     case event_id_sensor_ready:
         crop_initialize( p_fsm );
-        crop_resolution_changed( p_fsm );
-        p_fsm->need_updating = 1;
         b_event_processed = 1;
         break;
 

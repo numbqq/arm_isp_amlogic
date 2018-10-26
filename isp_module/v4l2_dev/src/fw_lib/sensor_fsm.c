@@ -332,7 +332,6 @@ uint8_t sensor_fsm_process_event( sensor_fsm_t *p_fsm, event_id_t event_id )
         break;
 
     case event_id_acamera_reset_sensor_hw:
-        fsm_raise_event( p_fsm, event_id_sensor_not_ready );
         fsm_raise_event( p_fsm, event_id_sensor_ready );
         b_event_processed = 1;
         break;

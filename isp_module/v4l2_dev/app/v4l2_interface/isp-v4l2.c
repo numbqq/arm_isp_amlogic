@@ -538,6 +538,45 @@ static int isp_v4l2_dqbuf( struct file *file, void *priv, struct v4l2_buffer *p 
     return rc;
 }
 
+static int isp_v4l2_cropcap(struct file *file, void *fh,
+                                    struct v4l2_cropcap *cap)
+{
+    int ret = 0;
+    isp_v4l2_dev_t *dev = video_drvdata(file);
+    struct isp_v4l2_fh *sp = fh_to_private(fh);
+    isp_v4l2_stream_t *pstream = dev->pstreams[sp->stream_id];
+
+    ret = isp_v4l2_get_cropcap(pstream, cap);
+
+    return ret;
+}
+
+static int isp_v4l2_g_crop(struct file *file, void *fh,
+                                    struct v4l2_crop *crop)
+{
+    int ret = 0;
+    isp_v4l2_dev_t *dev = video_drvdata(file);
+    struct isp_v4l2_fh *sp = fh_to_private(fh);
+    isp_v4l2_stream_t *pstream = dev->pstreams[sp->stream_id];
+
+    ret = isp_v4l2_get_crop(pstream, crop);
+
+    return ret;
+}
+
+static int isp_v4l2_s_crop(struct file *file, void *fh,
+                                const struct v4l2_crop *crop)
+{
+    int ret = 0;
+    isp_v4l2_dev_t *dev = video_drvdata(file);
+    struct isp_v4l2_fh *sp = fh_to_private(fh);
+    isp_v4l2_stream_t *pstream = dev->pstreams[sp->stream_id];
+
+    ret = isp_v4l2_set_crop(pstream, crop);
+
+    return ret;
+}
+
 static const struct v4l2_ioctl_ops isp_v4l2_ioctl_ops = {
     .vidioc_querycap = isp_v4l2_querycap,
 
@@ -568,8 +607,12 @@ static const struct v4l2_ioctl_ops isp_v4l2_ioctl_ops = {
     .vidioc_log_status = v4l2_ctrl_log_status,
     .vidioc_subscribe_event = v4l2_ctrl_subscribe_event,
     .vidioc_unsubscribe_event = v4l2_event_unsubscribe,
-};
 
+    /* crop ioctls */
+    .vidioc_cropcap = isp_v4l2_cropcap,
+    .vidioc_g_crop = isp_v4l2_g_crop,
+    .vidioc_s_crop = isp_v4l2_s_crop,
+};
 
 static int isp_cma_alloc(struct platform_device *pdev, unsigned long size)
 {

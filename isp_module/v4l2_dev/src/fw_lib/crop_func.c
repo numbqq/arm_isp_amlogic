@@ -122,7 +122,6 @@ void _update_ds( crop_fsm_ptr_t p_fsm, int isr )
     // configure downscaler
     if ( p_fsm->scaler_ds.enable ) {
         // check limits
-
         if ( p_fsm->scaler_ds.xsize > width )
             p_fsm->scaler_ds.xsize = width;
         if ( p_fsm->scaler_ds.ysize > height )
@@ -183,7 +182,6 @@ void _update_fr( crop_fsm_ptr_t p_fsm, int isr )
     width = acamera_isp_top_active_width_read( p_fsm->cmn.isp_base );
     height = acamera_isp_top_active_height_read( p_fsm->cmn.isp_base );
     LOG( LOG_INFO, "crop was configured with w:%u h:%u\n", width, height );
-
 
     if ( p_fsm->crop_fr.enable ) {
         // check limits
@@ -305,9 +303,10 @@ void crop_initialize( crop_fsm_ptr_t p_fsm )
     uint16_t height = acamera_isp_top_active_height_read( p_fsm->cmn.isp_base );
     p_fsm->width_fr = width;
     p_fsm->height_fr = height;
+#if 0  //avoid to cover these ds value
     p_fsm->crop_fr.xsize = width;
     p_fsm->crop_fr.ysize = height;
-#if 0  //ISP_HAS_DS1, avoid to cover these ds value
+
     p_fsm->width_ds = width;
     p_fsm->height_ds = height;
     p_fsm->crop_ds.xsize = width;

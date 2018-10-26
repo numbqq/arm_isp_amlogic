@@ -1476,3 +1476,237 @@ int isp_v4l2_stream_set_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
 
     return 0;
 }
+
+static uint32_t isp_v4l2_get_gcd(uint32_t width, uint32_t height)
+{
+    uint32_t gcd = 0;
+    uint32_t tmp = 0;
+    uint32_t wd = 0;
+    uint32_t ht = 0;
+
+    if (width == 0 || height == 0) {
+        LOG(LOG_ERR, "Error input param");
+        return gcd;
+    }
+
+    wd = width;
+    ht = height;
+
+    while (ht != 0) {
+        tmp = wd % ht;
+        wd = ht;
+        ht = tmp;
+    }
+
+    gcd = wd;
+
+    return gcd;
+}
+
+static int isp_v4l2_get_crop_type(isp_v4l2_stream_t *pstream)
+{
+    int s_type = -1;
+
+    if (pstream == NULL) {
+        LOG(LOG_ERR, "Error input param");
+        return s_type;
+    }
+
+    switch (pstream->stream_type) {
+    case V4L2_STREAM_TYPE_FR:
+        s_type = CROP_FR;
+    break;
+    case V4L2_STREAM_TYPE_DS1:
+        s_type = CROP_DS;
+    break;
+    default:
+        LOG(LOG_ERR, "Error: this stream cannot surport crop");
+    break;
+    }
+
+    return s_type;
+}
+
+int isp_v4l2_get_cropcap(isp_v4l2_stream_t *pstream,
+                        struct v4l2_cropcap *cap)
+{
+    int ret = -1;
+    uint32_t width_cur = 0;
+    uint32_t height_cur = 0;
+    uint32_t gcd = 0;
+    uint32_t ret_val = 0;
+
+    acamera_command( TSENSOR, SENSOR_WIDTH, 0, COMMAND_GET, &width_cur );
+    acamera_command( TSENSOR, SENSOR_HEIGHT, 0, COMMAND_GET, &height_cur );
+
+    if (width_cur == 0 || height_cur == 0) {
+        LOG(LOG_ERR, "Error sensor current resolution");
+        return ret;
+    }
+
+    cap->bounds.top = 0;
+    cap->bounds.left = 0;
+    cap->bounds.width = width_cur;
+    cap->bounds.height = height_cur;
+
+    cap->defrect.top = 0;
+    cap->defrect.left = 0;
+    if (pstream->stream_type ==  V4L2_STREAM_TYPE_DS1) {
+        acamera_command( TIMAGE, IMAGE_RESIZE_TYPE_ID,
+                            SCALER, COMMAND_SET, &ret_val );
+        acamera_command(TIMAGE, IMAGE_RESIZE_WIDTH_ID, 0,
+                            COMMAND_GET, &ret_val);
+        cap->defrect.width = ret_val;
+
+        acamera_command(TIMAGE, IMAGE_RESIZE_HEIGHT_ID, 0,
+                            COMMAND_GET, &ret_val);
+        cap->defrect.height = ret_val;
+    } else {
+        cap->defrect.width = width_cur;
+        cap->defrect.height = height_cur;
+    }
+    gcd = isp_v4l2_get_gcd(width_cur, height_cur);
+    if (gcd == 0) {
+        LOG(LOG_ERR, "Error get gcd");
+        return 0;
+    }
+
+    cap->pixelaspect.numerator = width_cur / gcd;
+    cap->pixelaspect.denominator = height_cur / gcd;
+
+    return 0;
+}
+
+int isp_v4l2_set_crop(isp_v4l2_stream_t *pstream,
+                            const struct v4l2_crop *crop)
+{
+    uint8_t result = 0;
+    uint32_t ret_val = 0;
+    int s_type = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t x_off = 0;
+    uint32_t y_off = 0;
+
+    if (pstream == NULL || crop == NULL) {
+        LOG(LOG_ERR, "Error input param");
+        return -1;
+    }
+
+    s_type = isp_v4l2_get_crop_type(pstream);
+
+    if (s_type < 0) {
+        LOG(LOG_ERR, "Error get stream type");
+        return s_type;
+    }
+
+    x_off = crop->c.left & 0xffff;
+    y_off = crop->c.top & 0xffff;
+    width = crop->c.width & 0xffff;
+    height = crop->c.height & 0xffff;
+
+    result = acamera_command( TIMAGE, IMAGE_RESIZE_TYPE_ID,
+                            s_type, COMMAND_SET, &ret_val );
+    if (result) {
+        LOG( LOG_CRIT, "Failed to set resize_type, ret_value: %d.", result );
+        return result;
+    }
+
+    result = acamera_command(TIMAGE, IMAGE_CROP_XOFFSET_ID,
+                            x_off, COMMAND_SET, &ret_val);
+    if (result) {
+        LOG(LOG_CRIT, "Failed to set x offset, ret_value: %d.", result);
+        return result;
+    }
+
+    result = acamera_command(TIMAGE, IMAGE_RESIZE_WIDTH_ID,
+                            width, COMMAND_SET, &ret_val);
+    if ( result ) {
+        LOG( LOG_CRIT, "Failed to set resize_width, ret_value: %d.", result );
+        return result;
+    }
+
+    result = acamera_command(TIMAGE, IMAGE_CROP_YOFFSET_ID,
+                            y_off, COMMAND_SET, &ret_val);
+    if (result) {
+        LOG(LOG_CRIT, "Failed to set y offset, ret_value: %d.", result);
+        return result;
+    }
+
+    result = acamera_command( TIMAGE, IMAGE_RESIZE_HEIGHT_ID,
+                            height, COMMAND_SET, &ret_val );
+    if (result) {
+        LOG( LOG_CRIT, "Failed to set resize_height, ret_value: %d.", result );
+        return result;
+    }
+
+    result = acamera_command( TIMAGE, IMAGE_RESIZE_ENABLE_ID,
+                            RUN, COMMAND_SET, &ret_val);
+    if (result) {
+        LOG(LOG_CRIT, "Failed to set resize_enable, ret_value: %d.", result);
+        return result;
+    }
+
+    return result;
+}
+
+int isp_v4l2_get_crop(isp_v4l2_stream_t *pstream,
+                            struct v4l2_crop *crop)
+{
+    uint8_t result = 0;
+    uint32_t ret_val = 0;
+    int s_type = 0;
+
+    if (pstream == NULL || crop == NULL) {
+        LOG(LOG_ERR, "Error input param");
+        return -1;
+    }
+
+    s_type = isp_v4l2_get_crop_type(pstream);
+
+    if (s_type < 0) {
+        LOG(LOG_ERR, "Error get stream type");
+        return s_type;
+    }
+
+    result = acamera_command( TIMAGE, IMAGE_RESIZE_TYPE_ID,
+                            s_type, COMMAND_SET, &ret_val );
+    if (result) {
+        LOG( LOG_CRIT, "Failed to get resize_type, ret_value: %d.", result );
+        return result;
+    }
+
+    result = acamera_command(TIMAGE, IMAGE_CROP_XOFFSET_ID,
+                            0, COMMAND_GET, &ret_val);
+    if (result) {
+        LOG(LOG_CRIT, "Failed to get x offset, ret_value: %d.", result);
+        return result;
+    }
+    crop->c.left = ret_val;
+
+    result = acamera_command(TIMAGE, IMAGE_CROP_YOFFSET_ID,
+                            0, COMMAND_GET, &ret_val);
+    if (result) {
+        LOG(LOG_CRIT, "Failed to get x offset, ret_value: %d.", result);
+        return result;
+    }
+    crop->c.top = ret_val;
+
+    result = acamera_command(TIMAGE, IMAGE_RESIZE_WIDTH_ID,
+                            0, COMMAND_GET, &ret_val);
+    if (result) {
+        LOG(LOG_CRIT, "Failed to get x offset, ret_value: %d.", result);
+        return result;
+    }
+    crop->c.width = ret_val;
+
+    result = acamera_command(TIMAGE, IMAGE_RESIZE_HEIGHT_ID,
+                            0, COMMAND_GET, &ret_val);
+    if (result) {
+        LOG(LOG_CRIT, "Failed to get x offset, ret_value: %d.", result);
+        return result;
+    }
+    crop->c.height = ret_val;
+
+    return result;
+}

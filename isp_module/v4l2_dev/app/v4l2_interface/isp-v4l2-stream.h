@@ -123,4 +123,8 @@ int isp_v4l2_stream_try_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
 int isp_v4l2_stream_get_format( isp_v4l2_stream_t *pstream, struct v4l2_format *f );
 int isp_v4l2_stream_set_format( isp_v4l2_stream_t *pstream, struct v4l2_format *f );
 
+int isp_v4l2_get_cropcap(isp_v4l2_stream_t *pstream, struct v4l2_cropcap *cap);
+int isp_v4l2_set_crop(isp_v4l2_stream_t *pstream, const struct v4l2_crop *crop);
+int isp_v4l2_get_crop(isp_v4l2_stream_t *pstream, struct v4l2_crop *crop);
+
 #endif

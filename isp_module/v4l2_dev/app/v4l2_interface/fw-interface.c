@@ -517,22 +517,24 @@ int fw_intf_stream_set_resolution( const isp_v4l2_sensor_info *sensor_info,
 
 #if defined( TIMAGE ) && defined( IMAGE_RESIZE_TYPE_ID ) && defined( IMAGE_RESIZE_WIDTH_ID )
         {
+            result = acamera_command( TIMAGE, IMAGE_RESIZE_TYPE_ID, SCALER, COMMAND_SET, &ret_val );
+            if ( result ) {
+                LOG( LOG_CRIT, "Failed to set resize_type, ret_value: %d.", result );
+                return result;
+            }
+
             result = acamera_command( TIMAGE, IMAGE_RESIZE_WIDTH_ID, w, COMMAND_SET, &ret_val );
             if ( result ) {
                 LOG( LOG_CRIT, "Failed to set resize_width, ret_value: %d.", result );
                 return result;
             }
-            acamera_command( TIMAGE, IMAGE_RESIZE_HEIGHT_ID, h, COMMAND_SET, &ret_val );
+            result = acamera_command( TIMAGE, IMAGE_RESIZE_HEIGHT_ID, h, COMMAND_SET, &ret_val );
             if ( result ) {
                 LOG( LOG_CRIT, "Failed to set resize_height, ret_value: %d.", result );
                 return result;
             }
-            acamera_command( TIMAGE, IMAGE_RESIZE_TYPE_ID, SCALER, COMMAND_SET, &ret_val );
-            if ( result ) {
-                LOG( LOG_CRIT, "Failed to set resize_type, ret_value: %d.", result );
-                return result;
-            }
-            acamera_command( TIMAGE, IMAGE_RESIZE_ENABLE_ID, RUN, COMMAND_SET, &ret_val );
+
+            result = acamera_command( TIMAGE, IMAGE_RESIZE_ENABLE_ID, RUN, COMMAND_SET, &ret_val );
             if ( result ) {
                 LOG( LOG_CRIT, "Failed to set resize_enable, ret_value: %d.", result );
                 return result;
