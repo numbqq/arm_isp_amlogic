@@ -58,6 +58,26 @@ int pwr_am_disable(sensor_bringup_t *sensor_bp)
 	return 0;
 }
 
+int pwr_ir_cut_enable(sensor_bringup_t* sensor_bp, int propname, int val)
+{
+	int ret = -1;
+	ret = propname;
+
+	if (ret >= 0) {
+		devm_gpio_request(sensor_bp->dev, propname, "POWER");
+		if (gpio_is_valid(propname)) {
+			gpio_direction_output(propname, val);
+			pr_info("pwr_enable: power gpio init\n");
+		} else {
+			pr_err("pwr_enable: gpio %d is not valid\n", propname);
+			return -1;
+		}
+	} else {
+		pr_err("pwr_enable: get_named_gpio %d fail\n", propname);
+	}
+	return ret;
+}
+
 int reset_am_enable(sensor_bringup_t* sensor_bp, const char* propname, int val)
 {
 	struct device_node *np = NULL;

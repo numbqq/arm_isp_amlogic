@@ -340,6 +340,32 @@ static const struct v4l2_subdev_ops camera_ops = {
     .core = &core_ops,
 };
 
+static int32_t ir_cut_get_named_gpio(struct device_node *np)
+{
+    int i;
+    int gcount = 0; // ir cut gpio count
+    int gname = 0; // ir cut gpio name
+
+    memset(sensor_bp->ir_gname, 0, sizeof(sensor_bp->ir_gname)); //init sensor_bp->ir_gname
+    sensor_bp->ir_gcount = 0;
+
+    gcount = of_gpio_named_count(np,"ir_cut_gpio");
+
+    if (gcount > IR_CUT_GPIO_MAX_NUM) {
+        gcount = IR_CUT_GPIO_MAX_NUM;
+        LOG( LOG_WARNING, "dts config gpio numbers do not match IR_CUT_GPIO_MAX_NUM");
+    }
+
+    sensor_bp->ir_gcount = gcount;
+    LOG(LOG_ERR, "ir cut gpio count = %d\n", gcount);
+
+    for (i = 0; i < gcount; i++) {
+        gname = of_get_named_gpio_flags(np,"ir_cut_gpio",i,NULL);
+        sensor_bp->ir_gname[i] = gname;
+        LOG(LOG_ERR, "ir cut gpio name [%d] = %d\n", i, sensor_bp->ir_gname[i]);
+     }
+     return 0;
+}
 
 static int32_t soc_sensor_probe( struct platform_device *pdev )
 {
@@ -347,6 +373,7 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
     int rtn = 0;
     int i;
     struct device *dev = &pdev->dev;
+    struct device_node *dev_np = dev->of_node;
 
     sensor_bp = kzalloc( sizeof( *sensor_bp ), GFP_KERNEL );
     if (sensor_bp == NULL) {
@@ -360,6 +387,8 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
     }
 
     pr_err("config sensor %s driver.\n", sensor_name);
+
+    ir_cut_get_named_gpio(dev_np);
 
     for (i = 0; i < NELEM(ConversionTable); ++i) {
         if (strcmp(ConversionTable[i].sensor_name, sensor_name) == 0) {
