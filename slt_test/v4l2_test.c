@@ -293,9 +293,9 @@ int slttest(int f, int t, int delta_s){
 			fclose(write_file);
 	}
 	if (err_flag)
-		printf("slt test fail!\n");
+		printf("ISP slt test fail!\n");
 	else
-		printf("slt test success!\n");
+		printf("ISP slt test success!\n");
 	if (read_file)
 		fclose(read_file);
 	return 0;
