@@ -222,6 +222,7 @@ int slttest(int f, int t, int delta_s){
 		sprintf(name, "/media/ca_%d.rgb", j);
 		if (!CalcFileMD5(name, tempmd5)) {
 			printf("Error occured1: read MD5 fail!\n");
+			return -1;
 		} else {
 			memcpy(md5, tempmd5, sizeof(tempmd5));
 		}
@@ -236,6 +237,7 @@ int slttest(int f, int t, int delta_s){
 				}
 			} else {
 				printf("Error occured2: read MD5 fail!\n");
+				return -1;
 			}
 		}
 		if (index > max) {
@@ -249,6 +251,7 @@ int slttest(int f, int t, int delta_s){
 	printf("choose frame_%d as base, same frames = %d\n", choosen, max);
 	if (!CalcFileMD5(name, md5)) {
 		printf("Error occured3: read MD5 fail!\n");
+		return -1;
 	}
 	read_file = fopen(name, "r");
 	for (i = 0; i < width * height * 3; i++) {
@@ -260,6 +263,7 @@ int slttest(int f, int t, int delta_s){
 		sprintf(name, "/media/ca_%d.rgb", j);
 		if (!CalcFileMD5(name, tempmd5)) {
 			printf("Error occured4: read MD5 fail!\n");
+			return -1;
 		}
 		if (strcmp(tempmd5, md5) == 0) {
 			continue;
@@ -272,8 +276,10 @@ int slttest(int f, int t, int delta_s){
 
 		for (i = 0; i < width * height * 3; i++) {
 			ret = fread(uv_buffer + i, 1, 1, write_file);
-			if (ret < 0)
+			if (ret < 0) {
 				printf("write fail\n");
+				return -1;
+			}
 		}
 		delta = 0;
 		for (i = 0; i < width * height * 3; i++) {
@@ -293,11 +299,12 @@ int slttest(int f, int t, int delta_s){
 			fclose(write_file);
 	}
 	if (err_flag)
-		printf("ISP slt test fail!\n");
+		printf("slt test fail!\n");
 	else
-		printf("ISP slt test success!\n");
+		printf("slt test success!\n");
 	if (read_file)
 		fclose(read_file);
+	system("rm -rf /media/ca_*");
 	return 0;
 }
 static uint8_t cmd_do_af_refocus = 0;
@@ -747,7 +754,7 @@ void * video_thread(void *arg)
             tparm->capture_count--;
 
     } while (tparm->capture_count != 0);
-    do_sensor_test_pattern(videofd, 0);
+    do_sensor_test_pattern(videofd, 1);
 
     /**************************************************
      * resource clean-up
@@ -767,11 +774,14 @@ void * video_thread(void *arg)
         munmap (v4l2_mem[i], v4l2_buf_length);
     }
 
-	if(stream_type == ARM_V4L2_TEST_STREAM_FR)
-		slttest(from_md5,to_md5, slt_control);
-	end_time = GetTimeMsec();
-	end_time = end_time - start_time;
-	printf("cost time : %ld\n", end_time);
+    if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
+        rc = slttest(from_md5,to_md5, slt_control);
+        if (rc < 0)
+            printf("Error: slt test exit due to error,pls check if isp is ok!\n");
+    }
+    end_time = GetTimeMsec();
+    end_time = end_time - start_time;
+    printf("cost time : %ld\n", end_time);
 fatal:
 
     close(videofd);
