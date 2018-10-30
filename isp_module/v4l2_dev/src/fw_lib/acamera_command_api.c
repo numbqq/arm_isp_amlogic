@@ -405,6 +405,12 @@ case TAML_SCALER:
 		case SCALER_HEIGHT:
 			ret = scaler_height(instance, value, direction, ret_value);
 			break;
+		case SCALER_SRC_WIDTH:
+			ret = scaler_src_width(instance, value, direction, ret_value);
+			break;
+		case SCALER_SRC_HEIGHT:
+			ret = scaler_src_height(instance, value, direction, ret_value);
+			break;
 		case SCALER_OUTPUT_MODE:
 			ret = scaler_output_mode(instance, value, direction, ret_value);
 			break;

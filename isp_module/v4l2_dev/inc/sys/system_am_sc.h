@@ -140,6 +140,9 @@ extern int am_sc_reset(void);
 extern int am_sc_stop(void);
 extern int am_sc_system_deinit(void);
 extern int am_sc_hw_deinit(void);
+extern void am_sc_set_src_width(uint32_t src_w);
+extern void am_sc_set_src_height(uint32_t src_h);
+
 
 #endif
 

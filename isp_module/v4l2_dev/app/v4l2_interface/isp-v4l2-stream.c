@@ -1647,6 +1647,13 @@ int isp_v4l2_set_crop(isp_v4l2_stream_t *pstream,
         return result;
     }
 
+    if (pstream->stream_type == V4L2_STREAM_TYPE_FR) {
+        acamera_command( TAML_SCALER, SCALER_SRC_WIDTH,
+                            width, COMMAND_SET, &ret_val );
+        acamera_command( TAML_SCALER, SCALER_SRC_HEIGHT,
+                            height, COMMAND_SET, &ret_val );
+    }
+
     return result;
 }
 

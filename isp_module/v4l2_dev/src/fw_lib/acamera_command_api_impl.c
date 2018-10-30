@@ -3733,6 +3733,40 @@ uint8_t scaler_height(acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direc
     return result;
 }
 
+uint8_t scaler_src_width(acamera_fsm_mgr_t *instance, uint32_t value,
+                        uint8_t direction, uint32_t *ret_value)
+{
+    uint32_t result = SUCCESS;
+    *ret_value = 0;
+    if ( direction == COMMAND_GET ) {
+
+    } else if (direction == COMMAND_SET) {
+        LOG(LOG_ERR, "LIKE:sc src width %d", value);
+        am_sc_set_src_width(value);
+    } else {
+        result = NOT_SUPPORTED;
+    }
+    return result;
+}
+
+uint8_t scaler_src_height(acamera_fsm_mgr_t *instance, uint32_t value,
+                        uint8_t direction, uint32_t *ret_value)
+{
+    uint32_t result = SUCCESS;
+    *ret_value = 0;
+    if ( direction == COMMAND_GET ) {
+
+    } else if (direction == COMMAND_SET) {
+        LOG(LOG_ERR, "LIKE:sc src height %d", value);
+        am_sc_set_src_height(value);
+    } else {
+        result = NOT_SUPPORTED;
+    }
+    return result;
+}
+
+
+
 uint8_t scaler_output_mode( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
 {
     uint32_t result = SUCCESS;

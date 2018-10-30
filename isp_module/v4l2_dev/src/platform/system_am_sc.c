@@ -1152,8 +1152,27 @@ void am_sc_set_width(uint32_t src_w, uint32_t out_w)
 		pr_info("%d, g_sc is NULL.\n", __LINE__);
 		return;
 	}
-	g_sc->info.src_w = src_w;
+	if (g_sc->info.src_w == 0)
+		g_sc->info.src_w = src_w;
 	g_sc->info.out_w = out_w;
+}
+
+void am_sc_set_src_width(uint32_t src_w)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return;
+	}
+	g_sc->info.src_w = src_w;
+}
+
+void am_sc_set_src_height(uint32_t src_h)
+{
+	if (!g_sc) {
+		pr_info("%d, g_sc is NULL.\n", __LINE__);
+		return;
+	}
+	g_sc->info.src_h = src_h;
 }
 
 uint32_t am_sc_get_height(void)
@@ -1171,8 +1190,9 @@ void am_sc_set_height(uint32_t src_h, uint32_t out_h)
 		pr_info("%d, g_sc is NULL.\n", __LINE__);
 		return;
 	}
-	g_sc->info.src_h= src_h;
-	g_sc->info.out_h= out_h;
+	if (g_sc->info.src_h == 0)
+		g_sc->info.src_h = src_h;
+	g_sc->info.out_h = out_h;
 }
 
 void am_sc_set_input_format(uint32_t value)
@@ -1348,6 +1368,9 @@ int am_sc_stop(void)
 			temp_buf = NULL;
 		}
 		free_irq(g_sc->irq, (void *)g_sc);
+
+		g_sc->info.src_w = 0;
+		g_sc->info.src_h = 0;
 		stop_flag = true;
 	}
 

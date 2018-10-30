@@ -316,6 +316,8 @@
 #define SENSOR_NAME                                       0x00000073
 #define SENSOR_TESTPATTERN                                0x00000074
 #define SENSOR_IR_CUT                                     0x00000075
+#define SCALER_SRC_WIDTH                                  0x00000076
+#define SCALER_SRC_HEIGHT                                 0x00000077
 // ------------------------------------------------------------------------------ //
 //		VALUE LIST
 // ------------------------------------------------------------------------------ //
