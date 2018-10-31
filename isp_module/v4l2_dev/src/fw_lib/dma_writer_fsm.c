@@ -194,9 +194,8 @@ uint8_t dma_writer_fsm_process_event( dma_writer_fsm_t *p_fsm, event_id_t event_
         break;
 #ifdef ISP_HAS_CROP_FSM
     case event_id_crop_updated:
-#else
-    case event_id_sensor_ready:
 #endif
+    case event_id_sensor_ready:
         if ( ( p_fsm->state == dma_writer_state_wait_for_sensor ) ||
              ( p_fsm->state == dma_writer_state_frame_processing_wait_events ) ) {
             p_fsm->state = dma_writer_state_frame_processing_init;
