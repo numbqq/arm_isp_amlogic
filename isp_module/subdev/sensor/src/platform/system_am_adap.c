@@ -41,7 +41,7 @@
 
 
 #define AM_ADAPTER_NAME "amlogic, isp-adapter"
-
+#define BOUNDRY 16
 
 struct am_adap *g_adap = NULL;
 struct am_adap_info para;
@@ -167,6 +167,7 @@ static ssize_t adapt_frame_write(struct device *dev,
 	ssize_t ret = size;
 	char *virt_buf = NULL;
 	int depth;
+	uint32_t stride;
 	uint32_t frame_size;
 	char *buf_orig, *parm[10] = {NULL};
 	unsigned int frame_index = 0;
@@ -204,9 +205,12 @@ static ssize_t adapt_frame_write(struct device *dev,
 			goto Err;
 		}
 	}
-	frame_index = ((data_process_para) & (0xfffffff));
+
 	depth = am_adap_get_depth();
-	frame_size = ((dump_width * depth)/8) * dump_height;
+	stride = ((dump_width * depth)/8);
+	stride = ((stride + (BOUNDRY - 1)) & (~(BOUNDRY - 1)));
+	frame_index = ((data_process_para) & (0xfffffff));
+	frame_size = stride * dump_height;
 	pr_info("dump width = %d, height = %d, size = %d\n",
 		dump_width, dump_height, frame_size);
 
@@ -273,6 +277,7 @@ static ssize_t inject_frame_write(struct device *dev,
 	struct device_attribute *attr, char const *buf, size_t size)
 {
 	char *buf_orig, *parm[100] = {NULL};
+	long stride = 0;
 	long frame_width = 0;
 	long frame_height = 0;
 	long bit_depth = 0;
@@ -311,9 +316,11 @@ static ssize_t inject_frame_write(struct device *dev,
 		goto Err;
 	}
 
+	stride = (frame_width * bit_depth)/8;
+	stride = ((stride + (BOUNDRY - 1)) & (~(BOUNDRY - 1)));
 	if (ddr_buf[DDR_BUF_SIZE - 1] != 0)
 		virt_buf = phys_to_virt(ddr_buf[DDR_BUF_SIZE - 1]);
-	file_size = ((frame_width * bit_depth)/8)* frame_height;
+	file_size = stride * frame_height;
 	pr_info("inject frame width = %ld, height = %ld, bitdepth = %ld, size = %d\n",
 		frame_width, frame_height,
 		bit_depth, file_size);
@@ -964,6 +971,7 @@ int am_adap_init(void)
 	int kfifo_ret = 0;
 	resource_size_t temp_buf;
 	char *buf = NULL;
+	uint32_t stride;
 
 	control_flag = 0;
 	wbuf_index = 0;
@@ -986,18 +994,20 @@ int am_adap_init(void)
 		depth = am_adap_get_depth();
 		if ((cma_pages) && (para.mode == DDR_MODE)) {
 			//note important : ddr_buf[0] and ddr_buf[1] address should alignment 16 byte
+			stride = (para.img.width * depth)/8;
+			stride = ((stride + (BOUNDRY - 1)) & (~(BOUNDRY - 1)));
 			ddr_buf[0] = buffer_start;
 			ddr_buf[0] = (ddr_buf[0] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 			temp_buf = ddr_buf[0];
 			buf = phys_to_virt(ddr_buf[0]);
-			memset(buf, 0x0, (para.img.width * para.img.height * depth)/8);
+			memset(buf, 0x0, (stride * para.img.height));
 			pr_info("ddr_buf 0 = %llx.\n", ddr_buf[0]);
 			for (i = 1; i < DDR_BUF_SIZE; i++) {
-				ddr_buf[i] = temp_buf + ((para.img.width) * (para.img.height) * depth)/8;
+				ddr_buf[i] = temp_buf + (stride * (para.img.height));
 				ddr_buf[i] = (ddr_buf[i] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 				temp_buf = ddr_buf[i];
 				buf = phys_to_virt(ddr_buf[i]);
-				memset(buf, 0x0, (para.img.width * para.img.height * depth)/8);
+				memset(buf, 0x0, (stride * para.img.height));
 				pr_info("ddr_buf %d = %llx.\n", i, ddr_buf[i]);
 			}
 		} else if ((cma_pages) && (para.mode == DOL_MODE)) {
