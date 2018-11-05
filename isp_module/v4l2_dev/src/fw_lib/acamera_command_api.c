@@ -359,6 +359,12 @@ case  TALGORITHMS:
 		case  ANTIFLICKER_MODE_ID:
 			ret = antiflicker_mode(instance, value, direction, ret_value);
 			break;
+		case AE_ZONE_WEIGHT:
+			ret = ae_zone_weight(instance, value, direction, ret_value);
+			break;
+		case AWB_ZONE_WEIGHT:
+			ret = awb_zone_weight(instance, value, direction, ret_value);
+			break;
 	}//switch (command)
 	break;
 case  TSCENE_MODES:

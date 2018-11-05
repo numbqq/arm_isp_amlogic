@@ -41,6 +41,7 @@ void ae_initialize( AE_fsm_ptr_t p_fsm );
 int ae_calculate_exposure( AE_fsm_ptr_t p_fsm );
 void ae_roi_update( AE_fsm_ptr_t p_fsm );
 void ae_set_new_param( AE_fsm_ptr_t p_fsm, sbuf_ae_t *p_sbuf_ae );
+int ae_set_zone_weight(AE_fsm_ptr_t p_fsm, void *u_wg_ptr);
 
 struct _AE_fsm_t {
     fsm_common_t cmn;

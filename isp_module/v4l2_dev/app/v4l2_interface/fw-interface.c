@@ -723,6 +723,21 @@ static int fw_intf_set_sensor_ir_cut_set(uint32_t ctrl_val)
     return 0;
 }
 
+static int fw_intf_set_ae_zone_weight(unsigned long ctrl_val)
+{
+    acamera_command(TALGORITHMS, AE_ZONE_WEIGHT, 0, COMMAND_SET, (uint32_t *)ctrl_val);
+
+    return 0;
+}
+
+static int fw_intf_set_awb_zone_weight(unsigned long ctrl_val)
+{
+    acamera_command(TALGORITHMS, AWB_ZONE_WEIGHT, 0, COMMAND_SET, (uint32_t *)ctrl_val);
+
+    return 0;
+}
+
+
 /* ----------------------------------------------------------------
  * Internal handler for control interface functions
  */
@@ -1571,3 +1586,22 @@ int fw_intf_set_customer_sensor_ir_cut(uint32_t ctrl_val)
 
     return rtn;
 }
+
+int fw_intf_set_customer_ae_zone_weight(unsigned long ctrl_val)
+{
+    int rtn = -1;
+
+    rtn = fw_intf_set_ae_zone_weight(ctrl_val);
+
+    return rtn;
+}
+
+int fw_intf_set_customer_awb_zone_weight(unsigned long ctrl_val)
+{
+    int rtn = -1;
+
+    rtn = fw_intf_set_awb_zone_weight(ctrl_val);
+
+    return rtn;
+}
+

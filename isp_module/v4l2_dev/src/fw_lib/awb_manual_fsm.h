@@ -55,6 +55,7 @@ void awb_read_statistics( AWB_fsm_ptr_t p_fsm );
 void awb_update_ccm( AWB_fsm_ptr_t p_fsm );
 void awb_normalise( AWB_fsm_ptr_t p_fsm );
 void awb_roi_update( AWB_fsm_ptr_t p_fsm );
+int awb_set_zone_weight(AWB_fsm_ptr_t p_fsm, void *u_wg_ptr);
 
 #include "acamera_metering_stats_mem_config.h"
 

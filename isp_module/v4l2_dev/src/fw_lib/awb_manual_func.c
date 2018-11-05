@@ -24,6 +24,9 @@
 #include "awb_manual_fsm.h"
 #include "sbuf.h"
 
+#include <linux/vmalloc.h>
+#include <asm/uaccess.h>
+
 #ifdef LOG_MODULE
 #undef LOG_MODULE
 #define LOG_MODULE LOG_MODULE_AWB_MANUAL
@@ -128,6 +131,49 @@ void awb_roi_update( AWB_fsm_ptr_t p_fsm )
     }
 }
 
+int awb_set_zone_weight(AWB_fsm_ptr_t p_fsm, void *u_wg_ptr)
+{
+    int ret = -1;
+    unsigned long awb_wg_size = 0;
+    uint8_t *awb_wg = NULL;
+    int x = 0;
+    int y = 0;
+    uint8_t awb_coeff = 0;
+    uint32_t idx = 0;
+
+    if (p_fsm == NULL || u_wg_ptr == NULL) {
+        LOG(LOG_ERR, "Error invalid input param");
+        return ret;
+    }
+
+    awb_wg_size = ISP_METERING_ZONES_AWB_H * ISP_METERING_ZONES_AWB_V;
+    awb_wg = vmalloc(awb_wg_size);
+    if (awb_wg == NULL) {
+        LOG(LOG_ERR, "Failed to malloc mem");
+        return ret;
+    }
+
+    memset(awb_wg, 0, awb_wg_size);
+
+    if (copy_from_user(awb_wg, u_wg_ptr, awb_wg_size)) {
+        vfree(awb_wg);
+        LOG(LOG_ERR, "Failed to copy awb weight");
+        return ret;
+    }
+
+    for (y = 0; y < ISP_METERING_ZONES_AWB_V; y++) {
+        for (x = 0; x < ISP_METERING_ZONES_AWB_H; x++) {
+            idx = y * ISP_METERING_ZONES_AWB_H + x;
+            awb_coeff = awb_wg[idx];
+            acamera_isp_metering_awb_zones_weight_write(
+                                        p_fsm->cmn.isp_base, idx, awb_coeff);
+            }
+    }
+
+    vfree(awb_wg);
+
+    return 0;
+}
 
 // Initalisation code
 void awb_init( AWB_fsm_t *p_fsm )

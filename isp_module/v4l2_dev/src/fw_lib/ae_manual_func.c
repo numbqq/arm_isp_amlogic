@@ -28,8 +28,10 @@
 #include "acamera_math.h"
 #include "ae_manual_fsm.h"
 
-
 #include "sbuf.h"
+
+#include <linux/vmalloc.h>
+#include <asm/uaccess.h>
 
 #define DEFAULT_AE_EXPOSURE_LOG2 3390000
 
@@ -114,6 +116,50 @@ void ae_roi_update( AE_fsm_ptr_t p_fsm )
             acamera_isp_metering_hist_aexp_zones_weight_write( p_fsm->cmn.isp_base, ISP_METERING_ZONES_MAX_H * y + x, ae_coeff );
         }
     }
+}
+
+int ae_set_zone_weight(AE_fsm_ptr_t p_fsm, void *u_wg_ptr)
+{
+    int ret = -1;
+    unsigned long ae_wg_size = 0;
+    uint8_t *ae_wg = NULL;
+    int x = 0;
+    int y = 0;
+    uint8_t ae_coeff = 0;
+    uint32_t idx = 0;
+
+    if (p_fsm == NULL || u_wg_ptr == NULL) {
+        LOG(LOG_ERR, "Error invalid input param");
+        return ret;
+    }
+
+    ae_wg_size = ISP_METERING_ZONES_MAX_H * ISP_METERING_ZONES_MAX_V;
+    ae_wg = vmalloc(ae_wg_size);
+    if (ae_wg == NULL) {
+        LOG(LOG_ERR, "Failed to malloc mem");
+        return ret;
+    }
+
+    memset(ae_wg, 0, ae_wg_size);
+
+    if (copy_from_user(ae_wg, u_wg_ptr, ae_wg_size)) {
+        vfree(ae_wg);
+        LOG(LOG_ERR, "Failed to copy ae weight");
+        return ret;
+    }
+
+    for (y = 0; y < ISP_METERING_ZONES_MAX_V; y++) {
+        for (x = 0; x < ISP_METERING_ZONES_MAX_H; x++) {
+            idx = y * ISP_METERING_ZONES_MAX_H + x;
+            ae_coeff = ae_wg[idx];
+            acamera_isp_metering_hist_aexp_zones_weight_write(
+                                        p_fsm->cmn.isp_base, idx, ae_coeff);
+            }
+    }
+
+    vfree(ae_wg);
+
+    return 0;
 }
 
 void ae_initialize( AE_fsm_ptr_t p_fsm )

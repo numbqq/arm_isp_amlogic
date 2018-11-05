@@ -2803,6 +2803,40 @@ uint8_t ae_roi( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, 
 }
 #endif
 
+uint8_t ae_zone_weight( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
+{
+	int ret = -1;
+
+	if (direction == COMMAND_SET) {
+		ret = acamera_fsm_mgr_set_param(instance,
+					FSM_PARAM_SET_AE_ZONE_WEIGHT,
+					ret_value, sizeof(ret_value));
+		if (ret != 0)
+			return FAIL;
+		else
+			return SUCCESS;
+	} else {
+		return NOT_SUPPORTED;
+	}
+}
+
+uint8_t awb_zone_weight( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
+{
+	int ret = -1;
+
+	if (direction == COMMAND_SET) {
+		ret = acamera_fsm_mgr_set_param(instance,
+					FSM_PARAM_SET_AWB_ZONE_WEIGHT,
+					ret_value, sizeof(ret_value));
+		if (ret != 0)
+			return FAIL;
+		else
+			return SUCCESS;
+	} else {
+		return NOT_SUPPORTED;
+	}
+}
+
 // ------------------------------------------------------------------------------ //
 // ae_compensation description:
 //

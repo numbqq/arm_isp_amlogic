@@ -107,6 +107,22 @@ int AE_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_t input_
         break;
     }
 
+    case FSM_PARAM_SET_AE_ZONE_WEIGHT: {
+        if (!input || input_size == 0) {
+            LOG(LOG_ERR, "Invalid param. param id: %d.", param_id);
+            rc = -1;
+            break;
+        }
+
+        unsigned char *u_ae_wg = input;
+
+        rc = ae_set_zone_weight(p_fsm, u_ae_wg);
+        if (rc != 0)
+            LOG(LOG_ERR, "Failed to set ae zone weight");
+
+        break;
+    }
+
     default:
         rc = -1;
         break;

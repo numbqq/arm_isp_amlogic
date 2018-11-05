@@ -318,6 +318,8 @@
 #define SENSOR_IR_CUT                                     0x00000075
 #define SCALER_SRC_WIDTH                                  0x00000076
 #define SCALER_SRC_HEIGHT                                 0x00000077
+#define AE_ZONE_WEIGHT                                    0x00000078
+#define AWB_ZONE_WEIGHT                                   0x00000079
 // ------------------------------------------------------------------------------ //
 //		VALUE LIST
 // ------------------------------------------------------------------------------ //
