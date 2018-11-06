@@ -3,7 +3,7 @@ CROSS_COMPILE=/opt/gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux/bin/aarch64-li
 
 CFLAGS=-I. -g -fPIE -Wall -pthread
 ODIR=obj
-OFILE=isp_slt
+OFILE=slt-isp
 
 _OBJ = v4l2_test.o
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ))
