@@ -80,6 +80,14 @@ static int ir_cut_state = 1;
 #define LINE_MASK (~(LINE_SIZE - 1))
 #define LINE_ALIGN(size) ((size + LINE_SIZE - 1) & LINE_MASK)
 
+#define ISP_METERING_ZONES_AE_MAX_H 33
+#define ISP_METERING_ZONES_AE_MAX_V 33
+#define ISP_METERING_ZONES_AWB_MAX_H 33
+#define ISP_METERING_ZONES_AWB_MAX_V 33
+
+static unsigned char ae_zone_weight[ISP_METERING_ZONES_AE_MAX_V][ISP_METERING_ZONES_AE_MAX_H];
+static unsigned char awb_zone_weight[ISP_METERING_ZONES_AWB_MAX_V][ISP_METERING_ZONES_AWB_MAX_H];
+
 
 /* config parameters */
 struct thread_param {
@@ -104,6 +112,7 @@ struct thread_param {
     int                         videofd;
     uint32_t  c_width;
     uint32_t  c_height;
+    uint32_t a_ctrl;
 };
 
 pthread_t tid[STATIC_STREAM_COUNT];
@@ -188,6 +197,46 @@ static void do_fr_fps(int videofd, int fps)
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("Do sensor fps failed");
     }
+}
+
+static void do_fr_set_ae_zone_weight(int videofd)
+{
+    struct v4l2_ext_controls ctrls;
+    struct v4l2_ext_control ctrl;
+
+    memset(&ctrls, 0, sizeof(ctrls));
+    memset(&ctrls, 0, sizeof(ctrl));
+
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_AE_ZONE_WEIGHT;
+    ctrl.ptr = ae_zone_weight;
+
+    ctrls.which = 0;
+    ctrls.count = 1;
+    ctrls.controls = &ctrl;
+
+    if (-1 == ioctl (videofd, VIDIOC_S_EXT_CTRLS, &ctrls)) {
+        printf("Do set ae zone weight failed\n");
+    }
+}
+
+static void do_fr_set_awb_zone_weight(int videofd)
+{
+    struct v4l2_ext_controls ctrls;
+    struct v4l2_ext_control ctrl;
+
+    memset(&ctrls, 0, sizeof(ctrls));
+    memset(&ctrls, 0, sizeof(ctrl));
+
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_AWB_ZONE_WEIGHT;
+    ctrl.ptr = awb_zone_weight;
+
+    ctrls.which = 0;
+    ctrls.count = 1;
+    ctrls.controls = &ctrl;
+
+   if (-1 == ioctl (videofd, VIDIOC_S_EXT_CTRLS, &ctrls)) {
+        printf("Do set awb zone weight failed\n");
+   }
 }
 
 static void do_sensor_exposure(int videofd, int exp)
@@ -702,6 +751,11 @@ void * video_thread(void *arg)
         do_crop(stream_type, videofd, tparm->c_width, tparm->c_height);
     }
 
+    if (stream_type == ARM_V4L2_TEST_STREAM_FR && tparm->a_ctrl == 1) {
+        do_fr_set_ae_zone_weight(videofd);
+        do_fr_set_awb_zone_weight(videofd);
+    }
+
     int fr_bitdepth;
     //get the pixel format
     switch(v4l2_fmt.fmt.pix.pixelformat){
@@ -974,7 +1028,7 @@ void * video_thread(void *arg)
         } else if (stream_type == ARM_V4L2_TEST_STREAM_DS1) {
          //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage * 2, stream_type, tparm->capture_count);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_DS2) {
-        //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type);
+        //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type, tparm->capture_count);
         }
 
         display_count++;
@@ -1178,6 +1232,7 @@ int main(int argc, char *argv[])
     int ds_gdc_ctrl = 0;
     uint32_t fr_c_width = 0;
     uint32_t fr_c_height = 0;
+    uint32_t fr_a_ctrl = 0;
 
     uint32_t ds_c_width = 0;
     uint32_t ds_c_height = 0;
@@ -1208,13 +1263,14 @@ int main(int argc, char *argv[])
         printf("    H : FR crop height\n");
         printf("    Y : DS1 crop width\n");
         printf("    Z : DS1 crop height\n");
+        printf("    a : FR zone weight ctrl\n");
         return -1;
     }
 
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -1281,6 +1337,9 @@ int main(int argc, char *argv[])
                 break;
             case 'Z':
                 ds_c_height = atoi(optarg);
+                break;
+            case 'a':
+                fr_a_ctrl = atoi(optarg);
                 break;
             case '?':
                 usage(argv[0]);
@@ -1371,6 +1430,7 @@ int main(int argc, char *argv[])
             .capture_count = fr_num,
             .c_width = fr_c_width,
             .c_height = fr_c_height,
+            .a_ctrl = fr_a_ctrl,
         },
 #if ARM_V4L2_TEST_HAS_META
         {
