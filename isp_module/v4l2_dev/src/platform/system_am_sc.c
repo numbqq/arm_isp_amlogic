@@ -582,7 +582,7 @@ void isp_mif_setting(ISP_MIF_t *wr_mif)
 	u8 swap_uv = 0;
 	if (g_sc->info.in_fmt == RGB24) {
 	    if (g_sc->info.out_fmt == NV12_YUV) {
-	       swap_uv = 1;
+	       swap_uv = 0;
 	    }
 	} else if (g_sc->info.in_fmt == AYUV) {
 	    if (g_sc->info.out_fmt == NV12_YUV) {

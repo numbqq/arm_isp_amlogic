@@ -133,13 +133,31 @@ static void matrix_yuv_fr_coefft_write_to_hardware( matrix_yuv_fsm_t *p_fsm )
         acamera_isp_fr_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 1 );
 
         break;
-    default:
     case PIPE_OUT_RGB:
+        acamera_isp_fr_cs_conv_coefft_11_write( p_fsm->cmn.isp_base, yuv_matrix[6] );
+        acamera_isp_fr_cs_conv_coefft_12_write( p_fsm->cmn.isp_base, yuv_matrix[7] );
+        acamera_isp_fr_cs_conv_coefft_13_write( p_fsm->cmn.isp_base, yuv_matrix[8] );
+        acamera_isp_fr_cs_conv_coefft_21_write( p_fsm->cmn.isp_base, yuv_matrix[3] );
+        acamera_isp_fr_cs_conv_coefft_22_write( p_fsm->cmn.isp_base, yuv_matrix[4] );
+        acamera_isp_fr_cs_conv_coefft_23_write( p_fsm->cmn.isp_base, yuv_matrix[5] );
+        acamera_isp_fr_cs_conv_coefft_31_write( p_fsm->cmn.isp_base, yuv_matrix[0] );
+        acamera_isp_fr_cs_conv_coefft_32_write( p_fsm->cmn.isp_base, yuv_matrix[1] );
+        acamera_isp_fr_cs_conv_coefft_33_write( p_fsm->cmn.isp_base, yuv_matrix[2] );
+        acamera_isp_fr_cs_conv_enable_filter_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_fr_cs_conv_enable_horizontal_downsample_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_fr_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 0 );
+
+        break;
     case PIPE_OUT_YUV444:
         acamera_isp_fr_cs_conv_enable_filter_write( p_fsm->cmn.isp_base, 0 );
         acamera_isp_fr_cs_conv_enable_horizontal_downsample_write( p_fsm->cmn.isp_base, 0 );
         acamera_isp_fr_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 0 );
 
+        break;
+    default:
+        acamera_isp_fr_cs_conv_enable_filter_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_fr_cs_conv_enable_horizontal_downsample_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_fr_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 0 );
         break;
     }
 }
@@ -173,9 +191,26 @@ static void matrix_yuv_ds_write_to_hardware( matrix_yuv_fsm_t *p_fsm )
         acamera_isp_ds1_cs_conv_enable_horizontal_downsample_write( p_fsm->cmn.isp_base, 1 );
         acamera_isp_ds1_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 1 );
         break;
-    default:
     case PIPE_OUT_RGB:
+        acamera_isp_ds1_cs_conv_coefft_11_write( p_fsm->cmn.isp_base, yuv_matrix[6] );
+        acamera_isp_ds1_cs_conv_coefft_12_write( p_fsm->cmn.isp_base, yuv_matrix[7] );
+        acamera_isp_ds1_cs_conv_coefft_13_write( p_fsm->cmn.isp_base, yuv_matrix[8] );
+        acamera_isp_ds1_cs_conv_coefft_21_write( p_fsm->cmn.isp_base, yuv_matrix[3] );
+        acamera_isp_ds1_cs_conv_coefft_22_write( p_fsm->cmn.isp_base, yuv_matrix[4] );
+        acamera_isp_ds1_cs_conv_coefft_23_write( p_fsm->cmn.isp_base, yuv_matrix[5] );
+        acamera_isp_ds1_cs_conv_coefft_31_write( p_fsm->cmn.isp_base, yuv_matrix[0] );
+        acamera_isp_ds1_cs_conv_coefft_32_write( p_fsm->cmn.isp_base, yuv_matrix[1] );
+        acamera_isp_ds1_cs_conv_coefft_33_write( p_fsm->cmn.isp_base, yuv_matrix[2] );
+        acamera_isp_ds1_cs_conv_enable_filter_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_ds1_cs_conv_enable_horizontal_downsample_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_ds1_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 0 );
+        break;
     case PIPE_OUT_YUV444:
+        acamera_isp_ds1_cs_conv_enable_filter_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_ds1_cs_conv_enable_horizontal_downsample_write( p_fsm->cmn.isp_base, 0 );
+        acamera_isp_ds1_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 0 );
+        break;
+    default:
         acamera_isp_ds1_cs_conv_enable_filter_write( p_fsm->cmn.isp_base, 0 );
         acamera_isp_ds1_cs_conv_enable_horizontal_downsample_write( p_fsm->cmn.isp_base, 0 );
         acamera_isp_ds1_cs_conv_enable_vertical_downsample_write( p_fsm->cmn.isp_base, 0 );
