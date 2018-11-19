@@ -74,6 +74,10 @@ static int open_port_cnt = 1;
 static int fb_buffer_cnt = 3;
 
 static int ir_cut_state = 1;
+static uint32_t manual_exposure_enable = 0;
+static uint32_t manual_sensor_integration_time = 1;
+static uint32_t manual_sensor_analog_gain = 0;
+static uint32_t manual_isp_digital_gain = 0;
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
 
 #define LINE_SIZE 128
@@ -254,7 +258,7 @@ static void do_sensor_exposure(int videofd, int exp)
 static void set_manual_exposure(int videofd, int enable)
 {
     struct v4l2_control ctrl;
-    ctrl.id = V4L2_CID_EXPOSURE_AUTO;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_MANUAL_EXPOSURE;
     ctrl.value = enable;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("set_manual_exposure failed\n");
@@ -268,6 +272,36 @@ static void do_sensor_ir_cut(int videofd, int ir_cut_state)
     ctrl.value = ir_cut_state;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("do_sensor_ir_cut failed\n");
+    }
+}
+
+static void set_manual_sensor_integration_time(int videofd, uint32_t manual_sensor_integration_time)
+{
+    struct v4l2_control ctrl;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_SENSOR_INTEGRATION_TIME;
+    ctrl.value = manual_sensor_integration_time;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("set_manual_sensor_integration_time failed\n");
+    }
+}
+
+static void set_manual_sensor_analog_gain(int videofd, uint32_t manual_sensor_analog_gain)
+{
+    struct v4l2_control ctrl;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_SENSOR_ANALOG_GAIN;
+    ctrl.value = manual_sensor_analog_gain;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("set_manual_sensor_analog_gain failed\n");
+    }
+}
+
+static void set_manual_isp_digital_gain(int videofd, uint32_t manual_isp_digital_gain)
+{
+    struct v4l2_control ctrl;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_ISP_DIGITAL_GAIN;
+    ctrl.value = manual_isp_digital_gain;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("set_manual_isp_digital_gain failed\n");
     }
 }
 
@@ -769,6 +803,19 @@ void * video_thread(void *arg)
         fr_bitdepth = (v4l2_fmt.fmt.pix_mp.plane_fmt[i].bytesperline/v4l2_fmt.fmt.pix_mp.width)*8;
         break;
     }
+    /**************************************************
+     *set manual exposure
+     *************************************************/
+     if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
+         if ( tparm->wdr_mode == 2 ) {
+             manual_exposure_enable = 0;
+             set_manual_exposure(videofd, manual_exposure_enable);
+         }
+         set_manual_exposure(videofd, manual_exposure_enable);
+         set_manual_sensor_integration_time(videofd, manual_sensor_integration_time);
+         set_manual_sensor_analog_gain(videofd, manual_sensor_analog_gain);
+         set_manual_isp_digital_gain(videofd, manual_isp_digital_gain);
+     }
 
     /**************************************************
      * buffer preparation
@@ -1264,13 +1311,17 @@ int main(int argc, char *argv[])
         printf("    Y : DS1 crop width\n");
         printf("    Z : DS1 crop height\n");
         printf("    a : FR zone weight ctrl\n");
+        printf("    M : manual exposure\n");
+        printf("    L : integration timet\n");
+        printf("    A : sensor analog gain\n");
+        printf("    S : isp digital gain\n");
         return -1;
     }
 
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:M:L:A:S:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -1340,6 +1391,17 @@ int main(int argc, char *argv[])
                 break;
             case 'a':
                 fr_a_ctrl = atoi(optarg);
+                break;
+            case 'M':
+                manual_exposure_enable = atoi(optarg);
+            case 'L':
+                manual_sensor_integration_time = atoi(optarg);
+                break;
+            case 'A':
+                manual_sensor_analog_gain = atoi(optarg);
+                break;
+            case 'S':
+                manual_isp_digital_gain = atoi(optarg);
                 break;
             case '?':
                 usage(argv[0]);
@@ -1545,7 +1607,6 @@ int main(int argc, char *argv[])
         V4L2_TEST_MENU_DO_CAPTURE_DNG,
         V4L2_TEST_MENU_DO_AF_REFOCUS,
         V4L2_TEST_MENU_DUMP_LAST_CAPTURE,
-        V4L2_TEST_MENU_SET_MANUAL_EXP,
         V4L2_TEST_MENU_EXIT,
         V4L2_TEST_MENU_MAX
     };
@@ -1555,7 +1616,6 @@ int main(int argc, char *argv[])
 
     do {
         int menu;
-        int enable;
         if(command>=V4L2_TEST_MENU_PREVIEW_ON_OFF){
             menu=command;
         }else{
@@ -1567,7 +1627,6 @@ int main(int argc, char *argv[])
             MSG("%d) Do capture (DNG)\n", V4L2_TEST_MENU_DO_CAPTURE_DNG);
             MSG("%d) Do AF Refocus\n", V4L2_TEST_MENU_DO_AF_REFOCUS);
             MSG("%d) Dump last capture\n", V4L2_TEST_MENU_DUMP_LAST_CAPTURE);
-            MSG("%d) SET_MANUAL_EXP\n", V4L2_TEST_MENU_SET_MANUAL_EXP);
             MSG("%d) Exit\n", V4L2_TEST_MENU_EXIT);
             MSG("Choose menu > ");
             //fflush(stdout);
@@ -1635,10 +1694,6 @@ int main(int argc, char *argv[])
             do {
                 usleep(200000);
             } while(v4l2_test_thread_dump);
-            break;
-            case V4L2_TEST_MENU_SET_MANUAL_EXP:
-            enable = 1;
-            set_manual_exposure(tparam[0].videofd, enable);
             break;
         case V4L2_TEST_MENU_EXIT:
             v4l2_test_thread_exit = 1;

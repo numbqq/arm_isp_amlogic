@@ -1176,13 +1176,26 @@ uint8_t system_max_exposure_ratio( acamera_fsm_mgr_t *instance, uint32_t value, 
 uint8_t system_integration_time( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t direction, uint32_t *ret_value )
 {
     *ret_value = 0;
-    cmos_control_param_t *param = (cmos_control_param_t *)_GET_UINT_PTR( ACAMERA_MGR2CTX_PTR( instance ), CALIBRATION_CMOS_CONTROL );
+    const sensor_param_t *param = NULL;
+    acamera_fsm_mgr_get_param( instance, FSM_PARAM_GET_SENSOR_PARAM, NULL, 0, &param, sizeof( param ) );
+    cmos_control_param_t *param_cmos = (cmos_control_param_t *)_GET_UINT_PTR( ACAMERA_MGR2CTX_PTR( instance ), CALIBRATION_CMOS_CONTROL );
     if ( direction == COMMAND_GET ) {
-        *ret_value = param->global_integration_time;
+        *ret_value = param_cmos->global_integration_time;
         return SUCCESS;
     } else if ( direction == COMMAND_SET ) {
-        param->global_integration_time = value;
-        return SUCCESS;
+         if ( value == 0 ) {
+             param_cmos->global_integration_time = 1;
+             LOG(LOG_ERR, "Warning: manual integration time rang: 1 - %d", param->integration_time_limit );
+         }
+         else if ( param->integration_time_limit < value ) {
+             param_cmos->global_integration_time = param->integration_time_limit;
+             LOG(LOG_ERR, "Warning: manual integration time rang: 1 - %d", param->integration_time_limit );
+         }
+         else {
+             param_cmos->global_integration_time = value;
+         }
+         LOG( LOG_ERR, "manual_sensor_integration_time =  %d", param_cmos->global_integration_time );
+         return SUCCESS;
     } else {
         return NOT_SUPPORTED;
     }
@@ -1258,9 +1271,11 @@ uint8_t system_sensor_analog_gain( acamera_fsm_mgr_t *instance, uint32_t value, 
     } else if ( direction == COMMAND_SET ) {
         if ( value > param->global_max_sensor_analog_gain ) {
             param->global_sensor_analog_gain = param->global_max_sensor_analog_gain;
+            LOG(LOG_ERR, "Warning: manual sensor analog gain rang: 0 - %d", param->global_max_sensor_analog_gain );
         } else {
             param->global_sensor_analog_gain = value;
         }
+        LOG( LOG_ERR, "manual_sensor_analog_gain =  %d", param->global_sensor_analog_gain );
         return SUCCESS;
     } else {
         return NOT_SUPPORTED;
@@ -1350,10 +1365,12 @@ uint8_t system_isp_digital_gain( acamera_fsm_mgr_t *instance, uint32_t value, ui
         *ret_value = param->global_isp_digital_gain;
         return SUCCESS;
     } else if ( direction == COMMAND_SET ) {
-        if ( value > param->global_max_isp_digital_gain )
+        if ( value > param->global_max_isp_digital_gain ) {
             param->global_isp_digital_gain = param->global_max_isp_digital_gain;
-        else
+            LOG(LOG_ERR, "Warning: manual isp digital gain rang: 0 - %d", param->global_max_isp_digital_gain );
+        } else
             param->global_isp_digital_gain = value;
+        LOG( LOG_ERR, "manual_isp_digital_gain =  %d", param->global_isp_digital_gain );
         return SUCCESS;
     } else {
         return NOT_SUPPORTED;

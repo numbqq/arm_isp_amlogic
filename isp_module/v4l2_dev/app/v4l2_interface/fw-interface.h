@@ -82,5 +82,9 @@ int fw_intf_set_custom_sensor_testpattern(uint32_t ctrl_val);
 int fw_intf_set_customer_sensor_ir_cut(uint32_t ctrl_val);
 int fw_intf_set_customer_ae_zone_weight(unsigned long ctrl_val);
 int fw_intf_set_customer_awb_zone_weight(unsigned long ctrl_val);
+int fw_intf_set_customer_manual_exposure( int val );
+int fw_intf_set_customer_sensor_integration_time(uint32_t ctrl_val);
+int fw_intf_set_customer_sensor_analog_gain(uint32_t ctrl_val);
+int fw_intf_set_customer_isp_digital_gain(uint32_t ctrl_val);
 
 #endif

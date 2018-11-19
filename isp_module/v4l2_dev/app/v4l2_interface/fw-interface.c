@@ -737,6 +737,30 @@ static int fw_intf_set_awb_zone_weight(unsigned long ctrl_val)
     return 0;
 }
 
+static int fw_intf_set_sensor_integration_time(uint32_t ctrl_val)
+{
+    uint32_t manual_sensor_integration_time = ctrl_val;
+    acamera_command(TSYSTEM, SYSTEM_INTEGRATION_TIME, manual_sensor_integration_time, COMMAND_SET, &ctrl_val );
+
+    return 0;
+}
+
+static int fw_intf_set_sensor_analog_gain(uint32_t ctrl_val)
+{
+    uint32_t manual_sensor_analog_gain = ctrl_val;
+    acamera_command(TSYSTEM, SYSTEM_SENSOR_ANALOG_GAIN, manual_sensor_analog_gain, COMMAND_SET, &ctrl_val );
+
+    return 0;
+}
+
+static int fw_intf_set_isp_digital_gain(uint32_t ctrl_val)
+{
+    uint32_t manual_isp_digital_gain = ctrl_val;
+    acamera_command(TSYSTEM, SYSTEM_ISP_DIGITAL_GAIN, manual_isp_digital_gain, COMMAND_SET, &ctrl_val );
+
+    return 0;
+}
+
 
 /* ----------------------------------------------------------------
  * Internal handler for control interface functions
@@ -1196,6 +1220,45 @@ static int isp_fw_do_set_exposure_auto( int enable )
     return 0;
 }
 
+static int isp_fw_do_set_manual_exposure( int enable )
+{
+#if defined( TALGORITHMS ) && defined( AE_MODE_ID )
+    int result_integration_time, result_analog_gain, result_digital_gain;
+    uint32_t ret_val;
+
+    LOG( LOG_ERR, "manual exposure enable: %d.", enable );
+
+    /* some controls(such brightness) will call acamera_command()
+     * before isp_fw initialed, so we need to check.
+     */
+    if ( !isp_started ) {
+        LOG( LOG_ERR, "ISP FW not inited yet" );
+        return -EBUSY;
+    }
+
+    result_integration_time = acamera_command( TSYSTEM, SYSTEM_MANUAL_INTEGRATION_TIME, enable, COMMAND_SET, &ret_val );
+    if ( result_integration_time ) {
+        LOG( LOG_ERR, "Failed to set manual_integration_time to manual mode, ret_value: %d", result_integration_time );
+        return ( result_integration_time );
+    }
+
+    result_analog_gain = acamera_command( TSYSTEM, SYSTEM_MANUAL_SENSOR_ANALOG_GAIN, enable, COMMAND_SET, &ret_val );
+    if ( result_integration_time ) {
+        LOG( LOG_ERR, "Failed to set manual_sensor_analog_gain to manual mode, ret_value: %d", result_analog_gain );
+        return ( result_integration_time );
+    }
+
+    result_digital_gain = acamera_command( TSYSTEM, SYSTEM_MANUAL_ISP_DIGITAL_GAIN, enable, COMMAND_SET, &ret_val );
+    if ( result_integration_time ) {
+        LOG( LOG_ERR, "Failed to set manual_isp_digital_gain to manual mode, ret_value: %d", result_digital_gain );
+        return ( result_integration_time );
+    }
+
+#endif
+
+    return 0;
+}
+
 /* set exposure in us unit */
 static int isp_fw_do_set_exposure( int exp )
 {
@@ -1605,3 +1668,54 @@ int fw_intf_set_customer_awb_zone_weight(unsigned long ctrl_val)
     return rtn;
 }
 
+int fw_intf_set_customer_manual_exposure( int val )
+{
+    int rtn = -1;
+
+    if ( val == -1) {
+       return 0;
+    }
+
+    rtn = isp_fw_do_set_manual_exposure( val );
+
+    return rtn;
+}
+
+int fw_intf_set_customer_sensor_integration_time(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    if ( ctrl_val == -1) {
+       return 0;
+    }
+
+    rtn = fw_intf_set_sensor_integration_time(ctrl_val);
+
+    return rtn;
+}
+
+int fw_intf_set_customer_sensor_analog_gain(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    if ( ctrl_val == -1) {
+       return 0;
+    }
+
+    rtn = fw_intf_set_sensor_analog_gain(ctrl_val);
+
+    return rtn;
+}
+
+int fw_intf_set_customer_isp_digital_gain(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    if ( ctrl_val == -1) {
+       return 0;
+    }
+
+    rtn = fw_intf_set_isp_digital_gain(ctrl_val);
+
+    return rtn;
+}
