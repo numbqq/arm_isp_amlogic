@@ -936,7 +936,7 @@ static uint32_t sbuf_is_ready_to_send_data( struct sbuf_context *p_ctx )
     // we need to wait before send stats data.
     if ( p_ctx->p_fsm->is_paused ||
          !p_ctx->sbuf_mgr.sbuf_base->kf_info.cali_info.is_fetched ) {
-        LOG( LOG_ERR, "is_paused: %d, is_fetched: %d.", p_ctx->p_fsm->is_paused, p_ctx->sbuf_mgr.sbuf_base->kf_info.cali_info.is_fetched );
+        LOG( LOG_INFO, "is_paused: %d, is_fetched: %d.", p_ctx->p_fsm->is_paused, p_ctx->sbuf_mgr.sbuf_base->kf_info.cali_info.is_fetched );
 
         rc = 0;
     }
@@ -1636,7 +1636,7 @@ static ssize_t sbuf_fops_read( struct file *file, char __user *buf, size_t count
     }
 
     if ( !sbuf_is_ready_to_send_data( p_ctx ) ) {
-        LOG( LOG_ERR, "Not ready to send data." );
+        LOG( LOG_INFO, "Not ready to send data." );
         return -ENODATA;
     }
 
@@ -1648,7 +1648,7 @@ static ssize_t sbuf_fops_read( struct file *file, char __user *buf, size_t count
         // recycle items to sbuf_mgr
         sbuf_recycle_idx_set( p_ctx, &idx_set );
 
-        LOG( LOG_ERR, "Not ready to send data." );
+        LOG( LOG_INFO, "Not ready to send data." );
         return -ENODATA;
     }
 
