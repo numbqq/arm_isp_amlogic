@@ -378,8 +378,8 @@ static uint16_t sensor_get_id( void *ctx )
 	sensor_context_t *p_ctx = ctx;
 	uint32_t sensor_id = 0;
 
-	sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x301c) << 16;
-	sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x301d) << 8;
+	sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x301e) << 8;
+	sensor_id |= acamera_sbus_read_u8(&p_ctx->sbus, 0x301f);
 
     if (sensor_id != SENSOR_CHIP_ID) {
         LOG(LOG_ERR, "%s: Failed to read sensor id\n", __func__);
