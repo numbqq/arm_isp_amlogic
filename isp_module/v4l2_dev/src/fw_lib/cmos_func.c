@@ -935,15 +935,19 @@ void cmos_analog_gain_update( cmos_fsm_ptr_t p_fsm )
             gain = 0;
         }
     }
-    int32_t again = cmos_alloc_sensor_analog_gain( p_fsm, gain );
-    if ( !param->global_manual_sensor_analog_gain &&
-         ( again != p_fsm->again_val_log2 ) ) {
-        if ( ( gain > p_fsm->again_val_log2 - again_accuracy ) &&
-             ( gain < p_fsm->again_val_log2 + again_accuracy ) ) {
-            again = cmos_alloc_sensor_analog_gain( p_fsm, p_fsm->again_val_log2 );
+    if (param->global_manual_sensor_analog_gain == 0) {
+        int32_t again = cmos_alloc_sensor_analog_gain( p_fsm, gain );
+        if ( !param->global_manual_sensor_analog_gain &&
+             ( again != p_fsm->again_val_log2 ) ) {
+             if ( ( gain > p_fsm->again_val_log2 - again_accuracy ) &&
+                 ( gain < p_fsm->again_val_log2 + again_accuracy ) ) {
+                 again = cmos_alloc_sensor_analog_gain( p_fsm, p_fsm->again_val_log2 );
+             }
         }
+        p_fsm->again_val_log2 = again;
+    } else {
+        p_fsm->again_val_log2 = gain;
     }
-    p_fsm->again_val_log2 = again;
 }
 
 void cmos_digital_gain_update( cmos_fsm_ptr_t p_fsm )
