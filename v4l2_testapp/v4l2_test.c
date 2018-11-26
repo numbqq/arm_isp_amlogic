@@ -78,6 +78,7 @@ static uint32_t manual_exposure_enable = 0;
 static uint32_t manual_sensor_integration_time = 1;
 static uint32_t manual_sensor_analog_gain = 0;
 static uint32_t manual_isp_digital_gain = 0;
+static uint32_t stop_sensor_update = 0;
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
 
 #define LINE_SIZE 128
@@ -292,6 +293,16 @@ static void set_manual_sensor_analog_gain(int videofd, uint32_t manual_sensor_an
     ctrl.value = manual_sensor_analog_gain;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("set_manual_sensor_analog_gain failed\n");
+    }
+}
+
+static void set_stop_sensor_update(int videofd, uint32_t stop_sensor_update)
+{
+    struct v4l2_control ctrl;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_STOP_SENSOR_UPDATE;
+    ctrl.value = stop_sensor_update;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("set_stop_sensor_update failed\n");
     }
 }
 
@@ -815,6 +826,7 @@ void * video_thread(void *arg)
          set_manual_sensor_integration_time(videofd, manual_sensor_integration_time);
          set_manual_sensor_analog_gain(videofd, manual_sensor_analog_gain);
          set_manual_isp_digital_gain(videofd, manual_isp_digital_gain);
+         set_stop_sensor_update(videofd, stop_sensor_update);
      }
 
     /**************************************************
@@ -1315,13 +1327,14 @@ int main(int argc, char *argv[])
         printf("    L : integration timet\n");
         printf("    A : sensor analog gain\n");
         printf("    S : isp digital gain\n");
+        printf("    K : stop sensor update, 0: enable sensor update, 1: stop sensor update\n");
         return -1;
     }
 
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:M:L:A:S:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:M:L:A:S:K:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -1402,6 +1415,9 @@ int main(int argc, char *argv[])
                 break;
             case 'S':
                 manual_isp_digital_gain = atoi(optarg);
+                break;
+            case 'K':
+                stop_sensor_update = atoi(optarg);
                 break;
             case '?':
                 usage(argv[0]);

@@ -198,6 +198,11 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         ret = fw_intf_set_customer_isp_digital_gain(ctrl->val);
         ctrl->val = -1;
         break;
+    case ISP_V4L2_CID_CUSTOM_SET_STOP_SENSOR_UPDATE:
+        LOG( LOG_INFO, "set_customer_stop_sensor_update = %d\n", ctrl->val );
+        ret = fw_intf_set_customer_stop_sensor_update(ctrl->val);
+        ctrl->val = -1;
+        break;
     }
 
     return ret;
@@ -409,6 +414,17 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_isp_digital_gain = {
     .def = -1,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_stop_sensor_update = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SET_STOP_SENSOR_UPDATE,
+    .name = "stop_sensor_update set",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = -1,
+    .max = 2,
+    .step = 1,
+    .def = -1,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -522,6 +538,8 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_sensor_analog_gain, NULL);
     ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_ISP_DIGITAL_GAIN,
                   &isp_v4l2_ctrl_isp_digital_gain, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_STOP_SENSOR_UPDATE,
+                  &isp_v4l2_ctrl_stop_sensor_update, NULL);
 
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );
