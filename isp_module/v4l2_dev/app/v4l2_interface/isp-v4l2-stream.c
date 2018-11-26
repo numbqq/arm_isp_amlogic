@@ -1367,12 +1367,16 @@ int isp_v4l2_stream_try_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
     f->fmt.pix_mp.num_planes = tfmt->planes;
     f->fmt.pix_mp.colorspace = ( tfmt->is_yuv ) ? V4L2_COLORSPACE_SMPTE170M : V4L2_COLORSPACE_SRGB;
     for ( i = 0; i < tfmt->planes; i++ ) {
-        f->fmt.pix_mp.plane_fmt[i].bytesperline = ( ( ( f->fmt.pix_mp.width * tfmt->depth / 8 ) + 127 ) >> 7 ) << 7; // for padding
-        f->fmt.pix_mp.plane_fmt[i].sizeimage = f->fmt.pix_mp.height * f->fmt.pix_mp.plane_fmt[i].bytesperline;
+        if ( tfmt->fourcc == V4L2_PIX_FMT_NV12 && i == 1) {
+            f->fmt.pix_mp.plane_fmt[i].bytesperline = ( ( ( f->fmt.pix_mp.width * tfmt->depth / 8 ) + 127 ) >> 7 ) << 7; // for padding
+            f->fmt.pix_mp.plane_fmt[i].sizeimage = f->fmt.pix_mp.height * f->fmt.pix_mp.plane_fmt[i].bytesperline / 2;
+        } else {
+            f->fmt.pix_mp.plane_fmt[i].bytesperline = ( ( ( f->fmt.pix_mp.width * tfmt->depth / 8 ) + 127 ) >> 7 ) << 7; // for padding
+            f->fmt.pix_mp.plane_fmt[i].sizeimage = f->fmt.pix_mp.height * f->fmt.pix_mp.plane_fmt[i].bytesperline;
+        }
         memset( f->fmt.pix_mp.plane_fmt[i].reserved, 0, sizeof( f->fmt.pix_mp.plane_fmt[i].reserved ) );
         memset( f->fmt.pix_mp.reserved, 0, sizeof( f->fmt.pix_mp.reserved ) );
     }
-
 
     return 0;
 }

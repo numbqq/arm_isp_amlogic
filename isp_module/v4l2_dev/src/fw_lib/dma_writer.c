@@ -399,7 +399,6 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
                     empty_frame->primary.height = pipe->api.p_acamera_isp_dma_writer_active_height_read( pipe->settings.isp_base );
                     empty_frame->primary.line_offset = acamera_line_offset( empty_frame->primary.width, _get_pixel_width( empty_frame->primary.type ) );
                     uint32_t frame_size = empty_frame->primary.line_offset * empty_frame->primary.height;
-
                     addr = empty_frame->primary.address;
                     pipe->settings.last_tframe = empty_frame;
                     LOG( LOG_DEBUG, "next dma addr:0x%lx\n", addr );
@@ -438,7 +437,8 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
                     empty_frame->secondary.height = pipe->api.p_acamera_isp_dma_writer_active_height_read_uv( pipe->settings.isp_base );
                     empty_frame->secondary.line_offset = acamera_line_offset( empty_frame->secondary.width, _get_pixel_width( empty_frame->secondary.type ) );
                     uint32_t frame_size = empty_frame->secondary.line_offset * empty_frame->secondary.height;
-
+                    if (empty_frame->secondary.type == DMA_FORMAT_NV12_UV || empty_frame->secondary.type == DMA_FORMAT_NV12_VU)
+                        frame_size = frame_size / 2;
                     addr = empty_frame->secondary.address;
                     if ( pipe->settings.vflip ) {
                         addr += frame_size - empty_frame->secondary.line_offset;
@@ -466,7 +466,6 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
                 } else {
                     pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
                 }
-
 
             } else {
                 //no empty frames
