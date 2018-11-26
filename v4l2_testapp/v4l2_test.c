@@ -266,51 +266,51 @@ static void set_manual_exposure(int videofd, int enable)
     }
 }
 
-static void do_sensor_ir_cut(int videofd, int ir_cut_state)
+static void do_sensor_ir_cut(int videofd, int ircut_state)
 {
     struct v4l2_control ctrl;
     ctrl.id = ISP_V4L2_CID_CUSTOM_SENSOR_IR_CUT;
-    ctrl.value = ir_cut_state;
+    ctrl.value = ircut_state;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("do_sensor_ir_cut failed\n");
     }
 }
 
-static void set_manual_sensor_integration_time(int videofd, uint32_t manual_sensor_integration_time)
+static void set_manual_sensor_integration_time(int videofd, uint32_t sensor_integration_time_state)
 {
     struct v4l2_control ctrl;
     ctrl.id = ISP_V4L2_CID_CUSTOM_SET_SENSOR_INTEGRATION_TIME;
-    ctrl.value = manual_sensor_integration_time;
+    ctrl.value = sensor_integration_time_state;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("set_manual_sensor_integration_time failed\n");
     }
 }
 
-static void set_manual_sensor_analog_gain(int videofd, uint32_t manual_sensor_analog_gain)
+static void set_manual_sensor_analog_gain(int videofd, uint32_t sensor_analog_gain_state)
 {
     struct v4l2_control ctrl;
     ctrl.id = ISP_V4L2_CID_CUSTOM_SET_SENSOR_ANALOG_GAIN;
-    ctrl.value = manual_sensor_analog_gain;
+    ctrl.value = sensor_analog_gain_state;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("set_manual_sensor_analog_gain failed\n");
     }
 }
 
-static void set_stop_sensor_update(int videofd, uint32_t stop_sensor_update)
+static void set_stop_sensor_update(int videofd, uint32_t stop_sensor_update_state)
 {
     struct v4l2_control ctrl;
     ctrl.id = ISP_V4L2_CID_CUSTOM_SET_STOP_SENSOR_UPDATE;
-    ctrl.value = stop_sensor_update;
+    ctrl.value = stop_sensor_update_state;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("set_stop_sensor_update failed\n");
     }
 }
 
-static void set_manual_isp_digital_gain(int videofd, uint32_t manual_isp_digital_gain)
+static void set_manual_isp_digital_gain(int videofd, uint32_t isp_digital_gain_state)
 {
     struct v4l2_control ctrl;
     ctrl.id = ISP_V4L2_CID_CUSTOM_SET_ISP_DIGITAL_GAIN;
-    ctrl.value = manual_isp_digital_gain;
+    ctrl.value = isp_digital_gain_state;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("set_manual_isp_digital_gain failed\n");
     }
