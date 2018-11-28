@@ -1016,6 +1016,10 @@ void cmos_antiflicker_update( cmos_fsm_ptr_t p_fsm )
         //Only do overexpose to keep antiflicker in linear mode
         if ( wdr_mode == WDR_MODE_LINEAR ) {
             cmos_control_param_t *param = (cmos_control_param_t *)_GET_UINT_PTR( ACAMERA_FSM2CTX_PTR( p_fsm ), CALIBRATION_CMOS_CONTROL );
+            // if set manual integration time, do not adjust.
+            if ( param->global_manual_integration_time ) {
+                return;
+            }
             if ( param->global_antiflicker_enable && p_fsm->integration_time_short < integration_time_short ) {
                 p_fsm->integration_time_short = integration_time_short; // division by zero is checked
             }
