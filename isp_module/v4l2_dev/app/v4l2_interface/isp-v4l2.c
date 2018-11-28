@@ -491,18 +491,8 @@ static int isp_v4l2_querybuf( struct file *file, void *priv, struct v4l2_buffer 
 {
     struct isp_v4l2_fh *sp = fh_to_private( file->private_data );
     int rc = 0;
-    int i = 0;
-    struct vb2_cmalloc_buf *buf = NULL;
 
     rc = vb2_querybuf( &sp->vb2_q, p );
-
-    if (p->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
-                    sp->stream_id != V4L2_STREAM_TYPE_META) {
-        for (i = 0; i < p->length; i++) {
-            buf = sp->vb2_q.bufs[p->index]->planes[i].mem_priv;
-            p->m.planes[i].reserved[0] = virt_to_phys(buf->vaddr);
-        }
-    }
 
     LOG( LOG_DEBUG, "sid:%d querybuf p->type:%d p->index:%d , rc %d",
             sp->stream_id, p->type, p->index, rc );
@@ -589,6 +579,18 @@ static int isp_v4l2_s_crop(struct file *file, void *fh,
     return ret;
 }
 
+static int isp_v4l2_expbuf(struct file *file, void *priv, struct v4l2_exportbuffer *ex_buf)
+{
+    struct isp_v4l2_fh *sp = fh_to_private( file->private_data );
+
+    if (sp == NULL || ex_buf == NULL) {
+        LOG(LOG_ERR, "Error invalid input param");
+        return -EINVAL;
+    }
+
+    return vb2_expbuf(&sp->vb2_q, ex_buf);
+}
+
 static const struct v4l2_ioctl_ops isp_v4l2_ioctl_ops = {
     .vidioc_querycap = isp_v4l2_querycap,
 
@@ -624,6 +626,8 @@ static const struct v4l2_ioctl_ops isp_v4l2_ioctl_ops = {
     .vidioc_cropcap = isp_v4l2_cropcap,
     .vidioc_g_crop = isp_v4l2_g_crop,
     .vidioc_s_crop = isp_v4l2_s_crop,
+
+    .vidioc_expbuf = isp_v4l2_expbuf,
 };
 
 static int isp_cma_alloc(struct platform_device *pdev, unsigned long size)
