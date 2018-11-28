@@ -72,6 +72,12 @@ typedef struct gdc_settings {
     //when inititialised this callback will be called to update frame buffer addresses and offsets
     void (*get_frame_buffer)(uint32_t y_base_addr, uint32_t uv_base_addr, uint32_t y_line_offset, uint32_t uv_line_offset);
     void *fh;
+    int32_t y_base_fd;
+    union {
+        int32_t uv_base_fd;
+        int32_t u_base_fd;
+    };
+    int32_t v_base_fd;
 } gdc_settings_t;
 
 #define GDC_IOC_MAGIC  'G'

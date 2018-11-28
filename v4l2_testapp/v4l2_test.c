@@ -204,6 +204,23 @@ static void do_fr_fps(int videofd, int fps)
     }
 }
 
+static int do_get_dma_buf_fd(int videofd, uint32_t index, uint32_t plane)
+{
+    struct v4l2_exportbuffer ex_buf;
+
+    ex_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    ex_buf.index = index;
+    ex_buf.plane = plane;
+    ex_buf.flags = 0;
+    ex_buf.fd = -1;
+
+    if (ioctl(videofd, VIDIOC_EXPBUF, &ex_buf))  {
+        ERR("LIKE-0:Failed get dma buf fd\n");
+    }
+
+    return ex_buf.fd;
+}
+
 static void do_fr_set_ae_zone_weight(int videofd)
 {
     struct v4l2_ext_controls ctrls;
@@ -670,12 +687,11 @@ void * video_thread(void *arg)
     struct v4l2_format          v4l2_fmt;
     struct v4l2_requestbuffers  v4l2_rb;
     int                         v4l2_buf_length = 0;
-    unsigned int phy_addr = 0;
-    //void                        *v4l2_mem[NB_BUFFER];
-    //number of buffer* max num of planes
+    int                         dma_fd = -1;
+
     void                        *v4l2_mem[NB_BUFFER*VIDEO_MAX_PLANES];
-    unsigned int v4l2_phy_mem[NB_BUFFER * VIDEO_MAX_PLANES] = {0};
-    int total_mapped_mem=0;
+    int                         v4l2_dma_fd[NB_BUFFER * VIDEO_MAX_PLANES] = {0};
+    int                         total_mapped_mem=0;
 
     /* thread parameters */
     struct thread_param         *tparm = (struct thread_param *)arg;
@@ -874,12 +890,12 @@ void * video_thread(void *arg)
         else if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
             for (j=0;j<v4l2_fmt.fmt.pix_mp.num_planes;j++) {
                 v4l2_buf_length = v4l2_buf.m.planes[j].length;
-                phy_addr = v4l2_buf.m.planes[j].reserved[0];
-                INFO("[T#%d] plane:%d multiplanar length: %u offset: %u, phy_addr:0x%x\n",
-                    stream_type, j, v4l2_buf.m.planes[j].length, v4l2_buf.m.planes[j].m.mem_offset, phy_addr);
+                dma_fd = do_get_dma_buf_fd(videofd, i, j);
+                INFO("[T#%d] plane:%d multiplanar length: %u offset: %u, dma_fd:%d\n",
+                    stream_type, j, v4l2_buf.m.planes[j].length, v4l2_buf.m.planes[j].m.mem_offset, dma_fd);
                 v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j] = mmap (0, v4l2_buf.m.planes[j].length, PROT_READ, MAP_SHARED,
                     videofd, v4l2_buf.m.planes[j].m.mem_offset);
-                v4l2_phy_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j] = phy_addr;
+                v4l2_dma_fd[i*v4l2_fmt.fmt.pix_mp.num_planes + j] = dma_fd;
                 ++total_mapped_mem;
                 INFO("[T#%d] Buffer[%d] mapped at address %p total_mapped_mem:%d.\n", stream_type,i*v4l2_fmt.fmt.pix_mp.num_planes + j, v4l2_mem[i*v4l2_fmt.fmt.pix_mp.num_planes + j],total_mapped_mem);
             }
@@ -1056,8 +1072,8 @@ void * video_thread(void *arg)
                                 //memcpy(gdc_ctx.i_buff, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
                                 //memcpy(gdc_ctx.i_buff + v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, v4l2_mem[idx * 2 + 1],
                                                         //v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage);
-                                gdc_ctx.gs.y_base_addr = v4l2_phy_mem[idx * 2];
-                                gdc_ctx.gs.uv_base_addr = v4l2_phy_mem[idx * 2 + 1];
+                                gdc_ctx.gs.y_base_fd = v4l2_dma_fd[idx * 2];
+                                gdc_ctx.gs.uv_base_fd = v4l2_dma_fd[idx * 2 + 1];
 
                                 gdc_handle(&gdc_ctx);
                                 save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type, tparm->capture_count);
