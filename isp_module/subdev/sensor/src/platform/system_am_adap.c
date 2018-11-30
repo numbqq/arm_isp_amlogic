@@ -620,8 +620,9 @@ int am_adap_frontend_init(void)
 {
 	int long_exp_offset = para.offset.long_offset;
 	int short_exp_offset = para.offset.short_offset;
-	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x0);//release from reset
+	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x7);//release from reset
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x6);//enable frontend module clock and disable auto clock gating
+	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x6);
 
 	if (para.mode == DIR_MODE) {
 		if (para.path == PATH0)
@@ -663,6 +664,10 @@ int am_adap_frontend_init(void)
 		} else {
 			pr_err("Not support DOL type\n");
 		}
+	}
+
+	if (para.mode == DIR_MODE) {
+		mipi_adap_reg_wr(CSI2_VC_MODE, FRONTEND_IO, 0x110000);
 	}
 
 	if (para.mode == DDR_MODE) {
@@ -1024,8 +1029,6 @@ int am_adap_init(void)
 		}
 	}
 
-	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 1);
-	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0);
 	if (para.mode == DDR_MODE) {
 		ret = request_irq(g_adap->rd_irq, &adpapter_isr, IRQF_SHARED | IRQF_TRIGGER_HIGH,
 		"adapter-irq", (void *)g_adap);
@@ -1061,7 +1064,8 @@ int am_adap_start(int idx)
 
 int am_adap_reset(void)
 {
-	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x0);
+	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x7);
+	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x6);
 	mipi_adap_reg_wr(CSI2_CLK_RESET, FRONTEND_IO, 0x6);
 	mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f0000);
 	mipi_adap_reg_wr(MIPI_OTHER_CNTL0, ALIGN_IO, 0xf0000000);
