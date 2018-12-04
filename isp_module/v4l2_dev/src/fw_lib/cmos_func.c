@@ -916,7 +916,7 @@ void cmos_analog_gain_update( cmos_fsm_ptr_t p_fsm )
             {
                 int32_t max_again = (int32_t)param->global_max_sensor_analog_gain << ( LOG2_GAIN_SHIFT - 5 );
                 int32_t max_isp_gain = ( (int32_t)param->global_max_isp_digital_gain << ( LOG2_GAIN_SHIFT - 5 ) ) - ( 1 << LOG2_GAIN_SHIFT );
-                int32_t reserved_again = max_again - ( ( (int32_t)param->global_analog_gain_reserve ) << (LOG2_GAIN_SHIFT - 5));
+                int32_t reserved_again = max_again - ( ( (int32_t)param->global_analog_gain_reserve ) << LOG2_GAIN_SHIFT );
                 if ( target_gain > reserved_again + max_isp_gain ) {
                     target_gain -= max_isp_gain;
                 } else if ( target_gain > reserved_again ) {

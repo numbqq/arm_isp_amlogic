@@ -189,7 +189,7 @@ static int32_t sensor_alloc_analog_gain( void *ctx, int32_t gain )
 {
     sensor_context_t *p_ctx = ctx;
 
-    uint16_t again = (gain >> (LOG2_GAIN_SHIFT - 5));
+    uint16_t again = ( gain * 20 ) >> LOG2_GAIN_SHIFT;
 
     if ( again > p_ctx->again_limit ) again = p_ctx->again_limit;
 
@@ -198,7 +198,7 @@ static int32_t sensor_alloc_analog_gain( void *ctx, int32_t gain )
         p_ctx->again[0] = again;
     }
 
-    return (( (int32_t)again ) << (LOG2_GAIN_SHIFT - 5 ));
+    return ( ( (int32_t)again ) << LOG2_GAIN_SHIFT ) / 20;
 }
 
 static int32_t sensor_alloc_digital_gain( void *ctx, int32_t gain )
@@ -669,9 +669,9 @@ void sensor_init_imx290( void **ctx, sensor_control_t *ctrl, void* sbp)
     s_ctx.again_limit = AGAIN_MAX_DB + DGAIN_MAX_DB;
     s_ctx.pixel_clock = 148500000;
 
-    s_ctx.param.again_accuracy = 1 << (LOG2_GAIN_SHIFT - 2);
+    s_ctx.param.again_accuracy = 1 << LOG2_GAIN_SHIFT;
     s_ctx.param.sensor_exp_number = 1;
-    s_ctx.param.again_log2_max = ( ( AGAIN_MAX_DB + DGAIN_MAX_DB ) << (LOG2_GAIN_SHIFT - 5));
+    s_ctx.param.again_log2_max = ( ( AGAIN_MAX_DB + DGAIN_MAX_DB ) << LOG2_GAIN_SHIFT ) / 20;
     s_ctx.param.dgain_log2_max = 0;
     s_ctx.param.integration_time_apply_delay = 2;
     s_ctx.param.isp_exposure_channel_delay = 0;
