@@ -22,7 +22,7 @@
 // ------------ 3A & iridix
 static uint8_t _calibration_evtolux_probability_enable[] = {0};
 
-static uint8_t _calibration_awb_avg_coef[] = {7};
+static uint8_t _calibration_awb_avg_coef[] = {30};
 
 static uint8_t _calibration_iridix_avg_coef[] = {30};
 
