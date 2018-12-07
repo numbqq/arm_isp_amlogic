@@ -23,9 +23,9 @@
 // ------------ 3A & iridix
 static uint8_t _calibration_evtolux_probability_enable[] = {1};
 
-static uint8_t _calibration_awb_avg_coef[] = {25};
+static uint8_t _calibration_awb_avg_coef[] = {30};
 
-static uint8_t _calibration_iridix_avg_coef[] = {25}; //7
+static uint8_t _calibration_iridix_avg_coef[] = {30}; //7
 
 static uint16_t _calibration_ccm_one_gain_threshold[] = {256 * 10};
 
@@ -33,9 +33,9 @@ static uint8_t _calibration_iridix_strength_maximum[] = {255};
 
 static uint16_t _calibration_iridix_min_max_str[] = {0};
 
-static uint32_t _calibration_iridix_ev_lim_full_str[] = {2100000}; //100
+static uint32_t _calibration_iridix_ev_lim_full_str[] = {1900000}; //100
 
-static uint32_t _calibration_iridix_ev_lim_no_str[] = {3300000,2900000}; //5792559, 2997049
+static uint32_t _calibration_iridix_ev_lim_no_str[] = {3600000,2600000}; //5792559, 2997049
 
 static uint8_t _calibration_ae_correction[] = {128};
 
@@ -43,8 +43,8 @@ static uint32_t _calibration_ae_exposure_correction[] = {500};
 
 // ------------Noise reduction ----------------------//
 static uint16_t _calibration_sinter_strength[][2] = {
-    {0 * 256, 35}, //30
-    {1 * 256, 36}, //30
+    {0 * 256, 55}, //30
+    {1 * 256, 55}, //30
     {2 * 256, 55}, //45
     {3 * 256, 65}, //60
     {4 * 256, 65}, //73
@@ -73,11 +73,11 @@ static uint16_t _calibration_sinter_strength_MC_contrast[][2] = {
 // {250, 100}};
 static uint16_t _calibration_sinter_strength1[][2] = {
 
-    {0 * 256, 20},     //255
-    {1 * 256, 80},     //255
-    {2 * 256, 130},    //255
-    {3 * 256, 150},    //255
-    {4 * 256, 150},    //255 4 int
+    {0 * 256, 60},     //255
+    {1 * 256, 75},     //255
+    {2 * 256, 100},    //255
+    {3 * 256, 130},    //255
+    {4 * 256, 130},    //255 4 int
     {5 * 256, 130},    //255 4 int
     {6 * 256, 130},    //255 4 int
     {7 * 256, 130},    //255 4 int
@@ -231,28 +231,28 @@ static uint16_t _calibration_saturation_strength[][2] = {
 
 // ----------- Frame stitching motion
 static uint16_t _calibration_stitching_lm_np[][2] = {
-    {0 * 256, 60},
-    {1 * 256, 80},
-    {2 * 256, 100},
-    {3 * 256, 100},
-    {4 * 256, 100},
-    {5 * 256, 100},
-    {6 * 256, 100},
-    {1664, 100}, // 6.5
-    {7 * 256, 100},
+    {0 * 256, 100},
+    {1 * 256, 100},
+    {2 * 256, 120},
+    {3 * 256, 120},
+    {4 * 256, 120},
+    {5 * 256, 120},
+    {6 * 256, 120},
+    {1664, 120}, // 6.5
+    {7 * 256, 120},
 };
 
 static uint16_t _calibration_stitching_lm_mov_mult[][2] = {
     //     {0,0} // 0 will disable motion
-    {0 * 256, 100}, //
-    {1 * 256, 100}, //
-    {2 * 256, 150}, //
-    {3 * 256, 150}, //
-    {4 * 256, 150}, //
-    {5 * 256, 150}, //
-    {6 * 256, 150}, //
-    {7 * 256, 150}, //
-    {8 * 256, 150}, //
+    {0 * 256, 512}, //
+    {1 * 256, 384}, //
+    {2 * 256, 256}, //
+    {3 * 256, 256}, //
+    {4 * 256, 256}, //
+    {5 * 256, 256}, //
+    {6 * 256, 256}, //
+    {7 * 256, 256}, //
+    {8 * 256, 256}, //
 };
 
 static uint16_t _calibration_stitching_lm_med_noise_intensity_thresh[][2] = {
@@ -323,16 +323,16 @@ static uint32_t _calibration_cmos_control[] = {
     0,   // manual isp digital gain
     0,   // manual max integration time
     0,   // max integration time
-    80, // max sensor AG
+    120, // max sensor AG
     0,   // max sensor DG
-    158, // 159 max isp DG
-    64, // max exposure ratio
+    112, // 159 max isp DG
+    12, // max exposure ratio
     0,   // integration time.
     0,   // sensor analog gain. log2 fixed - 5 bits
     0,   // sensor digital gain. log2 fixed - 5 bits
     0,   // isp digital gain. log2 fixed - 5 bits
     1,   // analog_gain_last_priority
-    4    // analog_gain_reserve
+    2    // analog_gain_reserve
 };
 
 static uint32_t _calibration_status_info[] = {
@@ -346,17 +346,17 @@ static uint32_t _calibration_status_info[] = {
 static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
     20,      // dark_prc //20
     98,      // bright_prc
-    1000,    // min_dk: minimum dark enhancement //1100
-    2200,    // max_dk: maximum dark enhancement //4250
+    1500,    // min_dk: minimum dark enhancement //1100
+    2500,    // max_dk: maximum dark enhancement //4250
     8,       // pD_cut_min: minimum intensity cut for dark regions in which dk_enh will be applied
     30,      // pD_cut_max: maximum intensity cut for dark regions in which dk_enh will be applied
-    16 << 8, // dark contrast min
-    60 << 8, // dark contrast max
+    10 << 8, // dark contrast min
+    20 << 8, // dark contrast max
     0,       // min_str: iridix strength in percentage
     50,      // max_str: iridix strength in percentage: 50 = 1x gain. 100 = 2x gain
     40,      // dark_prc_gain_target: target in histogram (percentage) for dark_prc after iridix is applied
-    15 << 8, //1382,   // 5.4<<8,  // contrast_min: clip factor of strength for LDR scenes. //20
-    5760,    // 30<<8,  // contrast_max: clip factor of strength for HDR scenes. //50
+    16 << 8, //1382,   // 5.4<<8,  // contrast_min: clip factor of strength for LDR scenes. //20
+    28 << 8,    // 30<<8,  // contrast_max: clip factor of strength for HDR scenes. //50
     32,      // max iridix gain
     0        // print debug
 };
@@ -447,7 +447,7 @@ static uint32_t _calibration_awb_mix_light_parameters[] = {
     300,  //lux low boundary for mix light lux range : range = {500: inf}
     2000, // lux high boundary for mix light range : range = {500: inf}
     3000, // contrast threshold for mix light: range = {200:2000}
-    330,  //BG threshold {255:400}
+    210,  //BG threshold {255:400}
     5,    // BG weight
     310,  // rgHigh_LUT_max
     252,  // rgHigh_LUT_min
@@ -487,10 +487,10 @@ static uint16_t _calibration_temper_strength[][2] = {
     {1 * 256, 85},
     {2 * 256, 90},
     {3 * 256, 110},
-    {4 * 256, 130},
-    {5 * 256, 130},
-    {6 * 256, 130},
-    {7 * 256, 130},
+    {4 * 256, 110},
+    {5 * 256, 110},
+    {6 * 256, 110},
+    {7 * 256, 110},
     {8 * 256, 130},
     {9 * 256, 130},
 };
