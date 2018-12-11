@@ -541,12 +541,16 @@ static int isp_v4l2_dqbuf( struct file *file, void *priv, struct v4l2_buffer *p 
 static int isp_v4l2_cropcap(struct file *file, void *fh,
                                     struct v4l2_cropcap *cap)
 {
-    int ret = 0;
+    int ret = -1;
     isp_v4l2_dev_t *dev = video_drvdata(file);
     struct isp_v4l2_fh *sp = fh_to_private(fh);
     isp_v4l2_stream_t *pstream = dev->pstreams[sp->stream_id];
 
-    ret = isp_v4l2_get_cropcap(pstream, cap);
+    if (pstream->stream_type == V4L2_STREAM_TYPE_FR ||
+                pstream->stream_type == V4L2_STREAM_TYPE_DS1)
+        ret = isp_v4l2_get_cropcap(pstream, cap);
+    else
+        LOG(LOG_ERR, "Error support this stream type: %d", pstream->stream_type);
 
     return ret;
 }
@@ -554,12 +558,16 @@ static int isp_v4l2_cropcap(struct file *file, void *fh,
 static int isp_v4l2_g_crop(struct file *file, void *fh,
                                     struct v4l2_crop *crop)
 {
-    int ret = 0;
+    int ret = -1;
     isp_v4l2_dev_t *dev = video_drvdata(file);
     struct isp_v4l2_fh *sp = fh_to_private(fh);
     isp_v4l2_stream_t *pstream = dev->pstreams[sp->stream_id];
 
-    ret = isp_v4l2_get_crop(pstream, crop);
+    if (pstream->stream_type == V4L2_STREAM_TYPE_FR ||
+                pstream->stream_type == V4L2_STREAM_TYPE_DS1)
+        ret = isp_v4l2_get_crop(pstream, crop);
+    else
+        LOG(LOG_ERR, "Error support this stream type: %d", pstream->stream_type);
 
     return ret;
 }
@@ -567,12 +575,16 @@ static int isp_v4l2_g_crop(struct file *file, void *fh,
 static int isp_v4l2_s_crop(struct file *file, void *fh,
                                 const struct v4l2_crop *crop)
 {
-    int ret = 0;
+    int ret = -1;
     isp_v4l2_dev_t *dev = video_drvdata(file);
     struct isp_v4l2_fh *sp = fh_to_private(fh);
     isp_v4l2_stream_t *pstream = dev->pstreams[sp->stream_id];
 
-    ret = isp_v4l2_set_crop(pstream, crop);
+    if (pstream->stream_type == V4L2_STREAM_TYPE_FR ||
+                pstream->stream_type == V4L2_STREAM_TYPE_DS1)
+        ret = isp_v4l2_set_crop(pstream, crop);
+    else
+        LOG(LOG_ERR, "Error support this stream type: %d", pstream->stream_type);
 
     return ret;
 }
