@@ -20,7 +20,7 @@
 #include "acamera_command_api.h"
 #include "acamera_firmware_settings.h"
 // ------------ 3A & iridix
-static uint8_t _calibration_evtolux_probability_enable[] = {0};
+static uint8_t _calibration_evtolux_probability_enable[] = {1};
 
 static uint8_t _calibration_awb_avg_coef[] = {30};
 
@@ -34,7 +34,7 @@ static uint16_t _calibration_iridix_min_max_str[] = {0};
 
 static uint32_t _calibration_iridix_ev_lim_full_str[] = {2557570};
 
-static uint32_t _calibration_iridix_ev_lim_no_str[] = {3750000, 3574729}; //3574729
+static uint32_t _calibration_iridix_ev_lim_no_str[] = {3750000, 3574729};
 
 static uint8_t _calibration_ae_correction[] = {128, 128, 128, 128, 128, 108, 98, 88, 78, 78, 78, 55};
 
@@ -42,47 +42,28 @@ static uint32_t _calibration_ae_exposure_correction[] = {6710, 15739, 15778, 232
 
 // ------------Noise reduction ----------------------//
 static uint16_t _calibration_sinter_strength[][2] = {
-    {0 * 256, 45}, //30
-    {1 * 256, 53}, //30
-    {2 * 256, 63}, //45
-    {3 * 256, 75}, //55
-    {4 * 256, 75}, //73
-    {5 * 256, 80}, //74
-    {6 * 256, 88}, //74
-    {7 * 256, 92}  //82
+    {0 * 256, 45},
+    {1 * 256, 53},
+    {2 * 256, 63},
+    {3 * 256, 75},
+    {4 * 256, 75},
+    {5 * 256, 80},
+    {6 * 256, 88},
+    {7 * 256, 92}};
 
-//    {0 * 256, 35}, //30
-//    {1 * 256, 43}, //30
-//    {2 * 256, 53}, //45
-//    {3 * 256, 65}, //55
-//    {4 * 256, 65}, //73
-//    {5 * 256, 70}, //74
-//    {6 * 256, 78}, //74
-//    {7 * 256, 82}  //82
-
-
-    // {0*256 , 110}, //118
-    // {1*256 , 113}, //123
-    // {2*256 , 125}, //130
-    // {3*256 , 133}, //133
-    // {4*256 , 134}, //134
-    // {5*256 , 133}, //133
-    // {6*256 , 135}  //135
-};
 // ------------Noise reduction ----------------------//
 static uint16_t _calibration_sinter_strength_MC_contrast[][2] = {
     {0 * 256, 0}};
 
 static uint16_t _calibration_sinter_strength1[][2] = {
-
-    {0 * 256, 155}, //155
-    {1 * 256, 155}, //155
-    {2 * 256, 125}, //155
-    {3 * 256, 115}, //155
-    {4 * 256, 115}, //255 4 int
-    {5 * 256, 115}, //255 4 int
-    {6 * 256, 85},  //255 4 int
-    {7 * 256, 85}}; //255 4 int
+    {0 * 256, 155},
+    {1 * 256, 155},
+    {2 * 256, 125},
+    {3 * 256, 115},
+    {4 * 256, 115},
+    {5 * 256, 115},
+    {6 * 256, 85},
+    {7 * 256, 85}};
 
 static uint16_t _calibration_sinter_thresh1[][2] = {
     {0 * 256, 10},
@@ -93,14 +74,6 @@ static uint16_t _calibration_sinter_thresh1[][2] = {
     {5 * 256, 14},
     {6 * 256, 15}};
 
-//{0 * 256, 0},
-//{1 * 256, 0},
-//{2 * 256, 2},
-//{3 * 256, 3},
-//{4 * 256, 4},
-//{5 * 256, 4},
-//{6 * 256, 5}};
-
 static uint16_t _calibration_sinter_thresh4[][2] = {
     {0 * 256, 10},
     {1 * 256, 12},
@@ -109,14 +82,6 @@ static uint16_t _calibration_sinter_thresh4[][2] = {
     {4 * 256, 64},
     {5 * 256, 64},
     {6 * 256, 128}};
-
-//    {0 * 256, 0},
-//    {1 * 256, 0},
-//    {2 * 256, 0},
-//    {3 * 256, 5},
-//    {4 * 256, 64},
-//    {5 * 256, 64},
-//    {6 * 256, 128}};
 
 static uint16_t _calibration_sinter_intConfig[][2] = {
     {0 * 256, 10},
@@ -144,6 +109,7 @@ static uint16_t _calibration_sinter_sad[][2] = {
     {4 * 256, 9},
     {5 * 256, 11},
     {6 * 256, 13}};
+
 // ------------ Sharpening and demosaic
 static uint16_t _calibration_sharp_alt_d[][2] = {
     {0 * 256, 28},
@@ -153,34 +119,17 @@ static uint16_t _calibration_sharp_alt_d[][2] = {
     {4 * 256, 29},
     {5 * 256, 15},
     {6 * 256, 5},
-    {7 * 256, 0}
-    //    {0 * 256, 30},
-    //    {1 * 256, 20},
-    //    {2 * 256, 19},
-    //    {3 * 256, 18},
-    //    {4 * 256, 18},
-    //    {5 * 256, 14},
-    //    {6 * 256, 19}
-};
+    {7 * 256, 0}};
 
 static uint16_t _calibration_sharp_alt_ud[][2] = {
-    {0 * 256, 40}, //12
+    {0 * 256, 40},
     {1 * 256, 25},
     {2 * 256, 10},
     {3 * 256, 8},
     {4 * 256, 8},
     {5 * 256, 2},
     {6 * 256, 0},
-    {7 * 256, 0}
-    //    {0 * 256, 34},
-    //    {1 * 256, 31},
-    //    {2 * 256, 27},
-    //    {3 * 256, 23},
-    //    {4 * 256, 12},
-    //    {5 * 256, 9},
-    //    {6 * 256, 4}
-};
-
+    {7 * 256, 0}};
 
 static uint16_t _calibration_sharp_alt_du[][2] = {
     {0 * 256, 70},
@@ -190,15 +139,7 @@ static uint16_t _calibration_sharp_alt_du[][2] = {
     {4 * 256, 29},
     {5 * 256, 17},
     {6 * 256, 5},
-    {7 * 256, 0}
-    //    {0 * 256, 80},
-    //    {1 * 256, 47},
-    //    {2 * 256, 45},
-    //    {3 * 256, 35},
-    //    {4 * 256, 34},
-    //    {5 * 256, 15},
-    //    {6 * 256, 7}
-};
+    {7 * 256, 0}};
 
 static uint16_t _calibration_sharpen_fr[][2] = {
     {0 * 256, 62},
@@ -207,16 +148,7 @@ static uint16_t _calibration_sharpen_fr[][2] = {
     {3 * 256, 30},
     {4 * 256, 18},
     {5 * 256, 8},
-    {6 * 256, 4},
-
-//    {0 * 256, 42},
-//    {1 * 256, 27},
-//    {2 * 256, 20},
-//   {3 * 256, 10},
-//    {4 * 256, 8},
-//    {5 * 256, 2},
-//    {6 * 256, 1},
-};
+    {6 * 256, 4},};
 
 static uint16_t _calibration_demosaic_np_offset[][2] = {
     {0 * 256, 1},
@@ -226,7 +158,6 @@ static uint16_t _calibration_demosaic_np_offset[][2] = {
     {4 * 256, 18},
     {5 * 256, 18},
     {6 * 256, 15}};
-
 
 static uint16_t _calibration_mesh_shading_strength[][2] = {
     {0 * 256, 4096}};
@@ -240,9 +171,7 @@ static uint16_t _calibration_saturation_strength[][2] = {
     {5 * 256, 90},
     {6 * 256 - 1, 90},
     {6 * 256, 128},
-    {7 * 256, 128},
-
-};
+    {7 * 256, 128}};
 
 // ----------- Frame stitching motion
 static uint16_t _calibration_stitching_lm_np[][2] = {
@@ -254,13 +183,13 @@ static uint16_t _calibration_stitching_lm_np[][2] = {
 static uint16_t _calibration_stitching_lm_mov_mult[][2] = {
     {0, 128},
     {2 * 256 - 128, 20},
-    {5 * 256, 8},
-};
+    {5 * 256, 8}};
+
 static uint16_t _calibration_stitching_lm_med_noise_intensity_thresh[][2] = {
     {0, 32},
     {6 * 256, 32},
-    {8 * 256, 4095},
-};
+    {8 * 256, 4095}};
+
 static uint16_t _calibration_stitching_ms_np[][2] = {
     {0, 3680},
     {1 * 256, 3680},
@@ -278,9 +207,7 @@ static uint16_t _calibration_dp_slope[][2] = {
     {3 * 256, 1800},
     {4 * 256, 1911},
     {5 * 256, 2200},
-    {6 * 256, 2400},
-};
-
+    {6 * 256, 2400}};
 
 static uint16_t _calibration_dp_threshold[][2] = {
     {0 * 256, 4095},
@@ -289,19 +216,17 @@ static uint16_t _calibration_dp_threshold[][2] = {
     {3 * 256, 110},
     {4 * 256, 95},
     {5 * 256, 85},
-    {6 * 256, 70},
-};
+    {6 * 256, 70}};
 
 static uint16_t _calibration_AWB_bg_max_gain[][2] = {
     {0 * 256, 100},
     {1 * 256, 100},
-    {7 * 256, 200},
-};
+    {7 * 256, 200}};
 
 static uint32_t _calibration_cmos_control[] = {
     0,   // enable antiflicker
     50,  // antiflicker frequency
-    0,   // manual integration time  //0
+    0,   // manual integration time
     0,   // manual sensor analog gain
     0,   // manual sensor digital gain
     0,   // manual isp digital gain
@@ -311,7 +236,7 @@ static uint32_t _calibration_cmos_control[] = {
     0,   // max sensor DG
     112, // max isp DG
     255, // max exposure ratio
-    0,   // integration time. //290
+    0,   // integration time
     0,   // sensor analog gain. log2 fixed - 5 bits
     0,   // sensor digital gain. log2 fixed - 5 bits
     0,   // isp digital gain. log2 fixed - 5 bits
@@ -331,14 +256,14 @@ static uint32_t _calibration_status_info[] = {
 static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
     20,      // dark_prc
     95,      // bright_prc
-    400,     // min_dk: minimum dark enhancement   //800
-    2000,    // max_dk: maximum dark enhancement   //2000
+    400,     // min_dk: minimum dark enhancement
+    2000,    // max_dk: maximum dark enhancement
     8,       // pD_cut_min: minimum intensity cut for dark regions in which dk_enh will be applied
     20,      // pD_cut_max: maximum intensity cut for dark regions in which dk_enh will be applied
     30 << 8, // dark contrast min
     50 << 8, // dark contrast max
-    0,       // min_str: iridix strength in percentage //26
-    40,      // max_str: iridix strength in percentage: 50 = 1x gain. 100 = 2x gain                //50
+    0,       // min_str: iridix strength in percentage
+    40,      // max_str: iridix strength in percentage: 50 = 1x gain. 100 = 2x gain
     40,      // dark_prc_gain_target: target in histogram (percentage) for dark_prc after iridix is applied
     30 << 8, // contrast_min: clip factor of strength for LDR scenes.
     40 << 8, // contrast_max: clip factor of strength for HDR scenes.
@@ -366,8 +291,7 @@ static uint16_t _calibration_ae_control_HDR_target[][2] = {
     {4 * 256, 236},
     {5 * 256, 236},
     {6 * 256, 236},
-    {7 * 256, 236},
-};
+    {7 * 256, 236}};
 
 static uint8_t _calibration_pf_radial_lut[] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
@@ -389,7 +313,7 @@ static uint32_t _calibration_auto_level_control[] = {
 
 
 static uint16_t _calibration_exposure_ratio_adjustment[][2] = {
-    //contrast, adjustment
+    //contrast u8.8, adjustment u8.8
     {1 * 256, 256},
     {16 * 256, 256},
     {32 * 256, 256},
@@ -397,20 +321,21 @@ static uint16_t _calibration_exposure_ratio_adjustment[][2] = {
 
 
 static uint16_t _calibration_cnr_uv_delta12_slope[][2] = {
-    {0 * 256, 1500}, //3800
+    {0 * 256, 1500},
     {1 * 256, 2000},
     {2 * 256, 2100},
     {3 * 256, 2100},
     {4 * 256, 3500},
     {5 * 256, 4100},
     {6 * 256, 5900},
-    {7 * 256, 6100},
-};
+    {7 * 256, 6100}};
 
 
 static uint16_t _calibration_fs_mc_off[] = {
-    8 * 256, // gain_log2 threshold. if gain is higher than the current gain_log2. mc off mode will be enabed.
+    // gain_log2 threshold. if gain is higher than the current gain_log2. mc off mode will be enabed.
+    8 * 256,
 };
+
 static int16_t _AWB_colour_preference[] = {7500, 6000, 4700, 2800};
 
 static uint32_t _calibration_awb_mix_light_parameters[] = {
@@ -456,6 +381,7 @@ static uint16_t _calibration_sharpen_ds1[][2] = {
     {6 * 256, 40},
     {7 * 256, 25},
     {8 * 256, 10}};
+
 static uint16_t _calibration_temper_strength[][2] = {
     {0 * 256, 120},
     {1 * 256, 120},
@@ -464,8 +390,7 @@ static uint16_t _calibration_temper_strength[][2] = {
     {4 * 256, 140},
     {5 * 256, 145},
     {6 * 256, 195},
-    {7 * 256, 195},
-};
+    {7 * 256, 195}};
 
 static uint32_t _calibration_af_lms[] = {
     70 << 6,  // Down_FarEnd
@@ -474,12 +399,6 @@ static uint32_t _calibration_af_lms[] = {
     112 << 6, // Down_Infinity
     112 << 6, // Hor_Infinity
     112 << 6, // Up_Infinity
-    // 50<<6, // Down_FarEnd
-    // 50<<6, // Hor_FarEnd
-    // 50<<6, // Up_FarEnd
-    // 167<<6, // Down_Infinity
-    // 167<<6, // Hor_Infinity
-    // 167<<6, // Up_Infinity
     832 << 6,                      // Down_Macro
     832 << 6,                      // Hor_Macro
     832 << 6,                      // Up_Macro
@@ -498,6 +417,7 @@ static uint32_t _calibration_af_lms[] = {
 };
 
 static uint16_t _calibration_af_zone_wght_hor[] = {0, 0, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0};
+
 static uint16_t _calibration_af_zone_wght_ver[] = {0, 0, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0};
 
 static LookupTable calibration_fs_mc_off = {.ptr = _calibration_fs_mc_off, .rows = 1, .cols = sizeof( _calibration_fs_mc_off ) / sizeof( _calibration_fs_mc_off[0] ), .width = sizeof( _calibration_fs_mc_off[0] )};
