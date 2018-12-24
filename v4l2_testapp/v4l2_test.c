@@ -204,6 +204,18 @@ static void do_fr_fps(int videofd, int fps)
     }
 }
 
+static void do_ds1_fps(int videofd, int fps)
+{
+    struct v4l2_control ctrl;
+
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_DS1_FPS;
+    ctrl.value = fps;
+
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("Do sensor fps failed");
+    }
+}
+
 static int do_get_dma_buf_fd(int videofd, uint32_t index, uint32_t plane)
 {
     struct v4l2_exportbuffer ex_buf;

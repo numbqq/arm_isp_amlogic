@@ -538,6 +538,7 @@ dma_error dma_writer_pipe_process_interrupt( dma_pipe *pipe, uint32_t irq_event 
     case ACAMERA_IRQ_FRAME_WRITER_DS:
         if ( pipe->type == dma_ds1 || pipe->type == dma_ds2 ) {
             dma_writer_pipe_update( pipe ); // have to change last address and buffer ring
+            dma_writer_pipe_set_fps(pipe); //change the fps of ds1 path
         }
         break;
     }

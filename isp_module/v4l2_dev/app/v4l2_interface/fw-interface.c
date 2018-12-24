@@ -723,6 +723,24 @@ static int fw_intf_set_sensor_ir_cut_set(uint32_t ctrl_val)
     return 0;
 }
 
+static int fw_intf_set_ds1_fps(uint32_t fps)
+{
+    uint32_t cur_fps = 0;
+
+    acamera_command(TSENSOR, SENSOR_FPS, 0, COMMAND_GET, &cur_fps);
+    if (cur_fps == 0) {
+        LOG(LOG_ERR, "Error input param\n");
+        return -1;
+    }
+
+    cur_fps = cur_fps / 256;
+
+    acamera_api_set_fps(dma_ds1, cur_fps, fps);
+
+    return 0;
+}
+
+
 static int fw_intf_set_ae_zone_weight(unsigned long ctrl_val)
 {
     acamera_command(TALGORITHMS, AE_ZONE_WEIGHT, 0, COMMAND_SET, (uint32_t *)ctrl_val);
@@ -1635,6 +1653,15 @@ int fw_intf_set_custom_fr_fps(uint32_t ctrl_val)
     int rtn = -1;
 
     rtn = fw_intf_set_fr_fps(ctrl_val);
+
+    return rtn;
+}
+
+int fw_intf_set_custom_ds1_fps(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    rtn = fw_intf_set_ds1_fps(ctrl_val);
 
     return rtn;
 }
