@@ -177,6 +177,7 @@ int sensor_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_t in
 {
     int rc = 0;
     sensor_fsm_t *p_fsm = (sensor_fsm_t *)fsm;
+    acamera_context_ptr_t ctx_ptr = NULL;
 
     switch ( param_id ) {
     case FSM_PARAM_SET_SENSOR_STREAMING: {
@@ -205,10 +206,13 @@ int sensor_fsm_set_param( void *fsm, uint32_t param_id, void *input, uint32_t in
             break;
         }
 
+        ctx_ptr = ACAMERA_FSM2CTX_PTR(p_fsm);
+        ctx_ptr->irq_flag++;
         p_fsm->preset_mode = *(uint32_t *)input;
         sensor_hw_init( p_fsm );
         sensor_configure_buffers( p_fsm );
         sensor_sw_init( p_fsm );
+        ctx_ptr->irq_flag--;
         break;
 
     case FSM_PARAM_SET_SENSOR_INFO_PRESET_NUM:
