@@ -34,6 +34,8 @@
 #include "system_am_adap.h"
 #include "sensor_bsp_common.h"
 
+#define NEED_CONFIG_BSP 1
+
 
 #define AGAIN_MAX_DB 0x64
 #define DGAIN_MAX_DB 0x6e
@@ -648,8 +650,17 @@ void sensor_init_imx290( void **ctx, sensor_control_t *ctrl, void* sbp)
 {
     // Local sensor data structure
     static sensor_context_t s_ctx;
+    int ret;
+    sensor_bringup_t* sensor_bp = (sensor_bringup_t*) sbp;
     *ctx = &s_ctx;
-	s_ctx.sbp = sbp;
+    s_ctx.sbp = sbp;
+
+#if NEED_CONFIG_BSP
+    ret = reset_am_enable(sensor_bp,"reset", 1);
+    if (ret < 0 )
+       pr_info("set reset fail\n");
+#endif
+
     s_ctx.sbus.mask = SBUS_MASK_SAMPLE_8BITS | SBUS_MASK_ADDR_16BITS | SBUS_MASK_ADDR_SWAP_BYTES;
     s_ctx.sbus.control = 0;
     s_ctx.sbus.bus = 1;
