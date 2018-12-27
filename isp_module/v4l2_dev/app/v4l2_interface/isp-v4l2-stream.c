@@ -86,13 +86,6 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
             .planes = 1,
         },
         {
-            .name = "ARGB30",
-            .fourcc = ISP_V4L2_PIX_FMT_ARGB2101010,
-            .depth = 32,
-            .is_yuv = false,
-            .planes = 1,
-        },
-        {
             .name = "ARGB24",
             .fourcc = V4L2_PIX_FMT_RGB24,
             .depth = 24,
@@ -138,6 +131,18 @@ static isp_v4l2_fmt_t isp_v4l2_supported_formats[] =
             .name = "RAW 16",
             .fourcc = V4L2_PIX_FMT_SBGGR16,
             .depth = 16,
+            .is_yuv = false,
+            .planes = 1,
+        },
+
+};
+
+static isp_v4l2_fmt_t ext_supported_formats[] =
+    {
+        {
+            .name = "ARGB30",
+            .fourcc = ISP_V4L2_PIX_FMT_ARGB2101010,
+            .depth = 32,
             .is_yuv = false,
             .planes = 1,
         },
@@ -1311,15 +1316,18 @@ int isp_v4l2_stream_try_format( isp_v4l2_stream_t *pstream, struct v4l2_format *
 #endif
 
     /* check format and modify */
-    tfmt = isp_v4l2_stream_find_format( f->fmt.pix_mp.pixelformat );
-    if ( !tfmt ) {
-        LOG( LOG_CRIT, "[Stream#%d] format 0x%08x is not supported, setting default format 0x%08x.\n",
-             pstream->stream_id, f->fmt.pix.pixelformat, ISP_DEFAULT_FORMAT );
-        f->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-        f->fmt.pix_mp.pixelformat = ISP_DEFAULT_FORMAT;
+    if (f->fmt.pix_mp.pixelformat == ISP_V4L2_PIX_FMT_META) {
+        tfmt = &ext_supported_formats[1];
+    } else {
         tfmt = isp_v4l2_stream_find_format( f->fmt.pix_mp.pixelformat );
+        if ( !tfmt ) {
+            LOG( LOG_CRIT, "[Stream#%d] format 0x%08x is not supported, setting default format 0x%08x.\n",
+                 pstream->stream_id, f->fmt.pix.pixelformat, ISP_DEFAULT_FORMAT );
+            f->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+            f->fmt.pix_mp.pixelformat = ISP_DEFAULT_FORMAT;
+            tfmt = isp_v4l2_stream_find_format( f->fmt.pix_mp.pixelformat );
+        }
     }
-
     //corect the exposure number here
     if ( tfmt->fourcc == V4L2_PIX_FMT_SBGGR16 ) {
         uint32_t spreset = 0, exposures_preset, rev_val;
