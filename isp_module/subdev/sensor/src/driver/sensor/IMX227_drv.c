@@ -518,6 +518,7 @@ void sensor_init_imx227( void **ctx, sensor_control_t *ctrl, void* sbp)
     s_ctx.param.sensor_ctx = &s_ctx;
     s_ctx.param.isp_context_seq.sequence = p_isp_data;
     s_ctx.param.isp_context_seq.seq_num= SENSOR_IMX227_CONTEXT_SEQ;
+    s_ctx.param.isp_context_seq.seq_table_max = array_size( isp_seq_table );
 
     ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
     ctrl->alloc_digital_gain = sensor_alloc_digital_gain;

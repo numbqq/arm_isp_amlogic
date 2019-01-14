@@ -32,6 +32,9 @@
 #include "runtime_initialization_settings.h"
 #include "sensor_bsp_common.h"
 
+static int isp_seq_num;
+module_param(isp_seq_num, int, 0664);
+
 #define ARGS_TO_PTR( arg ) ( (struct soc_sensor_ioctl_args *)arg )
 
 #define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
@@ -309,9 +312,15 @@ static long camera_ioctl( struct v4l2_subdev *sd, unsigned int cmd, void *arg )
     case SOC_SENSOR_GET_CONTEXT_SEQ: {
         ARGS_TO_PTR( arg )
             ->isp_context_seq.sequence = params->isp_context_seq.sequence;
-        ARGS_TO_PTR( arg )
-            ->isp_context_seq.seq_num = params->isp_context_seq.seq_num;
-
+        if ( isp_seq_num == -1 || ( params->isp_context_seq.seq_table_max- 1 ) < isp_seq_num ) {
+           ARGS_TO_PTR( arg )
+               ->isp_context_seq.seq_num = params->isp_context_seq.seq_num;
+           LOG( LOG_ERR, "Warning: wrong isp seq num, isp_seq_num range = 0 - %d\n, set isp_seq_num = 0\n", ( params->isp_context_seq.seq_table_max- 1 ) );
+        } else {
+           ARGS_TO_PTR( arg )
+               ->isp_context_seq.seq_num = isp_seq_num;
+           LOG( LOG_ERR, "get isp_seq_num = %d\n", isp_seq_num );
+        }
     } break;
     case SOC_SENSOR_IR_CUT_SET: {
         int32_t preset = ARGS_TO_PTR( arg )->args.general.val_in;

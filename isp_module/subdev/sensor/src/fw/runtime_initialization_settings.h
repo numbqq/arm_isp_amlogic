@@ -28,6 +28,8 @@ extern uint32_t get_calibrations_ov08a10( uint32_t ctx_num,void * sensor_arg,ACa
 extern void sensor_init_imx290( void** ctx, sensor_control_t*, void*) ;
 extern void sensor_deinit_imx290( void *ctx ) ;
 extern uint32_t get_calibrations_imx290( uint32_t ctx_num,void * sensor_arg,ACameraCalibrations *) ;
+extern uint32_t get_calibrations_imx290_lens_8mm( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
+extern uint32_t get_calibrations_imx290_lens_4mm( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
 
 extern void sensor_init_imx227( void** ctx, sensor_control_t*, void*) ;
 extern void sensor_deinit_imx227( void *ctx ) ;
@@ -40,6 +42,8 @@ extern uint32_t get_calibrations_imx227( uint32_t ctx_num,void * sensor_arg,ACam
 #define SENSOR_INIT_SUBDEV_FUNCTIONS_IMX290 sensor_init_imx290
 #define SENSOR_DEINIT_SUBDEV_FUNCTIONS_IMX290 sensor_deinit_imx290
 #define CALIBRATION_SUBDEV_FUNCTIONS_IMX290 get_calibrations_imx290
+#define CALIBRATION_SUBDEV_FUNCTIONS_IMX290_LENS_8mm  get_calibrations_imx290_lens_8mm
+#define CALIBRATION_SUBDEV_FUNCTIONS_IMX290_LENS_4mm  get_calibrations_imx290_lens_4mm
 
 #define SENSOR_INIT_SUBDEV_FUNCTIONS_IMX227 sensor_init_imx227
 #define SENSOR_DEINIT_SUBDEV_FUNCTIONS_IMX227 sensor_deinit_imx227

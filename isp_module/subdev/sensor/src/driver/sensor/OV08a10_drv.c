@@ -494,27 +494,27 @@ static uint32_t read_register( void *ctx, uint32_t address )
 
 static void write_register( void *ctx, uint32_t address, uint32_t data )
 {
-	sensor_context_t *p_ctx = ctx;
+    sensor_context_t *p_ctx = ctx;
     acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
     acamera_sbus_write_u8( p_sbus, address, data );
 }
 
 static void stop_streaming( void *ctx )
 {
-	sensor_context_t *p_ctx = ctx;
-	acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
-	p_ctx->streaming_flg = 0;
-	acamera_sbus_write_u8(p_sbus, 0x0100, 0x00);
-	LOG(LOG_ERR, "%s: Stream Off\n", __func__);
+    sensor_context_t *p_ctx = ctx;
+    acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
+    p_ctx->streaming_flg = 0;
+    acamera_sbus_write_u8(p_sbus, 0x0100, 0x00);
+    LOG(LOG_ERR, "%s: Stream Off\n", __func__);
 }
 
 static void start_streaming( void *ctx )
 {
-	sensor_context_t *p_ctx = ctx;
+    sensor_context_t *p_ctx = ctx;
     acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
     p_ctx->streaming_flg = 1;
     acamera_sbus_write_u8(p_sbus, 0x0100, 0x01);
-	LOG(LOG_ERR, "%s: Stream On\n", __func__);
+    LOG(LOG_ERR, "%s: Stream On\n", __func__);
 }
 
 static void sensor_test_pattern( void *ctx, uint8_t mode )
@@ -539,85 +539,86 @@ void sensor_deinit_ov08a10( void *ctx )
 void sensor_init_ov08a10( void **ctx, sensor_control_t *ctrl, void *sbp )
 {
     // Local sensor data structure
-	static sensor_context_t s_ctx;
-	int ret;
-	sensor_bringup_t* sensor_bp = (sensor_bringup_t*) sbp;
+    static sensor_context_t s_ctx;
+    int ret;
+    sensor_bringup_t* sensor_bp = (sensor_bringup_t*) sbp;
 #if NEED_CONFIG_BSP
-	ret = pwr_am_enable(sensor_bp, "power-enable", 0);
-	if (ret < 0 )
-		pr_err("set power fail\n");
-	udelay(30);
+    ret = pwr_am_enable(sensor_bp, "power-enable", 0);
+    if (ret < 0 )
+        pr_err("set power fail\n");
+    udelay(30);
 #endif
 
-	ret = clk_am_enable(sensor_bp, "g12a_24m");
-	if (ret < 0 )
-		pr_err("set mclk fail\n");
-	udelay(30);
+    ret = clk_am_enable(sensor_bp, "g12a_24m");
+    if (ret < 0 )
+        pr_err("set mclk fail\n");
+    udelay(30);
 
 #if NEED_CONFIG_BSP
-	ret = reset_am_enable(sensor_bp,"reset", 1);
-	if (ret < 0 )
-		pr_err("set reset fail\n");
+    ret = reset_am_enable(sensor_bp,"reset", 1);
+    if (ret < 0 )
+        pr_err("set reset fail\n");
 #endif
 
-	s_ctx.sbp = sbp;
+    s_ctx.sbp = sbp;
 
-	*ctx = &s_ctx;
+    *ctx = &s_ctx;
 
-	s_ctx.sbus.mask = SBUS_MASK_ADDR_16BITS |
-			SBUS_MASK_SAMPLE_8BITS |SBUS_MASK_ADDR_SWAP_BYTES;
-	s_ctx.sbus.control = I2C_CONTROL_MASK;
-	s_ctx.sbus.bus = 1;//get_next_sensor_bus_address();
-	s_ctx.sbus.device = SENSOR_DEV_ADDRESS;
-	acamera_sbus_init(&s_ctx.sbus, sbus_i2c);
+    s_ctx.sbus.mask = SBUS_MASK_ADDR_16BITS |
+           SBUS_MASK_SAMPLE_8BITS |SBUS_MASK_ADDR_SWAP_BYTES;
+    s_ctx.sbus.control = I2C_CONTROL_MASK;
+    s_ctx.sbus.bus = 1;//get_next_sensor_bus_address();
+    s_ctx.sbus.device = SENSOR_DEV_ADDRESS;
+    acamera_sbus_init(&s_ctx.sbus, sbus_i2c);
 
-	sensor_get_id(&s_ctx);
+    sensor_get_id(&s_ctx);
 
-	s_ctx.address = SENSOR_DEV_ADDRESS;
-	s_ctx.seq_width = 1;
-	s_ctx.streaming_flg = 0;
-	s_ctx.again[0] = 0;
-	s_ctx.again[1] = 0;
-	s_ctx.again[2] = 0;
-	s_ctx.again[3] = 0;
-	s_ctx.again_limit = 20;//AGAIN_MAX_DB + DGAIN_MAX_DB;
-	s_ctx.pixel_clock = 148500000;
+    s_ctx.address = SENSOR_DEV_ADDRESS;
+    s_ctx.seq_width = 1;
+    s_ctx.streaming_flg = 0;
+    s_ctx.again[0] = 0;
+    s_ctx.again[1] = 0;
+    s_ctx.again[2] = 0;
+    s_ctx.again[3] = 0;
+    s_ctx.again_limit = 20;//AGAIN_MAX_DB + DGAIN_MAX_DB;
+    s_ctx.pixel_clock = 148500000;
 
-	s_ctx.param.again_accuracy = 1 << LOG2_GAIN_SHIFT;
-	s_ctx.param.sensor_exp_number = 1;
-	s_ctx.param.again_log2_max = 0;
-	s_ctx.param.dgain_log2_max = 0;
-	s_ctx.param.integration_time_apply_delay = 2;
-	s_ctx.param.isp_exposure_channel_delay = 0;
-	s_ctx.param.modes_table = supported_modes;
-	s_ctx.param.modes_num = array_size( supported_modes );
-	s_ctx.param.mode = 0;
-	s_ctx.param.sensor_ctx = &s_ctx;
-	s_ctx.param.isp_context_seq.sequence = p_isp_data;
-	s_ctx.param.isp_context_seq.seq_num = SENSOR_OV08A10_ISP_CONTEXT_SEQ;
+    s_ctx.param.again_accuracy = 1 << LOG2_GAIN_SHIFT;
+    s_ctx.param.sensor_exp_number = 1;
+    s_ctx.param.again_log2_max = 0;
+    s_ctx.param.dgain_log2_max = 0;
+    s_ctx.param.integration_time_apply_delay = 2;
+    s_ctx.param.isp_exposure_channel_delay = 0;
+    s_ctx.param.modes_table = supported_modes;
+    s_ctx.param.modes_num = array_size( supported_modes );
+    s_ctx.param.mode = 0;
+    s_ctx.param.sensor_ctx = &s_ctx;
+    s_ctx.param.isp_context_seq.sequence = p_isp_data;
+    s_ctx.param.isp_context_seq.seq_num = SENSOR_OV08A10_ISP_CONTEXT_SEQ;
+    s_ctx.param.isp_context_seq.seq_table_max = array_size( isp_seq_table );
 
-	ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
-	ctrl->alloc_digital_gain = sensor_alloc_digital_gain;
-	ctrl->alloc_integration_time = sensor_alloc_integration_time;
-	ctrl->ir_cut_set= sensor_ir_cut_set;
-	ctrl->sensor_update = sensor_update;
-	ctrl->set_mode = sensor_set_mode;
-	ctrl->get_id = sensor_get_id;
-	ctrl->get_parameters = sensor_get_parameters;
-	ctrl->disable_sensor_isp = sensor_disable_isp;
-	ctrl->read_sensor_register = read_register;
-	ctrl->write_sensor_register = write_register;
-	ctrl->start_streaming = start_streaming;
-	ctrl->stop_streaming = stop_streaming;
-	ctrl->sensor_test_pattern = sensor_test_pattern;
+    ctrl->alloc_analog_gain = sensor_alloc_analog_gain;
+    ctrl->alloc_digital_gain = sensor_alloc_digital_gain;
+    ctrl->alloc_integration_time = sensor_alloc_integration_time;
+    ctrl->ir_cut_set= sensor_ir_cut_set;
+    ctrl->sensor_update = sensor_update;
+    ctrl->set_mode = sensor_set_mode;
+    ctrl->get_id = sensor_get_id;
+    ctrl->get_parameters = sensor_get_parameters;
+    ctrl->disable_sensor_isp = sensor_disable_isp;
+    ctrl->read_sensor_register = read_register;
+    ctrl->write_sensor_register = write_register;
+    ctrl->start_streaming = start_streaming;
+    ctrl->stop_streaming = stop_streaming;
+    ctrl->sensor_test_pattern = sensor_test_pattern;
 
-	// Reset sensor during initialization
-	sensor_hw_reset_enable();
-	system_timer_usleep( 1000 ); // reset at least 1 ms
-	sensor_hw_reset_disable();
-	system_timer_usleep( 1000 );
+    // Reset sensor during initialization
+    sensor_hw_reset_enable();
+    system_timer_usleep( 1000 ); // reset at least 1 ms
+    sensor_hw_reset_disable();
+    system_timer_usleep( 1000 );
 
-	LOG(LOG_ERR, "%s: Success subdev init\n", __func__);
+    LOG(LOG_ERR, "%s: Success subdev init\n", __func__);
 }
 
 //*************************************************************************************

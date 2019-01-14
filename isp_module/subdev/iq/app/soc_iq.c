@@ -31,6 +31,9 @@
 
 #include "runtime_initialization_settings.h"
 
+static int cali_name;
+module_param(cali_name, int, 0664);
+
 #define ARGS_TO_PTR( arg ) ( (struct soc_iq_ioctl_args *)arg )
 
 #define __GET_LUT_SIZE( lut ) ( lut->rows * lut->cols * lut->width )
@@ -154,6 +157,59 @@ static const struct v4l2_subdev_ops iq_ops = {
     .core = &core_ops,
 };
 
+static int get_cali_name_id( int cali_name_id, int sensor_name_id )
+{
+    switch ( sensor_name_id ) {
+    case 0: {
+        switch ( cali_name_id ) {
+        case 0:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_OS08A10;
+            LOG( LOG_ERR, "get_calibrations_os08a10\n" );
+            break;
+        default:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_OS08A10;
+            LOG( LOG_ERR, "get_calibrations_os08a10\n" );
+            break;
+        }
+    } break;
+    case 1: {
+        switch ( cali_name_id ) {
+        case 0:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX290;
+            LOG( LOG_ERR, "get_calibrations_imx290\n" );
+            break;
+        case 1:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX290_LENS_8mm;
+            LOG( LOG_ERR, "get_calibrations_imx290_lens_8mm\n" );
+            break;
+        case 2:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX290_LENS_4mm;
+            LOG( LOG_ERR, "get_calibrations_imx290_lens_4mm\n" );
+            break;
+        default:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX290;
+            LOG( LOG_ERR, "get_calibrations_imx290\n" );
+            break;
+        }
+    } break;
+    case 2: {
+        switch ( cali_name_id ) {
+        case 0:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX227;
+            LOG( LOG_ERR, "get_calibrations_imx227\n" );
+            break;
+        default:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX227;
+            LOG( LOG_ERR, "get_calibrations_imx227\n" );
+            break;
+        }
+    } break;
+    default:
+      break;
+    }
+    return 0;
+}
+
 static int32_t soc_iq_probe( struct platform_device *pdev )
 {
     int32_t rc = 0;
@@ -176,6 +232,7 @@ static int32_t soc_iq_probe( struct platform_device *pdev )
     for (i = 0; i < NELEM(IqConversionTable); ++i) {
         if (strcmp(IqConversionTable[i].sensor_name, sensor_name) == 0) {
                CALIBRATION_FUNC_ARR[0] = IqConversionTable[i].calibration_init;
+               get_cali_name_id( cali_name, i );
         }
     }
 
