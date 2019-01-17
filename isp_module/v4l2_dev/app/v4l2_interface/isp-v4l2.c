@@ -47,8 +47,8 @@
 static isp_v4l2_dev_t *g_isp_v4l2_dev = NULL;
 void *isp_kaddr = NULL;
 resource_size_t isp_paddr = 0;
-#define TEMPER_MEM_SIZE (64 * 1024 * 1024UL)
-
+#define SIZE_1M (1024 * 1024UL)
+#define DEFAULT_TEMPER_BUFFER_SIZE 8
 
 
 /* ----------------------------------------------------------------
@@ -687,6 +687,17 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
 
     memset( dev, 0x0, sizeof( isp_v4l2_dev_t ) );
 
+    /* get temper buffer size from dts */
+    rc = of_property_read_u32(pdev->dev.of_node, "temper-buf-size",
+                        &(dev->temper_buf_size));
+    LOG(LOG_INFO, "%s:temper buffer size %d, rtn %d\n", __func__,
+        dev->temper_buf_size, rc);
+
+    if (rc != 0) {
+        LOG(LOG_ERR, "failed to get temper-buf-size from dts, use default value\n");
+        dev->temper_buf_size = DEFAULT_TEMPER_BUFFER_SIZE;
+    }
+
     /* register v4l2_device */
 
     dev->v4l2_dev = v4l2_dev;
@@ -718,7 +729,7 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
     /* store dev pointer to destroy later and find stream */
     g_isp_v4l2_dev = dev;
 
-    rc = isp_cma_alloc(pdev, TEMPER_MEM_SIZE);
+    rc = isp_cma_alloc(pdev, (dev->temper_buf_size) * SIZE_1M);
 	if (rc < 0)
         goto deinit_ctrl;
 
@@ -764,7 +775,7 @@ deinit_fw_intf:
     fw_intf_isp_deinit();
 
 free_cma:
-    isp_cma_free(pdev, isp_kaddr, TEMPER_MEM_SIZE);
+    isp_cma_free(pdev, isp_kaddr, (dev->temper_buf_size) * SIZE_1M);
 
 deinit_ctrl:
     isp_v4l2_ctrl_deinit( &dev->isp_v4l2_ctrl );
@@ -788,7 +799,8 @@ void isp_v4l2_destroy_instance( struct platform_device *pdev )
         LOG( LOG_INFO, "unregistering %s.",
              video_device_node_name( &g_isp_v4l2_dev->video_dev ) );
 
-        isp_cma_free(pdev, isp_kaddr, TEMPER_MEM_SIZE);
+        isp_cma_free(pdev, isp_kaddr,
+             (g_isp_v4l2_dev->temper_buf_size) * SIZE_1M);
 
         /* unregister video device */
         video_unregister_device( &g_isp_v4l2_dev->video_dev );

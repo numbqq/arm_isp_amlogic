@@ -54,6 +54,7 @@ typedef struct _isp_v4l2_dev {
     /* open counter for stream id */
     atomic_t opened;
     unsigned int stream_mask;
+    unsigned int temper_buf_size;
 } isp_v4l2_dev_t;
 
 
