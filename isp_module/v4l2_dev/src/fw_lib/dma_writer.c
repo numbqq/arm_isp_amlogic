@@ -244,13 +244,15 @@ uint16_t dma_writer_write_frame_queue( void *handle, dma_type type, tframe_t *fr
     if ( frame_buf_len == 0 )
         return 0;
 
+    int index = 0;
     for ( i = 0; i < MAX_DMA_QUEUE_FRAMES; i++ ) {
+        index = ( i + pipe->state.buf_num_rdi ) % MAX_DMA_QUEUE_FRAMES;
 
-        if ( pipe->settings.frame_buf_queue[i].primary.status == dma_buf_purge ) { //replace the buffer when it is in use
-            pipe->settings.frame_buf_queue[i] = frame_buf_array[set_i];
-            pipe->settings.frame_buf_queue[i].primary.status = dma_buf_empty;
-            pipe->settings.frame_buf_queue[i].secondary.status = dma_buf_empty;
-            LOG( LOG_INFO, "enqueue:0x%lx at %d\n", pipe->settings.frame_buf_queue[i].primary.address, (int)i );
+        if ( pipe->settings.frame_buf_queue[index].primary.status == dma_buf_purge ) { //replace the buffer when it is in use
+            pipe->settings.frame_buf_queue[index] = frame_buf_array[set_i];
+            pipe->settings.frame_buf_queue[index].primary.status = dma_buf_empty;
+            pipe->settings.frame_buf_queue[index].secondary.status = dma_buf_empty;
+            LOG( LOG_INFO, "enqueue:0x%lx at %d\n", pipe->settings.frame_buf_queue[index].primary.address, (int)i );
             set_i++;
         }
         if ( set_i >= frame_buf_len ) {
@@ -291,11 +293,11 @@ uint16_t dma_writer_write_frame_queue( void *handle, dma_type type, tframe_t *fr
 tframe_t *dma_get_next_empty_frame( dma_pipe *pipe )
 {
     int i, index = 0, last_index;
-    for ( i = 0; i < pipe->state.buf_num_size; i++ ) {
-        index = ( i + pipe->state.buf_num_wri ) % pipe->state.buf_num_size;
+    for ( i = 0; i < MAX_DMA_QUEUE_FRAMES; i++ ) {
+        index = ( i + pipe->state.buf_num_wri ) % MAX_DMA_QUEUE_FRAMES;
         last_index = pipe->state.buf_num_wri;
         if ( pipe->settings.frame_buf_queue[index].primary.status == dma_buf_empty ) {
-            pipe->state.buf_num_wri = ( index + 1 ) % pipe->state.buf_num_size;
+            pipe->state.buf_num_wri = ( index + 1 ) % MAX_DMA_QUEUE_FRAMES;
             //recover busy frames not returned by dma
             if ( pipe->settings.frame_buf_queue[last_index].primary.status == dma_buf_busy ) {
                 pipe->settings.frame_buf_queue[last_index].primary.status = dma_buf_empty;
@@ -313,10 +315,10 @@ tframe_t *dma_get_next_empty_frame( dma_pipe *pipe )
 tframe_t *dma_get_next_ready_frame( dma_pipe *pipe )
 {
     int i, index;
-    for ( i = 0; i < pipe->state.buf_num_size; i++ ) {
-        index = ( i + pipe->state.buf_num_rdi ) % pipe->state.buf_num_size;
+    for ( i = 0; i < MAX_DMA_QUEUE_FRAMES; i++ ) {
+        index = ( i + pipe->state.buf_num_rdi ) % MAX_DMA_QUEUE_FRAMES;
         if ( pipe->settings.frame_buf_queue[index].primary.status == dma_buf_ready ) {
-            pipe->state.buf_num_rdi = ( index + 1 ) % pipe->state.buf_num_size;
+            pipe->state.buf_num_rdi = ( index + 1 ) % MAX_DMA_QUEUE_FRAMES;
             return &( pipe->settings.frame_buf_queue[index] );
         }
     }
