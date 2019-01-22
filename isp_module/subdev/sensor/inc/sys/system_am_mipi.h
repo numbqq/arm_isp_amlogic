@@ -94,7 +94,7 @@ typedef struct am_mipi_info {
 	uint8_t lanes;
 
 	uint32_t csi_version;
-
+	uint32_t fte1_flag;
 }am_mipi_info_t;
 
 int am_mipi_parse_dt(struct device_node *node);

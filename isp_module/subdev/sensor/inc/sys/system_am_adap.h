@@ -26,6 +26,9 @@
 #include <linux/i2c.h>
 
 #define FRONTEND_BASE               0x00004800
+#define FRONTEND1_BASE              0x00004C00
+#define FTE1_OFFSET                 0x00000400
+
 
 #define CSI2_CLK_RESET				0x00
 #define CSI2_GEN_CTRL0				0x04
@@ -136,6 +139,13 @@ typedef enum {
 	DOL_LINEINFO,
 } dol_type_t;
 
+typedef enum {
+	FTE_DONE = 0,
+	FTE0_DONE,
+	FTE1_DONE,
+} dol_state_t;
+
+
 typedef struct exp_offset {
 	int long_offset;
 	int short_offset;
@@ -167,6 +177,7 @@ int am_adap_start(int idx);
 int am_adap_reset(void);
 int am_adap_deinit(void);
 void am_adap_set_info(struct am_adap_info *info);
+int get_fte1_flag(void);
 int am_adap_get_depth(void);
 
 #endif

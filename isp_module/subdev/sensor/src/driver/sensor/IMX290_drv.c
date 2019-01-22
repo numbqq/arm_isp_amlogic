@@ -41,7 +41,7 @@
 #define DGAIN_MAX_DB 0x6e
 
 #define FS_LIN_1080P 1
-
+static int sen_mode = 0;
 static void start_streaming( void *ctx );
 static void stop_streaming( void *ctx );
 
@@ -402,6 +402,7 @@ static void sensor_set_iface(sensor_mode_t *mode)
 
     memset(&mipi_info, 0, sizeof(mipi_info));
     memset(&info, 0, sizeof(struct am_adap_info));
+    mipi_info.fte1_flag = get_fte1_flag();
     mipi_info.lanes = mode->lanes;
     mipi_info.ui_val = 1000 / mode->bps;
 
@@ -429,8 +430,8 @@ static void sensor_set_iface(sensor_mode_t *mode)
         info.mode = DOL_MODE;
         info.type = mode->dol_type;
         if (info.type == DOL_LINEINFO) {
-           info.offset.long_offset = 15;
-           info.offset.short_offset = 20;
+           info.offset.long_offset = 0xa;
+           info.offset.short_offset = 0x1d;
         }
     } else
         info.mode = DIR_MODE;
@@ -446,6 +447,7 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
     uint8_t setting_num = 0;
     uint16_t s_id = 0xff;
+    sen_mode = mode;
 
     sensor_hw_reset_enable();
     system_timer_usleep( 10000 );
@@ -608,13 +610,20 @@ static void stop_streaming( void *ctx )
     sensor_context_t *p_ctx = ctx;
     acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
     p_ctx->streaming_flg = 0;
+
     acamera_sbus_write_u8( p_sbus, 0x3000, 0x01 );
+
+    reset_sensor_bus_counter();
+    am_adap_deinit();
+    am_mipi_deinit();
 }
 
 static void start_streaming( void *ctx )
 {
     sensor_context_t *p_ctx = ctx;
     acamera_sbus_ptr_t p_sbus = &p_ctx->sbus;
+    sensor_param_t *param = &p_ctx->param;
+    sensor_set_iface(&param->modes_table[sen_mode]);
     p_ctx->streaming_flg = 1;
     acamera_sbus_write_u8( p_sbus, 0x3000, 0x00 );
 
