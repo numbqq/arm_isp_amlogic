@@ -290,7 +290,6 @@ int fw_intf_stream_start( isp_v4l2_stream_type_t streamType )
 #if ISP_HAS_DS2
     if (streamType == V4L2_STREAM_TYPE_DS2) {
         uint32_t ret_val;
-        mdelay(200);
         LOG( LOG_ERR, "Starting stream type %d", streamType );
         acamera_command( TAML_SCALER, SCALER_STREAMING_ON, ON, COMMAND_SET, &ret_val );
     }
