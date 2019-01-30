@@ -48,7 +48,7 @@ static isp_v4l2_dev_t *g_isp_v4l2_dev = NULL;
 void *isp_kaddr = NULL;
 resource_size_t isp_paddr = 0;
 #define SIZE_1M (1024 * 1024UL)
-#define DEFAULT_TEMPER_BUFFER_SIZE 8
+#define DEFAULT_TEMPER_BUFFER_SIZE 16
 
 
 /* ----------------------------------------------------------------
