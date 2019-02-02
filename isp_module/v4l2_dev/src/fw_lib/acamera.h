@@ -34,6 +34,8 @@ typedef void ( *buffer_callback_t )( void *ctx_param, tframe_t *tframe, const me
 
 int32_t acamera_get_context_number( void );
 
-void acamera_update_cur_settings_to_isp( void );
+void acamera_update_cur_settings_to_isp( int port );
+
+void acamera_reset_ping_pong_port(void);
 
 #endif /* __ACAMERA_H__ */

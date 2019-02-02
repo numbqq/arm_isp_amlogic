@@ -180,6 +180,10 @@ dma_error dma_writer_reset( void *handle, dma_type type )
         pipe->state.buf_num_rdi = 0;
         pipe->state.buf_num_wri = 0;
         pipe->state.buf_num_size = 0;
+        pipe->settings.last_tframe = NULL;
+        pipe->settings.inqueue_tframe[0] = NULL;
+        pipe->settings.inqueue_tframe[1] = NULL;
+        pipe->settings.init_delay = 0;
         dma_writer_init_frame_queue( pipe );
         pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
         pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
@@ -249,6 +253,9 @@ uint16_t dma_writer_write_frame_queue( void *handle, dma_type type, tframe_t *fr
         index = ( i + pipe->state.buf_num_rdi ) % MAX_DMA_QUEUE_FRAMES;
 
         if ( pipe->settings.frame_buf_queue[index].primary.status == dma_buf_purge ) { //replace the buffer when it is in use
+            /* init tframe status first */
+            frame_buf_array[set_i].primary.status = dma_buf_purge;
+            frame_buf_array[set_i].secondary.status = dma_buf_purge;
             pipe->settings.frame_buf_queue[index] = frame_buf_array[set_i];
             pipe->settings.frame_buf_queue[index].primary.status = dma_buf_empty;
             pipe->settings.frame_buf_queue[index].secondary.status = dma_buf_empty;
@@ -271,6 +278,8 @@ uint16_t dma_writer_write_frame_queue( void *handle, dma_type type, tframe_t *fr
         pipe->api.p_acamera_isp_dma_writer_bank0_base_write( pipe->settings.isp_base, pipe->settings.frame_buf_queue[set_i].primary.address );
         pipe->api.p_acamera_isp_dma_writer_bank0_base_write_uv( pipe->settings.isp_base, pipe->settings.frame_buf_queue[set_i].secondary.address );
         LOG( LOG_INFO, "active_width: %u, active_height: %u.", (unsigned int)pipe->settings.width, (unsigned int)pipe->settings.height );
+        pipe->settings.inqueue_tframe[1] = &pipe->settings.frame_buf_queue[set_i];
+        pipe->settings.frame_buf_queue[set_i].primary.status = dma_buf_busy;
         pipe->settings.enabled = 1;
         if ( pipe->api.p_acamera_isp_dma_writer_format_read( pipe->settings.isp_base ) != DMA_FORMAT_DISABLE )
             pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 1 );
@@ -279,6 +288,7 @@ uint16_t dma_writer_write_frame_queue( void *handle, dma_type type, tframe_t *fr
 
         //check if format is for UV
         if ( pipe->api.p_acamera_isp_dma_writer_format_read_uv( pipe->settings.isp_base ) != DMA_FORMAT_DISABLE ) {
+            pipe->settings.frame_buf_queue[set_i].secondary.status = dma_buf_busy;
             pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 1 );
             LOG( LOG_DEBUG, "enabled uv %d", pipe->api.p_acamera_isp_dma_writer_format_read_uv( pipe->settings.isp_base ) );
         } else {
@@ -299,7 +309,10 @@ tframe_t *dma_get_next_empty_frame( dma_pipe *pipe )
         if ( pipe->settings.frame_buf_queue[index].primary.status == dma_buf_empty ) {
             pipe->state.buf_num_wri = ( index + 1 ) % MAX_DMA_QUEUE_FRAMES;
             //recover busy frames not returned by dma
-            if ( pipe->settings.frame_buf_queue[last_index].primary.status == dma_buf_busy ) {
+            if (( pipe->settings.frame_buf_queue[last_index].primary.status == dma_buf_busy )
+                && (&pipe->settings.frame_buf_queue[last_index] != pipe->settings.last_tframe)
+                && (&pipe->settings.frame_buf_queue[last_index] != pipe->settings.inqueue_tframe[0])
+                && (&pipe->settings.frame_buf_queue[last_index] != pipe->settings.inqueue_tframe[1])) {
                 pipe->settings.frame_buf_queue[last_index].primary.status = dma_buf_empty;
                 pipe->settings.frame_buf_queue[last_index].secondary.status = dma_buf_empty;
                 DMA_PRINTF( ( "recovered 0x%lx\n", pipe->settings.frame_buf_queue[last_index].primary.address ) );
@@ -351,11 +364,17 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
 
             //only check primary status
             if ( pipe->settings.last_tframe ) {
-                addr = pipe->settings.last_tframe->primary.address;
+                if (pipe->settings.init_delay > 0) {
+                    /* recycle the buffer as empty */
+                    pipe->settings.init_delay--;
+                    pipe->settings.last_tframe->primary.status = dma_buf_empty;
+                    pipe->settings.last_tframe->secondary.status = dma_buf_empty;
+                    pipe->settings.last_tframe = NULL;
+                } else {
+                    addr = pipe->settings.last_tframe->primary.address;
 #if ISP_HAS_FPGA_WRAPPER && ISP_CONTROLS_DMA_READER
-                addr_uv = pipe->settings.last_tframe->secondary.address;
+                    addr_uv = pipe->settings.last_tframe->secondary.address;
 #endif
-                {
                     pipe->settings.last_tframe->primary.status = dma_buf_ready;
                     pipe->settings.last_tframe->secondary.status = dma_buf_ready;
                 }
@@ -387,7 +406,9 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
                 addr_late1_uv = addr_uv;
             }
 #endif
-            pipe->settings.last_tframe = NULL;
+            pipe->settings.last_tframe = pipe->settings.inqueue_tframe[0];
+            pipe->settings.inqueue_tframe[0] = pipe->settings.inqueue_tframe[1];
+            pipe->settings.inqueue_tframe[1] = NULL;
 
             if (pipe->settings.back_tframe != NULL)
                 empty_frame = pipe->settings.back_tframe;
@@ -402,7 +423,7 @@ dma_error dma_writer_pipe_update( dma_pipe *pipe )
                     empty_frame->primary.line_offset = acamera_line_offset( empty_frame->primary.width, _get_pixel_width( empty_frame->primary.type ) );
                     uint32_t frame_size = empty_frame->primary.line_offset * empty_frame->primary.height;
                     addr = empty_frame->primary.address;
-                    pipe->settings.last_tframe = empty_frame;
+                    pipe->settings.inqueue_tframe[1] = empty_frame;
                     LOG( LOG_DEBUG, "next dma addr:0x%lx\n", addr );
                     if ( pipe->settings.vflip ) {
                         addr += frame_size - empty_frame->primary.line_offset;
@@ -500,16 +521,16 @@ dma_error dma_writer_pipe_set_fps(dma_pipe *pipe)
     c_fps = pipe->settings.c_fps;
     t_fps = pipe->settings.t_fps;
 
-    if (pipe->settings.last_tframe == NULL ||
-                inter_val == 0 || inter_val == 1)
+    if ((pipe->settings.inqueue_tframe[1] == NULL)
+        || (inter_val == 0) || (inter_val == 1))
         return edma_ok;
 
     if (inter_val > 2) {
         if (frm_count % inter_val != 0) {
             pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
             pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
-            pipe->settings.back_tframe = pipe->settings.last_tframe;
-            pipe->settings.last_tframe = NULL;
+            pipe->settings.back_tframe = pipe->settings.inqueue_tframe[1];
+            pipe->settings.inqueue_tframe[1] = NULL;
         } else {
             pipe->settings.back_tframe = NULL;
         }
@@ -518,8 +539,8 @@ dma_error dma_writer_pipe_set_fps(dma_pipe *pipe)
         if (frm_count % inter_val == 0) {
             pipe->api.p_acamera_isp_dma_writer_frame_write_on_write( pipe->settings.isp_base, 0 );
             pipe->api.p_acamera_isp_dma_writer_frame_write_on_write_uv( pipe->settings.isp_base, 0 );
-            pipe->settings.back_tframe = pipe->settings.last_tframe;
-            pipe->settings.last_tframe = NULL;
+            pipe->settings.back_tframe = pipe->settings.inqueue_tframe[1];
+            pipe->settings.inqueue_tframe[1] = NULL;
         } else {
             pipe->settings.back_tframe = NULL;
         }
@@ -577,4 +598,19 @@ metadata_t *dma_writer_return_metadata( void *handle, dma_type type )
         return ret;
     }
     return 0;
+}
+
+dma_error dma_writer_pipe_get_next_empty_buffer( void *handle, dma_type type )
+{
+    dma_error result = edma_ok;
+
+    if ( handle != NULL ) {
+        dma_handle *p_dma = (dma_handle *)handle;
+        dma_pipe *pipe = &p_dma->pipe[type];
+
+        return dma_writer_pipe_update(pipe);
+    } else {
+        result = edma_fail;
+    }
+    return result;
 }

@@ -63,6 +63,7 @@ void frame_buffer_fr_finished( dma_writer_fsm_ptr_t p_fsm );
 void frame_buffer_ds_finished( dma_writer_fsm_ptr_t p_fsm );
 void frame_buffer_check_and_run( dma_writer_fsm_ptr_t p_fsm );
 void frame_buffer_queue_reset(dma_writer_fsm_ptr_t p_fsm, dma_type type);
+void frame_buffer_get_next_empty_frame(dma_writer_fsm_ptr_t p_fsm, dma_type type);
 
 uint16_t frame_buffer_configure( dma_writer_fsm_ptr_t p_fsm, dma_type dma_output, tframe_t *frame_buf_array, uint32_t frame_buf_len );
 uint16_t frame_buffer_reconfigure( dma_writer_fsm_ptr_t p_fsm, dma_type dma_output, tframe_t *frame_buf_array, uint16_t frame_buf_len );
@@ -70,7 +71,6 @@ int acamera_frame_fr_set_ready_interrupt( acamera_firmware_t *g_fw );
 void dma_writer_update_address_interrupt( dma_writer_fsm_const_ptr_t p_fsm, uint8_t irq_event );
 void acamera_frame_buffer_update( dma_writer_fsm_const_ptr_t p_fsm );
 void dma_writer_set_path_fps(dma_writer_fsm_ptr_t p_fsm, dma_type type, uint32_t c_fps, uint32_t t_fps);
-
 
 
 struct _dma_writer_fsm_t {

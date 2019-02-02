@@ -254,6 +254,13 @@ uint8_t sensor_streaming( acamera_fsm_mgr_t *instance, uint32_t value, uint8_t d
             isp_safe_stop( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base );
         } else if ( ( value == ON ) && !is_streaming ) {
             uint32_t streaming = 1;
+
+            acamera_reset_ping_pong_port();
+            acamera_update_cur_settings_to_isp(ISP_CONFIG_PING);
+
+            acamera_api_dma_buff_get_next(dma_fr);
+            acamera_update_cur_settings_to_isp(ISP_CONFIG_PONG);
+
             isp_safe_start( ACAMERA_MGR2CTX_PTR( instance )->settings.isp_base );
             acamera_fsm_mgr_set_param( instance, FSM_PARAM_SET_SENSOR_STREAMING, &streaming, sizeof( streaming ) );
         } else {
@@ -4593,6 +4600,17 @@ void acamera_api_dma_buff_queue_reset(uint8_t type)
     d_type = type;
 
     acamera_fsm_mgr_set_param(instance, FSM_PARAM_SET_DMA_QUEUE_RESET, &d_type, sizeof(d_type));
+}
+
+void acamera_api_dma_buff_get_next(uint8_t type)
+{
+    uint8_t d_type = 0xff;
+
+    acamera_fsm_mgr_t *instance = &( ( (acamera_context_t *)acamera_get_api_ctx_ptr() )->fsm_mgr );
+
+    d_type = type;
+
+    acamera_fsm_mgr_set_param(instance, FSM_PARAM_SET_DMA_PULL_BUFFER, &d_type, sizeof(d_type));
 }
 
 #ifdef MON_ERROR_CALIBRATION_LUT_NULL

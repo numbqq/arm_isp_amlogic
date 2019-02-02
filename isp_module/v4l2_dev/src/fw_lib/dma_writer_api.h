@@ -109,9 +109,11 @@ typedef struct dma_pipe_settings {
     uint8_t pause;
     struct _acamera_context_t *p_ctx;
     tframe_t *back_tframe; //used to backup last tframe
-	uint32_t c_fps; //current sensor setting fps
-	uint32_t t_fps; //pipe target fps
-	uint32_t inter_val; //interval frames
+    uint32_t c_fps; //current sensor setting fps
+    uint32_t t_fps; //pipe target fps
+    uint32_t inter_val; //interval frames
+    uint32_t init_delay;
+    tframe_t *inqueue_tframe[2];
 } dma_pipe_settings;
 
 
@@ -257,5 +259,6 @@ metadata_t *dma_writer_return_metadata( void *handle, dma_type type );
 tframe_t *dma_writer_api_return_next_ready_frame( void *handle, dma_type type );
 int dma_set_frame_ready_handle( void *handle, dma_type type, uint32_t addr, dma_buf_state set_dma_state );
 void dma_writer_set_initialized( void *handle, dma_type type, uint8_t initialized );
+dma_error dma_writer_pipe_get_next_empty_buffer( void *handle, dma_type type );
 
 #endif /* __DMA_WRITER_API__ */

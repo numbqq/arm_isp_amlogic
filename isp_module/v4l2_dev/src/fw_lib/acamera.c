@@ -273,7 +273,11 @@ int32_t acamera_init( acamera_settings *settings, uint32_t ctx_num )
     return result;
 }
 
-void acamera_update_cur_settings_to_isp( void )
+void acamera_update_cur_settings_to_isp( int port )
+{
+}
+
+void acamera_reset_ping_pong_port(void)
 {
 }
 
@@ -403,10 +407,21 @@ int32_t acamera_init( acamera_settings *settings, uint32_t ctx_num )
     return result;
 }
 
-void acamera_update_cur_settings_to_isp( void )
+void acamera_update_cur_settings_to_isp( int port )
 {
-    system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PING, SYS_DMA_TO_DEVICE, NULL );
-    system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PONG, SYS_DMA_TO_DEVICE, NULL );
+    if (port == 0xff) {
+        system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PING, SYS_DMA_TO_DEVICE, NULL );
+        system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PONG, SYS_DMA_TO_DEVICE, NULL );
+    } else if (port == ISP_CONFIG_PING) {
+        system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PING, SYS_DMA_TO_DEVICE, NULL );
+    } else if (port == ISP_CONFIG_PONG) {
+        system_dma_copy_sg( g_firmware.dma_chan_isp_config, ISP_CONFIG_PONG, SYS_DMA_TO_DEVICE, NULL );
+    }
+}
+
+void acamera_reset_ping_pong_port(void)
+{
+    acamera_isp_isp_global_mcu_ping_pong_config_select_write( 0, ISP_CONFIG_PING );
 }
 
 #endif /* #if USER_MODULE */
