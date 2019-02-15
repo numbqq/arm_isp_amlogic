@@ -94,6 +94,7 @@ typedef struct _isp_v4l2_sensor_info {
 #define ISP_V4L2_CID_CUSTOM_SET_ISP_DIGITAL_GAIN ( ISP_V4L2_CID_BASE + 17 )
 #define ISP_V4L2_CID_CUSTOM_SET_STOP_SENSOR_UPDATE ( ISP_V4L2_CID_BASE + 18 )
 #define ISP_V4L2_CID_CUSTOM_SET_DS1_FPS ( ISP_V4L2_CID_BASE + 19 )
+#define ISP_V4L2_CID_AE_COMPENSATION ( ISP_V4L2_CID_BASE + 20 )
 
 /* type of stream */
 typedef enum {

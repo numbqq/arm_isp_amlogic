@@ -208,6 +208,10 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         ret = fw_intf_set_custom_ds1_fps(ctrl->val);
         *(ctrl->p_new.p_s32) = 0;
         break;
+    case ISP_V4L2_CID_AE_COMPENSATION:
+        LOG( LOG_INFO, "new ae compensation: %d.\n", ctrl->val );
+        ret = fw_intf_set_ae_compensation( ctrl->val );
+        break;
     }
 
     return ret;
@@ -441,6 +445,17 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_stop_sensor_update = {
     .def = -1,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_ae_compensation = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_AE_COMPENSATION,
+    .name = "ISP AE Compensation",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = 0,
+    .max = 255,
+    .step = 1,
+    .def = 0,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -558,6 +573,8 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_stop_sensor_update, NULL);
     ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_DS1_FPS,
                   &isp_v4l2_ctrl_ds1_fps, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_AE_COMPENSATION,
+                  &isp_v4l2_ctrl_ae_compensation, NULL);
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );
     ctrl->video_dev->ctrl_handler = hdl_std_ctrl;

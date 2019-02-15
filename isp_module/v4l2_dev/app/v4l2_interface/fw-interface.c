@@ -1461,6 +1461,28 @@ static int isp_fw_do_set_focus( int focus )
     return 0;
 }
 
+static int isp_fw_do_set_ae_compensation( int val )
+{
+    int result;
+    uint32_t ret_val;
+
+    LOG( LOG_INFO, "ae_compensation: %d.", val );
+
+    if ( val < 0 )
+        return -EIO;
+
+    if ( !isp_started ) {
+        LOG( LOG_NOTICE, "ISP FW not inited yet" );
+        return -EBUSY;
+    }
+
+    result = acamera_command( TALGORITHMS, AE_COMPENSATION_ID, val, COMMAND_SET, &ret_val );
+    if ( result ) {
+        LOG( LOG_ERR, "Failed to set AE_COMPENSATION to %u, ret_value: %d.", val, result );
+        return result;
+    }
+    return 0;
+}
 
 /* ----------------------------------------------------------------
  * fw_interface config interface
@@ -1764,5 +1786,10 @@ int fw_intf_set_customer_stop_sensor_update(uint32_t ctrl_val)
     rtn = fw_intf_set_stop_sensor_update(ctrl_val);
 
     return rtn;
+}
+
+int fw_intf_set_ae_compensation( int val )
+{
+    return isp_fw_do_set_ae_compensation( val );
 }
 
