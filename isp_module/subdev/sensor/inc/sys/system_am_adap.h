@@ -158,6 +158,7 @@ struct am_adap {
 	void __iomem *base_addr;
 	int f_end_irq;
 	int rd_irq;
+	unsigned int adap_buf_size;
 };
 
 struct am_adap_info {

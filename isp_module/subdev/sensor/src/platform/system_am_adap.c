@@ -55,14 +55,13 @@ static uint8_t *isp_cma_mem = NULL;
 static struct page *cma_pages = NULL;
 static resource_size_t buffer_start;
 
-#define CMA_ALLOC_SIZE 48
 #define DDR_BUF_SIZE 4
-
 static resource_size_t ddr_buf[DDR_BUF_SIZE];
 
-#define DOL_CMA_ALLOC_SIZE 48
 #define DOL_BUF_SIZE 6
 static resource_size_t dol_buf[DOL_BUF_SIZE];
+
+#define DEFAULT_ADAPTER_BUFFER_SIZE 24
 
 static int dump_width;
 static int dump_height;
@@ -604,6 +603,14 @@ int am_adap_parse_dt(struct device_node *node)
 	if (ret != 0) {
 		pr_err("adapt reserved mem device init failed.\n");
 		return ret;
+	}
+
+	ret = of_property_read_u32(t_adap->p_dev->dev.of_node, "mem_alloc",
+		&(t_adap->adap_buf_size));
+	pr_info("adapter alloc %dM memory\n", t_adap->adap_buf_size);
+	if (ret != 0) {
+		pr_err("failed to get adap-buf-size from dts, use default value\n");
+		t_adap->adap_buf_size = DEFAULT_ADAPTER_BUFFER_SIZE;
 	}
 
 	device_create_file(&(t_adap->p_dev->dev), &dev_attr_adapt_frame);
@@ -1154,7 +1161,7 @@ int am_adap_alloc_mem(void)
 	if (para.mode == DDR_MODE) {
 		cma_pages = dma_alloc_from_contiguous(
 				  &(g_adap->p_dev->dev),
-				  (CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT, 0);
+				  (g_adap->adap_buf_size * SZ_1M) >> PAGE_SHIFT, 0);
 		if (cma_pages) {
 			buffer_start = page_to_phys(cma_pages);
 			pr_info("adapt phy addr = %llx\n", buffer_start);
@@ -1167,7 +1174,7 @@ int am_adap_alloc_mem(void)
 	} else if (para.mode == DOL_MODE) {
 		cma_pages = dma_alloc_from_contiguous(
 				  &(g_adap->p_dev->dev),
-				  (DOL_CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT, 0);
+				  (g_adap->adap_buf_size * SZ_1M) >> PAGE_SHIFT, 0);
 		if (cma_pages) {
 			buffer_start = page_to_phys(cma_pages);
 			pr_info("adapt dol phy addr = %llx\n", buffer_start);
@@ -1186,7 +1193,7 @@ int am_adap_free_mem(void)
 			dma_release_from_contiguous(
 				 &(g_adap->p_dev->dev),
 				 cma_pages,
-				 (CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT);
+				 (g_adap->adap_buf_size * SZ_1M) >> PAGE_SHIFT);
 			cma_pages = NULL;
 			buffer_start = 0;
 			pr_info("release alloc CMA buffer.\n");
@@ -1196,7 +1203,7 @@ int am_adap_free_mem(void)
 			dma_release_from_contiguous(
 				 &(g_adap->p_dev->dev),
 				 cma_pages,
-				 (DOL_CMA_ALLOC_SIZE*SZ_1M) >> PAGE_SHIFT);
+				 (g_adap->adap_buf_size * SZ_1M) >> PAGE_SHIFT);
 			cma_pages = NULL;
 			buffer_start = 0;
 			pr_info("release alloc dol CMA buffer.\n");
