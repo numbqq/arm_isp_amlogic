@@ -62,7 +62,7 @@ INCLUDE_DIRS := $(addprefix -I,$(shell find ../ -type d ))
 
 ccflags-y:=-I$(PWD)/app -I$(PWD)/inc -I$(PWD)/app/control -I$(PWD)/inc/api -I$(PWD)/inc/isp -I$(PWD)/inc/sys -I$(PWD)/src/platform -I$(PWD)/src/fw  -I$(PWD)/src/fw_lib -I$(PWD)/src/calibration -I$(PWD)/src/driver/sensor -I$(PWD)/src/driver/lens -I$(_KDIR)/include/linux/
 
-ccflags-y += -Wno-declaration-after-statement
+ccflags-y += -Wno-declaration-after-statement -Wno-error
 
 all:
 		CROSS_COMPILE=${_CROSS_COMPILE} make ARCH=${_ARCH} -C $(_KDIR) M=$(PWD) modules

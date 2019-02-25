@@ -67,7 +67,7 @@ typedef struct {
 #include <linux/interrupt.h>
 
 typedef struct {
-    void *dev_addr;
+    void __iomem *dev_addr;
     void *fw_addr;
     size_t size;
     void *sys_back_ptr;
@@ -448,14 +448,14 @@ int32_t system_dma_sg_device_setup( void *ctx, int32_t buff_loc, dma_addr_pair_t
 
     system_dma_device->sg_device_nents[buff_loc] = addr_pairs;
     if ( !system_dma_device->mem_addrs[buff_loc] )
-        system_dma_device->mem_addrs[buff_loc] = kmalloc( sizeof( mem_addr_pair_t ) * SYSTEM_DMA_MAX_CHANNEL, GFP_KERNEL );
+        system_dma_device->mem_addrs[buff_loc] = kzalloc( sizeof( mem_addr_pair_t ) * SYSTEM_DMA_MAX_CHANNEL, GFP_KERNEL );
 
     if ( !system_dma_device->mem_addrs[buff_loc] ) {
         LOG( LOG_CRIT, "Failed to allocate virtual address pairs for flushing!!" );
         return -1;
     }
     for ( i = 0; i < addr_pairs; i++ ) {
-        system_dma_device->mem_addrs[buff_loc][i].dev_addr = ioremap( device_addr_pair[i].address, device_addr_pair[i].size );
+        system_dma_device->mem_addrs[buff_loc][i].dev_addr = ioremap_nocache( device_addr_pair[i].address, device_addr_pair[i].size );
         system_dma_device->mem_addrs[buff_loc][i].size = device_addr_pair[i].size;
         system_dma_device->mem_addrs[buff_loc][i].sys_back_ptr = ctx;
     }
@@ -498,6 +498,30 @@ int32_t system_dma_sg_fwmem_setup( void *ctx, int32_t buff_loc, fwmem_addr_pair_
     return 0;
 }
 
+inline void system_memcpy_toio(volatile void __iomem *to, const void *from, size_t count)
+{
+    const unsigned int *f = from;
+    count /= 4;
+    while (count) {
+        count--;
+        __raw_writel(*f, to);
+        f++;
+        to += 4;
+    }
+}
+
+inline void system_memcpy_fromio(void *to, const volatile void __iomem *from, size_t count)
+{
+    unsigned int *t = to;
+    count /= 4;
+    while (count) {
+        count--;
+        *t = __raw_readl(from);
+        t++;
+        from += 4;
+    }
+}
+
 static void memcopy_func( unsigned long p_task )
 {
     mem_tasklet_t *mem_task = (mem_tasklet_t *)p_task;
@@ -512,12 +536,12 @@ static void memcopy_func( unsigned long p_task )
     if ( direction == SYS_DMA_TO_DEVICE ) {
         src_mem = mem_addr->fw_addr;
         dst_mem = mem_addr->dev_addr;
+        system_memcpy_toio( dst_mem, src_mem, mem_addr->size);
     } else {
         dst_mem = mem_addr->fw_addr;
         src_mem = mem_addr->dev_addr;
+        system_memcpy_fromio( dst_mem, src_mem, mem_addr->size );
     }
-
-    memcpy( dst_mem, src_mem, mem_addr->size );
 
     LOG( LOG_DEBUG, "(%d:%d) d:%p s:%p l:%ld", buff_loc, direction, dst_mem, src_mem, mem_addr->size );
 
