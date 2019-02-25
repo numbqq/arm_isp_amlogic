@@ -75,7 +75,9 @@ static int isp_v4l2_fh_open( struct file *file )
         return -ENOMEM;
 
     unsigned int stream_opened = atomic_read( &dev->opened );
-    if ( stream_opened >= V4L2_STREAM_TYPE_MAX ) {
+    /* update open counter */
+
+    if ( stream_opened > V4L2_STREAM_TYPE_MAX ) {
         LOG( LOG_CRIT, "too many open streams." );
         kzfree( sp );
         return -EBUSY;
@@ -83,6 +85,8 @@ static int isp_v4l2_fh_open( struct file *file )
 
     file->private_data = &sp->fh;
 
+    if ( mutex_lock_interruptible( &dev->file_lock ) )
+        LOG( LOG_CRIT, "mutex_lock_interruptible failed.\n" );
     for ( i = 0; i < V4L2_STREAM_TYPE_MAX; i++ ) {
         if ( ( dev->stream_mask & ( 1 << i ) ) == 0 ) {
             dev->stream_mask |= ( 1 << i );
@@ -90,6 +94,7 @@ static int isp_v4l2_fh_open( struct file *file )
             break;
         }
     }
+    mutex_unlock( &dev->file_lock );
 
     v4l2_fh_init( &sp->fh, &dev->video_dev );
     v4l2_fh_add( &sp->fh );
@@ -120,6 +125,7 @@ static int isp_v4l2_fop_open( struct file *file )
     isp_v4l2_dev_t *dev = video_drvdata( file );
     struct isp_v4l2_fh *sp;
 
+    atomic_add( 1, &dev->opened );
     /* open file header */
     rc = isp_v4l2_fh_open( file );
     if ( rc < 0 ) {
@@ -172,9 +178,6 @@ static int isp_v4l2_fop_open( struct file *file )
     dev->fh_ptr[sp->stream_id] = &( sp->fh );
     mutex_unlock( &dev->notify_lock );
 
-    /* update open counter */
-    atomic_add( 1, &dev->opened );
-
     return rc;
 
 vb2_q_fail:
@@ -184,6 +187,7 @@ vb2_q_fail:
     isp_v4l2_fh_release( file );
 
 fh_open_fail:
+    atomic_sub( 1, &dev->opened );
     return rc;
 }
 
@@ -195,9 +199,6 @@ static int isp_v4l2_fop_close( struct file *file )
     int open_counter;
 
     LOG( LOG_INFO, "isp_v4l2: %s: called for sid:%d.", __func__, sp->stream_id );
-
-    dev->stream_mask &= ~( 1 << sp->stream_id );
-    open_counter = atomic_sub_return( 1, &dev->opened );
 
     /* deinit fh_ptr */
     if ( mutex_lock_interruptible( &dev->notify_lock ) )
@@ -221,6 +222,13 @@ static int isp_v4l2_fop_close( struct file *file )
 
     if ( sp->vb2_q.lock )
         mutex_unlock( sp->vb2_q.lock );
+
+    if ( mutex_lock_interruptible( &dev->file_lock ) )
+        LOG( LOG_CRIT, "mutex_lock_interruptible failed.\n" );
+
+    dev->stream_mask &= ~( 1 << sp->stream_id );
+    mutex_unlock( &dev->file_lock );
+    open_counter = atomic_sub_return( 1, &dev->opened );
 
     /* release file handle */
     isp_v4l2_fh_release( file );
@@ -714,6 +722,8 @@ int isp_v4l2_create_instance( struct v4l2_device *v4l2_dev, struct platform_devi
     /* initialize locks */
     mutex_init( &dev->mlock );
     mutex_init( &dev->notify_lock );
+    mutex_init( &dev->file_lock);
+
 
     /* initialize stream id table */
     for ( i = 0; i < V4L2_STREAM_TYPE_MAX; i++ ) {

@@ -39,6 +39,7 @@ typedef struct _isp_v4l2_dev {
     /* lock */
     struct mutex mlock;
     struct mutex notify_lock;
+    struct mutex file_lock;
 
     /* file handle array for event notify */
     struct v4l2_fh *fh_ptr[V4L2_STREAM_TYPE_MAX];
