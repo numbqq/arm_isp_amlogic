@@ -77,7 +77,9 @@ static int ir_cut_state = 1;
 static uint32_t manual_exposure_enable = 0;
 static uint32_t manual_sensor_integration_time = 1;
 static uint32_t manual_sensor_analog_gain = 0;
+static uint32_t manual_sensor_digital_gain = 0;
 static uint32_t manual_isp_digital_gain = 0;
+
 static uint32_t stop_sensor_update = 0;
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
 
@@ -322,6 +324,16 @@ static void set_manual_sensor_analog_gain(int videofd, uint32_t sensor_analog_ga
     ctrl.value = sensor_analog_gain_state;
     if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
         printf("set_manual_sensor_analog_gain failed\n");
+    }
+}
+
+static void set_manual_sensor_digital_gain(int videofd, uint32_t sensor_digital_gain_state)
+{
+    struct v4l2_control ctrl;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_SENSOR_DIGITAL_GAIN;
+    ctrl.value = sensor_digital_gain_state;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("set_manual_sensor_digital_gain failed\n");
     }
 }
 
@@ -853,6 +865,7 @@ void * video_thread(void *arg)
          set_manual_exposure(videofd, manual_exposure_enable);
          set_manual_sensor_integration_time(videofd, manual_sensor_integration_time);
          set_manual_sensor_analog_gain(videofd, manual_sensor_analog_gain);
+         set_manual_sensor_digital_gain(videofd, manual_sensor_digital_gain);
          set_manual_isp_digital_gain(videofd, manual_isp_digital_gain);
          set_stop_sensor_update(videofd, stop_sensor_update);
      }
@@ -1354,6 +1367,7 @@ int main(int argc, char *argv[])
         printf("    M : manual exposure\n");
         printf("    L : integration timet\n");
         printf("    A : sensor analog gain\n");
+        printf("    G : sensor digital gain\n");
         printf("    S : isp digital gain\n");
         printf("    K : stop sensor update, 0: enable sensor update, 1: stop sensor update\n");
         return -1;
@@ -1362,7 +1376,7 @@ int main(int argc, char *argv[])
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:M:L:A:S:K:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:M:L:A:G:S:K:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -1440,6 +1454,9 @@ int main(int argc, char *argv[])
                 break;
             case 'A':
                 manual_sensor_analog_gain = atoi(optarg);
+                break;
+            case 'G':
+                manual_sensor_digital_gain = atoi(optarg);
                 break;
             case 'S':
                 manual_isp_digital_gain = atoi(optarg);

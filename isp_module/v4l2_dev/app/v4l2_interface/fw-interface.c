@@ -786,6 +786,14 @@ static int fw_intf_set_stop_sensor_update(uint32_t ctrl_val)
     return 0;
 }
 
+static int fw_intf_set_sensor_digital_gain(uint32_t ctrl_val)
+{
+    uint32_t manual_sensor_digital_gain = ctrl_val;
+    acamera_command(TSYSTEM, SYSTEM_SENSOR_DIGITAL_GAIN, manual_sensor_digital_gain, COMMAND_SET, &ctrl_val );
+
+    return 0;
+}
+
 /* ----------------------------------------------------------------
  * Internal handler for control interface functions
  */
@@ -1247,7 +1255,7 @@ static int isp_fw_do_set_exposure_auto( int enable )
 static int isp_fw_do_set_manual_exposure( int enable )
 {
 #if defined( TALGORITHMS ) && defined( AE_MODE_ID )
-    int result_integration_time, result_sensor_analog_gain, result_isp_digital_gain;
+    int result_integration_time, result_sensor_analog_gain, result_sensor_digital_gain, result_isp_digital_gain;
     uint32_t ret_val;
 
     LOG( LOG_ERR, "manual exposure enable: %d.", enable );
@@ -1270,6 +1278,12 @@ static int isp_fw_do_set_manual_exposure( int enable )
     if ( result_sensor_analog_gain ) {
         LOG( LOG_ERR, "Failed to set manual_sensor_analog_gain to manual mode, ret_value: %d", result_sensor_analog_gain );
         return ( result_sensor_analog_gain );
+    }
+
+    result_sensor_digital_gain = acamera_command( TSYSTEM, SYSTEM_MANUAL_SENSOR_DIGITAL_GAIN, enable, COMMAND_SET, &ret_val );
+    if ( result_sensor_analog_gain ) {
+        LOG( LOG_ERR, "Failed to set manual_sensor_digital_gain to manual mode, ret_value: %d", result_sensor_digital_gain );
+        return ( result_sensor_digital_gain );
     }
 
     result_isp_digital_gain = acamera_command( TSYSTEM, SYSTEM_MANUAL_ISP_DIGITAL_GAIN, enable, COMMAND_SET, &ret_val );
@@ -1791,5 +1805,18 @@ int fw_intf_set_customer_stop_sensor_update(uint32_t ctrl_val)
 int fw_intf_set_ae_compensation( int val )
 {
     return isp_fw_do_set_ae_compensation( val );
+}
+
+int fw_intf_set_customer_sensor_digital_gain(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    if ( ctrl_val == -1) {
+       return 0;
+    }
+
+    rtn = fw_intf_set_sensor_digital_gain(ctrl_val);
+
+    return rtn;
 }
 

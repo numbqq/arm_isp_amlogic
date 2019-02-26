@@ -212,6 +212,11 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         LOG( LOG_INFO, "new ae compensation: %d.\n", ctrl->val );
         ret = fw_intf_set_ae_compensation( ctrl->val );
         break;
+    case ISP_V4L2_CID_CUSTOM_SET_SENSOR_DIGITAL_GAIN:
+        LOG( LOG_INFO, "set_customer_sensor_digital_gain = %d\n", ctrl->val );
+        ret = fw_intf_set_customer_sensor_digital_gain(ctrl->val);
+        ctrl->val = -1;
+        break;
     }
 
     return ret;
@@ -456,6 +461,17 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_ae_compensation = {
     .def = 0,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_digital_gain = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SET_SENSOR_DIGITAL_GAIN,
+    .name = "sensor_digital_gain set",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = -1,
+    .max = 256,
+    .step = 1,
+    .def = -1,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -575,6 +591,8 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_ds1_fps, NULL);
     ADD_CTRL_CST( ISP_V4L2_CID_AE_COMPENSATION,
                   &isp_v4l2_ctrl_ae_compensation, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_SENSOR_DIGITAL_GAIN,
+                  &isp_v4l2_ctrl_sensor_digital_gain, NULL);
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );
     ctrl->video_dev->ctrl_handler = hdl_std_ctrl;
