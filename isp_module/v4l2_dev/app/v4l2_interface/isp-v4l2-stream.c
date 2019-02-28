@@ -953,6 +953,7 @@ static int isp_v4l2_stream_copy_thread( void *data )
         spin_lock( &pstream->slock );
         t_list = tframe.list;
 
+        s_list = NULL;
 
         list_for_each_entry(pbuf, &pstream->stream_buffer_list, list) {
             s_list = (void *)&pbuf->list;
