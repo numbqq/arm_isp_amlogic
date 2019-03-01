@@ -555,11 +555,11 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     param->pixels_per_line = param->total.width;
     param->integration_time_min = SENSOR_MIN_INTEGRATION_TIME;
     if ( param->modes_table[mode].wdr_mode == WDR_MODE_LINEAR ) {
-        param->integration_time_limit = SENSOR_MAX_INTEGRATION_TIME_LIMIT;
+        param->integration_time_limit = p_ctx->vmax - 2;
         param->integration_time_max = p_ctx->vmax - 2;
     } else {
-        param->integration_time_limit = 60;
-        param->integration_time_max = 60;
+        param->integration_time_limit = p_ctx->max_S;
+        param->integration_time_max = p_ctx->max_S;
         if ( param->modes_table[mode].exposures == 2 ) {
             param->integration_time_long_max = ( p_ctx->vmax << 1 ) - 256;
             param->lines_per_second = param->lines_per_second >> 1;
@@ -571,7 +571,6 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
         }
     }
     param->sensor_exp_number = param->modes_table[mode].exposures;
-    param->integration_time_limit = SENSOR_MAX_INTEGRATION_TIME_LIMIT;
     param->mode = mode;
     p_ctx->wdr_mode = param->modes_table[mode].wdr_mode;
     param->bayer = param->modes_table[mode].bayer;
