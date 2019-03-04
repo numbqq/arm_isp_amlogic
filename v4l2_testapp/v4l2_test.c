@@ -741,6 +741,10 @@ void * video_thread(void *arg)
         }
     }
 
+    for (i = 0; i < NB_BUFFER * VIDEO_MAX_PLANES; i++) {
+        v4l2_dma_fd[i] = -1;
+    }
+
     /*
     if (stream_type == ARM_V4L2_TEST_STREAM_RAW && ISP_RAW_PLANES > 1) {
         multiplanar=1;
@@ -1167,6 +1171,8 @@ void * video_thread(void *arg)
     //for (i = 0; i < NB_BUFFER; i++) {
     for (i = 0; i < total_mapped_mem; i++) {
         munmap (v4l2_mem[i], v4l2_buf_length);
+        if (v4l2_dma_fd[i] >= 0)
+            close(v4l2_dma_fd[i]);
     }
 
 fatal:
