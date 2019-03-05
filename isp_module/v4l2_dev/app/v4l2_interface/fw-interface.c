@@ -416,11 +416,12 @@ uint32_t fw_intf_find_proper_present_idx(const isp_v4l2_sensor_info *sensor_info
                for (j = 0; j < sensor_info->preset[i].fps_num; j++) {
                   if ((sensor_info->preset[i].exposures[j] == custom_exp) &&
                      (sensor_info->preset[i].wdr_mode[j] == custom_wdr_mode)) {
-                     idx = sensor_info->preset[i].idx[j];
-                     *fps = sensor_info->preset[i].fps[j];
-                     LOG( LOG_INFO, "idx = %d, fps = %d\n", idx, *fps);
-                     *( (char *)&sensor_info->preset[i].fps_cur ) = j;
-                     break;
+                     if ( sensor_info->preset[i].fps[j] > (*fps)) {
+                         idx = sensor_info->preset[i].idx[j];
+                         *fps = sensor_info->preset[i].fps[j];
+                         LOG( LOG_INFO, "idx = %d, fps = %d\n", idx, *fps);
+                         *( (char *)&sensor_info->preset[i].fps_cur ) = j;
+                     }
                   }
                }
                break;

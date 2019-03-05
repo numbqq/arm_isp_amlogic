@@ -24,7 +24,7 @@
 
 /* Sensor data types */
 #define MAX_SENSOR_PRESET_SIZE 10
-#define MAX_SENSOR_FPS_SIZE 5
+#define MAX_SENSOR_FPS_SIZE 6
 typedef struct _isp_v4l2_sensor_preset {
     uint32_t width;
     uint32_t height;

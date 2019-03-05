@@ -41,6 +41,7 @@
 #define DGAIN_MAX_DB 0x6e
 
 #define FS_LIN_1080P 1
+#define FS_LIN_1080P_60FPS 0
 static int sen_mode = 0;
 static void start_streaming( void *ctx );
 static void stop_streaming( void *ctx );
@@ -130,7 +131,22 @@ static sensor_mode_t supported_modes[] = {
         .bayer = BAYER_RGGB,
         .dol_type = DOL_LINEINFO,
         .num = 4,
+    },
+#if FS_LIN_1080P_60FPS
+    {
+        .wdr_mode = WDR_MODE_FS_LIN, // 8 Lanes
+        .fps = 60 * 256,
+        .resolution.width = 1920,
+        .resolution.height = 1080,
+        .bits = 10,
+        .exposures = 2,
+        .lanes = 4,
+        .bps = 446,
+        .bayer = BAYER_RGGB,
+        .dol_type = DOL_LINEINFO,
+        .num = 5,
     }
+#endif
 };
 
 
@@ -501,6 +517,9 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
         p_ctx->vmax = 1350;
     } else if ((param->modes_table[mode].exposures == 2) && (param->modes_table[mode].fps == 30 * 256)) {
         p_ctx->s_fps = 30;
+        p_ctx->vmax = 1220;
+    } else if ((param->modes_table[mode].exposures == 2) && (param->modes_table[mode].fps == 60 * 256)) {
+        p_ctx->s_fps = 60;
         p_ctx->vmax = 1220;
     } else {
         //p_ctx->vmax = ((uint32_t)acamera_sbus_read_u8(p_sbus,0x8219)<<8)|acamera_sbus_read_u8(p_sbus,0x8218);
