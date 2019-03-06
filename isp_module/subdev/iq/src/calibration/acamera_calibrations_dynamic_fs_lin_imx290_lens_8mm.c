@@ -197,14 +197,14 @@ static uint16_t _calibration_saturation_strength[][2] = {
 
 // ----------- Frame stitching motion
 static uint16_t _calibration_stitching_lm_np[][2] = {
-    {0 * 256, 100},
-    {1 * 256, 100},
-    {2 * 256, 120},
-    {3 * 256, 120},
-    {4 * 256, 120},
-    {5 * 256, 120},
-    {6 * 256, 120},
-    {7 * 256, 120}};
+    {0 * 256, 50},
+    {1 * 256, 50},
+    {2 * 256, 50},
+    {3 * 256, 50},
+    {4 * 256, 50},
+    {5 * 256, 50},
+    {6 * 256, 50},
+    {7 * 256, 50}};
 
 static uint16_t _calibration_stitching_lm_mov_mult[][2] = {
     {0 * 256, 512},
@@ -285,7 +285,7 @@ static uint32_t _calibration_cmos_control[] = {
     120, // max sensor AG
     0,   // max sensor DG
     112, // 159 max isp DG
-    12, // max exposure ratio
+    6, // max exposure ratio
     0,   // integration time.
     0,   // sensor analog gain. log2 fixed - 5 bits
     0,   // sensor digital gain. log2 fixed - 5 bits
@@ -333,14 +333,14 @@ static uint32_t _calibration_ae_control[] = {
 };
 
 static uint16_t _calibration_ae_control_HDR_target[][2] = {
-    {0 * 256, 25}, // HDR AE target should not be higher than LDR target
-    {1 * 256, 25},
-    {4 * 256, 25},
-    {5 * 256, 25},
-    {6 * 256, 25},
-    {7 * 256, 25},
-    {8 * 256, 25},
-    {9 * 256, 25}};
+    {0 * 256, 100}, // HDR AE target should not be higher than LDR target
+    {1 * 256, 100},
+    {4 * 256, 100},
+    {5 * 256, 100},
+    {6 * 256, 100},
+    {7 * 256, 100},
+    {8 * 256, 100},
+    {9 * 256, 100}};
 
 static uint8_t _calibration_pf_radial_lut[] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
@@ -389,11 +389,11 @@ static int16_t _AWB_colour_preference[] = {7500, 6000, 4700, 2800};
 
 static uint32_t _calibration_awb_mix_light_parameters[] = {
     1,    // 1 = enable, 0 = disable
-    300,  //lux low boundary for mix light lux range : range = {500: inf}
-    2000, // lux high boundary for mix light range : range = {500: inf}
-    3000, // contrast threshold for mix light: range = {200:2000}
-    210,  //BG threshold {255:400}
-    5,    // BG weight
+    1100,  //lux low boundary for mix light lux range : range = {500: inf}
+    20000, // lux high boundary for mix light range : range = {500: inf}
+    700, // contrast threshold for mix light: range = {200:2000}
+    300,  //BG threshold {255:400}
+    0,    // BG weight
     310,  // rgHigh_LUT_max
     252,  // rgHigh_LUT_min
     0     // print debug
@@ -429,9 +429,9 @@ static uint16_t _calibration_sharpen_ds1[][2] = {
     {8 * 256, 10}};
 
 static uint16_t _calibration_temper_strength[][2] = {
-    {0 * 256, 85},
-    {1 * 256, 85},
-    {2 * 256, 90},
+    {0 * 256, 100},
+    {1 * 256, 100},
+    {2 * 256, 100},
     {3 * 256, 110},
     {4 * 256, 110},
     {5 * 256, 110},
