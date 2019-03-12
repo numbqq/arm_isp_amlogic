@@ -1327,7 +1327,7 @@ uint8_t system_sensor_digital_gain( acamera_fsm_mgr_t *instance, uint32_t value,
     } else if ( direction == COMMAND_SET ) {
         if ( value > param->global_max_sensor_digital_gain ) {
             param->global_sensor_digital_gain = param->global_max_sensor_digital_gain;
-            LOG(LOG_ERR, "Warning: manual sensor analog gain rang: 0 - %d", param->global_max_sensor_digital_gain );
+            LOG(LOG_ERR, "Warning: manual sensor digital gain rang: 0 - %d", param->global_max_sensor_digital_gain );
         } else {
             param->global_sensor_digital_gain = value;
         }
