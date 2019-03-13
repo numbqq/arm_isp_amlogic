@@ -48,11 +48,11 @@ struct IqConversion {
     const char *sensor_name;
 };
 
-
 struct IqConversion IqConversionTable[] = {
     {CALIBRATION_SUBDEV_FUNCTIONS_OS08A10, "os08a10"},
     {CALIBRATION_SUBDEV_FUNCTIONS_IMX290, "imx290"},
     {CALIBRATION_SUBDEV_FUNCTIONS_IMX227, "imx227"},
+    {CALIBRATION_SUBDEV_FUNCTIONS_IMX481, "imx481"},
 };
 
 uint32_t ( *CALIBRATION_FUNC_ARR[] )( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c ) = {CALIBRATION_SUBDEV_FUNCTIONS_IMX290};
