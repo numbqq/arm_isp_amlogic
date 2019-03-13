@@ -53,6 +53,7 @@ struct IqConversion IqConversionTable[] = {
     {CALIBRATION_SUBDEV_FUNCTIONS_IMX290, "imx290"},
     {CALIBRATION_SUBDEV_FUNCTIONS_IMX227, "imx227"},
     {CALIBRATION_SUBDEV_FUNCTIONS_IMX481, "imx481"},
+    {CALIBRATION_SUBDEV_FUNCTIONS_IMX307, "imx307"},
 };
 
 uint32_t ( *CALIBRATION_FUNC_ARR[] )( uint32_t ctx_id, void *sensor_arg, ACameraCalibrations *c ) = {CALIBRATION_SUBDEV_FUNCTIONS_IMX290};
@@ -213,6 +214,18 @@ static int get_cali_name_id( int cali_name_id, int sensor_name_id )
         default:
             CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX481;
             LOG( LOG_ERR, "get_calibrations_imx481\n" );
+            break;
+        }
+    } break;
+    case 4: {
+        switch ( cali_name_id ) {
+        case 0:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX307;
+            LOG( LOG_ERR, "get_calibrations_imx307\n" );
+            break;
+        default:
+            CALIBRATION_FUNC_ARR[0] = CALIBRATION_SUBDEV_FUNCTIONS_IMX307;
+            LOG( LOG_ERR, "get_calibrations_imx307\n" );
             break;
         }
     } break;

@@ -30,7 +30,7 @@ extern uint32_t get_calibrations_imx290_lens_8mm( uint32_t ctx_num, void * senso
 extern uint32_t get_calibrations_imx290_lens_4mm( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
 extern uint32_t get_calibrations_os08a10( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
 extern uint32_t get_calibrations_imx481( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
-
+extern uint32_t get_calibrations_imx307( uint32_t ctx_num, void * sensor_arg, ACameraCalibrations *) ;
 
 #define SENSOR_INIT_SUBDEV_FUNCTIONS  sensor_init_dummy
 #define SENSOR_DEINIT_SUBDEV_FUNCTIONS  sensor_deinit_dummy
@@ -40,4 +40,4 @@ extern uint32_t get_calibrations_imx481( uint32_t ctx_num, void * sensor_arg, AC
 #define CALIBRATION_SUBDEV_FUNCTIONS_IMX290_LENS_4mm  get_calibrations_imx290_lens_4mm
 #define CALIBRATION_SUBDEV_FUNCTIONS_OS08A10  get_calibrations_os08a10
 #define CALIBRATION_SUBDEV_FUNCTIONS_IMX481  get_calibrations_imx481
-
+#define CALIBRATION_SUBDEV_FUNCTIONS_IMX307  get_calibrations_imx307
