@@ -217,6 +217,14 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         ret = fw_intf_set_customer_sensor_digital_gain(ctrl->val);
         ctrl->val = -1;
         break;
+    case ISP_V4L2_CID_CUSTOM_SET_AWB_RED_GAIN:
+        LOG( LOG_INFO, "set_customer_awb_red_gain = %d\n", ctrl->val );
+        ret = fw_intf_set_customer_awb_red_gain(ctrl->val);
+        break;
+    case ISP_V4L2_CID_CUSTOM_SET_AWB_BLUE_GAIN:
+        LOG( LOG_INFO, "set_customer_awb_blue_gain = %d\n", ctrl->val );
+        ret = fw_intf_set_customer_awb_blue_gain(ctrl->val);
+        break;
     }
 
     return ret;
@@ -472,6 +480,28 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_sensor_digital_gain = {
     .def = -1,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_awb_red_gain = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SET_AWB_RED_GAIN,
+    .name = "awb_red_gain set",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = -1,
+    .max = 65535,
+    .step = 1,
+    .def = -1,
+};
+
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_awb_blue_gain = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SET_AWB_BLUE_GAIN,
+    .name = "awb_blue_gain set",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = -1,
+    .max = 65535,
+    .step = 1,
+    .def = -1,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -593,6 +623,10 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_ae_compensation, NULL);
     ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_SENSOR_DIGITAL_GAIN,
                   &isp_v4l2_ctrl_sensor_digital_gain, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_AWB_RED_GAIN,
+                  &isp_v4l2_ctrl_awb_red_gain, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_AWB_BLUE_GAIN,
+                  &isp_v4l2_ctrl_awb_blue_gain, NULL);
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );
     ctrl->video_dev->ctrl_handler = hdl_std_ctrl;

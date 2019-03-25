@@ -795,6 +795,22 @@ static int fw_intf_set_sensor_digital_gain(uint32_t ctrl_val)
     return 0;
 }
 
+static int fw_intf_set_awb_red_gain(uint32_t ctrl_val)
+{
+    uint32_t awb_red_gain = ctrl_val;
+    acamera_command(TSYSTEM, SYSTEM_AWB_RED_GAIN, awb_red_gain, COMMAND_SET, &ctrl_val );
+
+    return 0;
+}
+
+static int fw_intf_set_awb_blue_gain(uint32_t ctrl_val)
+{
+    uint32_t awb_blue_gain = ctrl_val;
+    acamera_command(TSYSTEM, SYSTEM_AWB_BLUE_GAIN, awb_blue_gain, COMMAND_SET, &ctrl_val );
+
+    return 0;
+}
+
 /* ----------------------------------------------------------------
  * Internal handler for control interface functions
  */
@@ -1817,6 +1833,32 @@ int fw_intf_set_customer_sensor_digital_gain(uint32_t ctrl_val)
     }
 
     rtn = fw_intf_set_sensor_digital_gain(ctrl_val);
+
+    return rtn;
+}
+
+int fw_intf_set_customer_awb_red_gain(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    if ( ctrl_val == -1) {
+       return 0;
+    }
+
+    rtn = fw_intf_set_awb_red_gain(ctrl_val);
+
+    return rtn;
+}
+
+int fw_intf_set_customer_awb_blue_gain(uint32_t ctrl_val)
+{
+    int rtn = -1;
+
+    if ( ctrl_val == -1) {
+       return 0;
+    }
+
+    rtn = fw_intf_set_awb_blue_gain(ctrl_val);
 
     return rtn;
 }

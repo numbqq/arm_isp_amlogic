@@ -90,5 +90,7 @@ int fw_intf_set_customer_isp_digital_gain(uint32_t ctrl_val);
 int fw_intf_set_customer_stop_sensor_update(uint32_t ctrl_val);
 int fw_intf_set_ae_compensation( int val );
 int fw_intf_set_customer_sensor_digital_gain(uint32_t ctrl_val);
+int fw_intf_set_customer_awb_red_gain(uint32_t ctrl_val);
+int fw_intf_set_customer_awb_blue_gain(uint32_t ctrl_val);
 
 #endif
