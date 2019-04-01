@@ -1164,20 +1164,17 @@ int am_adap_alloc_mem(void)
 				  (g_adap->adap_buf_size * SZ_1M) >> PAGE_SHIFT, 0);
 		if (cma_pages) {
 			buffer_start = page_to_phys(cma_pages);
-			pr_info("adapt phy addr = %llx\n", buffer_start);
 		} else {
 			pr_err("alloc cma pages failed.\n");
 			return 0;
 		}
 		isp_cma_mem = phys_to_virt(buffer_start);
-		pr_info("isp_cma_mem = %p\n", isp_cma_mem);
 	} else if (para.mode == DOL_MODE) {
 		cma_pages = dma_alloc_from_contiguous(
 				  &(g_adap->p_dev->dev),
 				  (g_adap->adap_buf_size * SZ_1M) >> PAGE_SHIFT, 0);
 		if (cma_pages) {
 			buffer_start = page_to_phys(cma_pages);
-			pr_info("adapt dol phy addr = %llx\n", buffer_start);
 		} else {
 			pr_err("alloc dol cma pages failed.\n");
 			return 0;
@@ -1257,20 +1254,17 @@ int am_adap_init(void)
 			temp_buf = ddr_buf[0];
 			buf = phys_to_virt(ddr_buf[0]);
 			memset(buf, 0x0, (stride * para.img.height));
-			pr_info("ddr_buf 0 = %llx.\n", ddr_buf[0]);
 			for (i = 1; i < DDR_BUF_SIZE; i++) {
 				ddr_buf[i] = temp_buf + (stride * (para.img.height));
 				ddr_buf[i] = (ddr_buf[i] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 				temp_buf = ddr_buf[i];
 				buf = phys_to_virt(ddr_buf[i]);
 				memset(buf, 0x0, (stride * para.img.height));
-				pr_info("ddr_buf %d = %llx.\n", i, ddr_buf[i]);
 			}
 		} else if ((cma_pages) && (para.mode == DOL_MODE)) {
 			dol_buf[0] = buffer_start;
 			dol_buf[0] = (dol_buf[0] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 			temp_buf = dol_buf[0];
-			pr_info("dol_buf 0 = %llx.\n", dol_buf[0]);
 			if (frontend1_flag)
 				buf_cnt = DOL_BUF_SIZE;
 			else
@@ -1279,7 +1273,6 @@ int am_adap_init(void)
 				dol_buf[i] = temp_buf + ((para.img.width) * (para.img.height) * depth)/8;
 				dol_buf[i] = (dol_buf[i] + (PAGE_SIZE - 1)) & (~(PAGE_SIZE - 1));
 				temp_buf = dol_buf[i];
-				pr_info("dol_buf %d = %llx.\n", i, dol_buf[i]);
 			}
 		}
 	}
