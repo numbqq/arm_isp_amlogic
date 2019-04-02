@@ -270,6 +270,8 @@ static int32_t soc_iq_probe( struct platform_device *pdev )
     soc_iq.dev = &pdev->dev;
     rc = v4l2_async_register_subdev( &soc_iq );
 
+    for (i = 0; i < CALIBRATION_TOTAL_SIZE; i++)
+        (&g_luts_arr[0])->calibrations[i] = NULL;
 
     LOG( LOG_ERR, "register v4l2 IQ device. result %d, sd 0x%x sd->dev 0x%x", rc, &soc_iq, soc_iq.dev );
 
