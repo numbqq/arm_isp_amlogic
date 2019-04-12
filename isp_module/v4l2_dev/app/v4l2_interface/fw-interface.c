@@ -1515,6 +1515,30 @@ static int isp_fw_do_set_ae_compensation( int val )
     return 0;
 }
 
+static int isp_fw_do_set_max_integration_time( int val )
+{
+    int result;
+    uint32_t ret_val;
+
+    LOG( LOG_INFO, "_max_integration_time: %d.", val );
+
+    if ( val < 0 )
+        return -EIO;
+
+    if ( !isp_started ) {
+        LOG( LOG_NOTICE, "ISP FW not inited yet" );
+        return -EBUSY;
+    }
+
+    result = acamera_command( TSYSTEM, SYSTEM_MAX_INTEGRATION_TIME, val, COMMAND_SET, &ret_val );
+    if ( result ) {
+        LOG( LOG_ERR, "Failed to set max_integration_time to %u, ret_value: %d.", val, result );
+        return result;
+    }
+    return 0;
+}
+
+
 /* ----------------------------------------------------------------
  * fw_interface config interface
  */
@@ -1863,3 +1887,10 @@ int fw_intf_set_customer_awb_blue_gain(uint32_t ctrl_val)
     return rtn;
 }
 
+int fw_intf_set_customer_max_integration_time(uint32_t ctrl_val)
+{
+    if ( ctrl_val == -1) {
+       return 0;
+    }
+    return isp_fw_do_set_max_integration_time(ctrl_val);
+}

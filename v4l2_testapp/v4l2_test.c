@@ -81,6 +81,8 @@ static uint32_t manual_sensor_digital_gain = 0;
 static uint32_t manual_isp_digital_gain = 0;
 
 static uint32_t stop_sensor_update = 0;
+static uint32_t max_int_time = 0;
+
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
 
 #define LINE_SIZE 128
@@ -356,6 +358,17 @@ static void set_manual_isp_digital_gain(int videofd, uint32_t isp_digital_gain_s
         printf("set_manual_isp_digital_gain failed\n");
     }
 }
+
+static void set_sensor_max_integration_time(int videofd, uint32_t time)
+{
+    struct v4l2_control ctrl;
+    ctrl.id = ISP_V4L2_CID_CUSTOM_SET_MAX_INTEGRATION_TIME;
+    ctrl.value = time;
+    if (-1 == ioctl (videofd, VIDIOC_S_CTRL, &ctrl)) {
+        printf("set_sensor_max_integration_time failed\n");
+    }
+}
+
 
 void save_imgae(char *buff, unsigned int size, int flag, int num)
 {
@@ -872,7 +885,9 @@ void * video_thread(void *arg)
          set_manual_sensor_digital_gain(videofd, manual_sensor_digital_gain);
          set_manual_isp_digital_gain(videofd, manual_isp_digital_gain);
          set_stop_sensor_update(videofd, stop_sensor_update);
+         //set_sensor_max_integration_time(videofd, max_int_time);
      }
+
 
     /**************************************************
      * buffer preparation
@@ -1382,7 +1397,7 @@ int main(int argc, char *argv[])
     int c;
 
     while(optind < argc){
-        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:M:L:A:G:S:K:")) != -1) {
+        if ((c = getopt (argc, argv, "c:p:F:f:D:R:r:d:N:n:w:e:b:v:t:x:g:I:W:H:Y:Z:a:M:L:A:G:S:K:m:")) != -1) {
             switch (c) {
             case 'c':
                 command = atoi(optarg);
@@ -1469,6 +1484,9 @@ int main(int argc, char *argv[])
                 break;
             case 'K':
                 stop_sensor_update = atoi(optarg);
+                break;
+            case 'm':
+                max_int_time = atoi(optarg);
                 break;
             case '?':
                 usage(argv[0]);

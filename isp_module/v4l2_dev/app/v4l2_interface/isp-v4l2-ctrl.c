@@ -225,6 +225,10 @@ static int isp_v4l2_ctrl_s_ctrl_custom( struct v4l2_ctrl *ctrl )
         LOG( LOG_INFO, "set_customer_awb_blue_gain = %d\n", ctrl->val );
         ret = fw_intf_set_customer_awb_blue_gain(ctrl->val);
         break;
+    case ISP_V4L2_CID_CUSTOM_SET_MAX_INTEGRATION_TIME:
+        LOG( LOG_INFO, "set_customer_max_integration_time = %d\n", ctrl->val );
+        ret = fw_intf_set_customer_max_integration_time(ctrl->val);
+        break;
     }
 
     return ret;
@@ -502,6 +506,17 @@ static const struct v4l2_ctrl_config isp_v4l2_ctrl_awb_blue_gain = {
     .def = -1,
 };
 
+static const struct v4l2_ctrl_config isp_v4l2_ctrl_max_integration_time = {
+    .ops = &isp_v4l2_ctrl_ops_custom,
+    .id = ISP_V4L2_CID_CUSTOM_SET_MAX_INTEGRATION_TIME,
+    .name = "max_int_time set",
+    .type = V4L2_CTRL_TYPE_INTEGER,
+    .min = -1,
+    .max = 5564,
+    .step = 1,
+    .def = -1,
+};
+
 static const struct v4l2_ctrl_ops isp_v4l2_ctrl_ops = {
     .s_ctrl = isp_v4l2_ctrl_s_ctrl_standard,
 };
@@ -627,6 +642,9 @@ int isp_v4l2_ctrl_init( isp_v4l2_ctrl_t *ctrl )
                   &isp_v4l2_ctrl_awb_red_gain, NULL);
     ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_AWB_BLUE_GAIN,
                   &isp_v4l2_ctrl_awb_blue_gain, NULL);
+    ADD_CTRL_CST( ISP_V4L2_CID_CUSTOM_SET_MAX_INTEGRATION_TIME,
+                  &isp_v4l2_ctrl_max_integration_time, NULL);
+
     /* Add control handler to v4l2 device */
     v4l2_ctrl_add_handler( hdl_std_ctrl, hdl_cst_ctrl, NULL );
     ctrl->video_dev->ctrl_handler = hdl_std_ctrl;
