@@ -22,7 +22,6 @@
 #include "acamera_firmware_settings.h"
 // created from 2016-10-19T16:42:58.865Z UTClinear.json
 
-
 // CALIBRATION_LIGHT_SRC
 static uint16_t _calibration_light_src[][2] = {
   { 325, 153 }};
