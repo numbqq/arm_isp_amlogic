@@ -22,11 +22,11 @@
 // ------------ 3A & iridix
 static uint8_t _calibration_evtolux_probability_enable[] = {1};
 
-static uint8_t _calibration_awb_avg_coef[] = {30};
+static uint8_t _calibration_awb_avg_coef[] = {5};
 
-static uint8_t _calibration_iridix_avg_coef[] = {30};
+static uint8_t _calibration_iridix_avg_coef[] = {5};
 
-static uint16_t _calibration_ccm_one_gain_threshold[] = {1408};
+static uint16_t _calibration_ccm_one_gain_threshold[] = {2048};
 
 static uint8_t _calibration_iridix_strength_maximum[] = {255};
 
@@ -34,9 +34,9 @@ static uint16_t _calibration_iridix_min_max_str[] = {0};
 
 static uint32_t _calibration_iridix_ev_lim_full_str[] = {2557570};
 
-static uint32_t _calibration_iridix_ev_lim_no_str[] = {3750000, 3574729};
+static uint32_t _calibration_iridix_ev_lim_no_str[] = {5050000, 3574729};
 
-static uint8_t _calibration_ae_correction[] = {128, 128, 128, 128, 128, 108, 98, 88, 78, 78, 78, 55};
+static uint8_t _calibration_ae_correction[] = {128, 128, 128, 128, 128, 128, 128, 128, 128, 115, 115, 115};
 
 static uint32_t _calibration_ae_exposure_correction[] = {6710, 15739, 15778, 23282, 56186, 500325, 632161, 1190074, 1406400, 2382765, 3295034, 5491142}; //500,157778,500325,632161,1406400,6046465 //23282 - Max Lab Exposure
 
@@ -166,10 +166,9 @@ static uint16_t _calibration_saturation_strength[][2] = {
     {0 * 256, 128},
     {1 * 256, 128},
     {2 * 256, 128},
-    {3 * 256, 118},
-    {4 * 256, 105},
-    {5 * 256, 90},
-    {6 * 256 - 1, 90},
+    {3 * 256, 128},
+    {4 * 256, 128},
+    {5 * 256, 128},
     {6 * 256, 128},
     {7 * 256, 128}};
 
@@ -256,8 +255,8 @@ static uint32_t _calibration_status_info[] = {
 static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
     20,      // dark_prc
     95,      // bright_prc
-    2400,     // min_dk: minimum dark enhancement
-    4000,    // max_dk: maximum dark enhancement
+    500,     // min_dk: minimum dark enhancement
+    3000,    // max_dk: maximum dark enhancement
     8,       // pD_cut_min: minimum intensity cut for dark regions in which dk_enh will be applied
     20,      // pD_cut_max: maximum intensity cut for dark regions in which dk_enh will be applied
     30 << 8, // dark contrast min
@@ -272,8 +271,8 @@ static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
 };
 
 static uint32_t _calibration_ae_control[] = {
-    30,  // AE convergance
-    236, // LDR AE target -> this should match the 18% grey of teh output gamma
+    5,  // AE convergance
+    225, // LDR AE target -> this should match the 18% grey of teh output gamma
     0,   // AE tail weight
     0,   // WDR mode only: Max percentage of clipped pixels for long exposure: WDR mode only: 256 = 100% clipped pixels
     0,   // WDR mode only: Time filter for exposure ratio
@@ -307,7 +306,7 @@ static uint32_t _calibration_auto_level_control[] = {
     0,  // auto_black_min
     50, // auto_black_max
     75, // auto_white_prc
-    15, // avg_coeff
+    5, // avg_coeff
     1   // enable_auto_level
 };
 
@@ -340,13 +339,13 @@ static int16_t _AWB_colour_preference[] = {7500, 6000, 4700, 2800};
 
 static uint32_t _calibration_awb_mix_light_parameters[] = {
     1,    // 1 = enable, 0 = disable
-    500,  //lux low boundary for mix light lux range : range = {500: inf}
-    3000, // lux high boundary for mix light range : range = {500: inf}
-    2000, // contrast threshold for mix light: range = {200:2000}
-    330,  //BG threshold {255:400}
-    5,    // BG weight
-    260,  // rgHigh_LUT_max
-    252,  // rgHigh_LUT_min
+    200,  //lux low boundary for mix light lux range : range = {500: inf}
+    2500, // lux high boundary for mix light range : range = {500: inf}
+    40000, // contrast threshold for mix light: range = {200:2000}
+    500,  //BG threshold {255:400}
+    0,    // BG weight
+    300,  // rgHigh_LUT_max
+    256,  // rgHigh_LUT_min
     0     // print debug
 };
 
@@ -383,14 +382,14 @@ static uint16_t _calibration_sharpen_ds1[][2] = {
     {8 * 256, 10}};
 
 static uint16_t _calibration_temper_strength[][2] = {
-    {0 * 256, 120},
-    {1 * 256, 120},
+    {0 * 256, 100},
+    {1 * 256, 100},
     {2 * 256, 120},
     {3 * 256, 120},
-    {4 * 256, 140},
-    {5 * 256, 145},
-    {6 * 256, 195},
-    {7 * 256, 195}};
+    {4 * 256, 135},
+    {5 * 256, 135},
+    {6 * 256, 135},
+    {7 * 256, 135}};
 
 static uint32_t _calibration_af_lms[] = {
     70 << 6,  // Down_FarEnd
