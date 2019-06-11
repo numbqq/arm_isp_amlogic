@@ -91,6 +91,112 @@ uint32_t write_reg(uint32_t val, unsigned long addr)
     return 0;
 }
 
+static void parse_param(char *buf_orig, char **parm){
+    char *ps, *token;
+    unsigned int n = 0;
+    char delim1[3] = " \n";
+    ps = buf_orig;
+    token = strsep(&ps, delim1);
+    while (token != NULL) {
+        if (*token != '\0') {
+            parm[n++] = token;
+        }
+        token = strsep(&ps, delim1);
+    }
+}
+
+static const char *sensor_reg_usage_str = {
+    "Usage:\n"
+    "echo r addr(H) > /sys/devices/platform/sensor/sreg;\n"
+    "echo w addr(H) value(H) > /sys/devices/platform/sensor/sreg;\n"
+    "echo d addr(H) num(D) > /sys/devices/platform/sensor/sreg; dump reg from addr\n"
+};
+
+static ssize_t sreg_read(
+    struct device *dev,
+    struct device_attribute *attr,
+    char *buf)
+{
+    return sprintf(buf, "%s\n", sensor_reg_usage_str);
+}
+
+static ssize_t sreg_write(
+    struct device *dev, struct device_attribute *attr,
+    char const *buf, size_t size)
+{
+    char *buf_orig = NULL;
+    char *parm[8] = {NULL};
+    long val = 0;
+    unsigned int reg_addr, reg_val, i;
+    ssize_t ret = size;
+
+    subdev_camera_ctx *ctx = &s_ctx[0];
+
+    if ( ctx->camera_context == NULL ) {
+        LOG( LOG_ERR, "Failed to process reg write.camera_init must be called before\n");
+        ret = -EINVAL;
+        goto Err;
+    }
+
+    if (!buf)
+        return ret;
+
+    buf_orig = kstrdup(buf, GFP_KERNEL);
+    if (!buf_orig)
+        return ret;
+
+    parse_param(buf_orig, (char **)&parm);
+
+    if (!parm[0]) {
+        ret = -EINVAL;
+        goto Err;
+    }
+
+    if (!strcmp(parm[0], "r")) {
+        if (!parm[1] || (kstrtoul(parm[1], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_addr = val;
+        reg_val = ctx->camera_control.read_sensor_register( ctx->camera_context, reg_addr);
+        pr_info("SENSOR READ[0x%04x]=0x%02x\n", reg_addr, reg_val);
+    } else if (!strcmp(parm[0], "w")) {
+        if (!parm[1] || (kstrtoul(parm[1], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_addr = val;
+        if (!parm[2] || (kstrtoul(parm[2], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_val = val;
+        ctx->camera_control.write_sensor_register( ctx->camera_context, reg_addr, reg_val);
+        pr_info("SENSOR WRITE[0x%04x]=0x%02x\n", reg_addr, reg_val);
+        reg_val = ctx->camera_control.read_sensor_register( ctx->camera_context, reg_addr);
+        pr_info("SENSOR READ[0x%04x]=0x%02x\n", reg_addr, reg_val);
+    } else if (!strcmp(parm[0], "d")) {
+        if (!parm[1] || (kstrtoul(parm[1], 16, &val) < 0)) {
+            ret = -EINVAL;
+            goto Err;
+        }
+        reg_addr = val;
+        if (!parm[2] || (kstrtoul(parm[2], 10, &val) < 0))
+            val = 1;
+
+        for (i = 0; i < val; i++) {
+            reg_val = ctx->camera_control.read_sensor_register( ctx->camera_context, reg_addr);
+            pr_info("SENSOR DUMP[0x%04x]=0x%02x\n", reg_addr, reg_val);
+            reg_addr += 1;
+        }
+    } else
+        pr_info("unsupprt cmd!\n");
+Err:
+    kfree(buf_orig);
+    return ret;
+}
+static DEVICE_ATTR(sreg, S_IRUGO | S_IWUSR, sreg_read, sreg_write);
+
 static int camera_init( struct v4l2_subdev *sd, u32 val )
 {
     int rc = 0;
@@ -418,6 +524,8 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
 
     soc_sensor.dev = &pdev->dev;
     rc = v4l2_async_register_subdev( &soc_sensor );
+
+    device_create_file(dev, &dev_attr_sreg);
 
     LOG( LOG_ERR, "register v4l2 sensor device. result %d, sd 0x%x sd->dev 0x%x", rc, &soc_sensor, soc_sensor.dev );
 
