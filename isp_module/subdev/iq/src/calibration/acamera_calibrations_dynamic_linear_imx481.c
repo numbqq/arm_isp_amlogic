@@ -22,7 +22,7 @@
 // ------------ 3A & iridix
 static uint8_t _calibration_evtolux_probability_enable[] = {1};
 
-static uint8_t _calibration_awb_avg_coef[] = {5};
+static uint8_t _calibration_awb_avg_coef[] = {15};
 
 static uint8_t _calibration_iridix_avg_coef[] = {5};
 
@@ -166,11 +166,11 @@ static uint16_t _calibration_saturation_strength[][2] = {
     {0 * 256, 128},
     {1 * 256, 128},
     {2 * 256, 128},
-    {3 * 256, 128},
-    {4 * 256, 128},
-    {5 * 256, 128},
-    {6 * 256, 128},
-    {7 * 256, 128}};
+    {3 * 256, 110},
+    {4 * 256, 95},
+    {5 * 256, 95},
+    {6 * 256, 95},
+    {7 * 256, 95}};
 
 // ----------- Frame stitching motion
 static uint16_t _calibration_stitching_lm_np[][2] = {
@@ -233,7 +233,7 @@ static uint32_t _calibration_cmos_control[] = {
     0,   // max integration time
     150, // max sensor AG
     0,   // max sensor DG
-    112, // max isp DG
+    30, // max isp DG
     255, // max exposure ratio
     0,   // integration time
     0,   // sensor analog gain. log2 fixed - 5 bits
@@ -255,8 +255,8 @@ static uint32_t _calibration_status_info[] = {
 static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
     20,      // dark_prc
     95,      // bright_prc
-    500,     // min_dk: minimum dark enhancement
-    3000,    // max_dk: maximum dark enhancement
+    450,     // min_dk: minimum dark enhancement
+    450,    // max_dk: maximum dark enhancement
     8,       // pD_cut_min: minimum intensity cut for dark regions in which dk_enh will be applied
     20,      // pD_cut_max: maximum intensity cut for dark regions in which dk_enh will be applied
     30 << 8, // dark contrast min
@@ -307,7 +307,7 @@ static uint32_t _calibration_auto_level_control[] = {
     50, // auto_black_max
     75, // auto_white_prc
     5, // avg_coeff
-    1   // enable_auto_level
+    0   // enable_auto_level
 };
 
 
@@ -382,14 +382,14 @@ static uint16_t _calibration_sharpen_ds1[][2] = {
     {8 * 256, 10}};
 
 static uint16_t _calibration_temper_strength[][2] = {
-    {0 * 256, 100},
-    {1 * 256, 100},
-    {2 * 256, 120},
-    {3 * 256, 120},
-    {4 * 256, 135},
-    {5 * 256, 135},
-    {6 * 256, 135},
-    {7 * 256, 135}};
+    {0 * 256, 70},
+    {1 * 256, 80},
+    {2 * 256, 90},
+    {3 * 256, 90},
+    {4 * 256, 90},
+    {5 * 256, 90},
+    {6 * 256, 90},
+    {7 * 256, 90}};
 
 static uint32_t _calibration_af_lms[] = {
     70 << 6,  // Down_FarEnd
