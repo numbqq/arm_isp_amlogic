@@ -32,7 +32,7 @@ static uint8_t _calibration_iridix_strength_maximum[] = {255};
 
 static uint16_t _calibration_iridix_min_max_str[] = {0};
 
-static uint32_t _calibration_iridix_ev_lim_full_str[] = {1300025};
+static uint32_t _calibration_iridix_ev_lim_full_str[] = {1300000};
 
 static uint32_t _calibration_iridix_ev_lim_no_str[] = {3760476, 3116186};
 
@@ -112,40 +112,40 @@ static uint16_t _calibration_sinter_sad[][2] = {
 
 // ------------ Sharpening and demosaic
 static uint16_t _calibration_sharp_alt_d[][2] = {
-    {0 * 256, 28},
-    {1 * 256, 28},
-    {2 * 256, 26},
-    {3 * 256, 26},
-    {4 * 256, 29},
-    {5 * 256, 15},
+    {0 * 256, 20},
+    {1 * 256, 13},
+    {2 * 256, 15},
+    {3 * 256, 30},
+    {4 * 256, 35},
+    {5 * 256, 35},
     {6 * 256, 5},
     {7 * 256, 0}};
 
 static uint16_t _calibration_sharp_alt_ud[][2] = {
-    {0 * 256, 40},
-    {1 * 256, 25},
-    {2 * 256, 10},
-    {3 * 256, 8},
-    {4 * 256, 8},
-    {5 * 256, 2},
+    {0 * 256, 20},
+    {1 * 256, 13},
+    {2 * 256, 13},
+    {3 * 256, 13},
+    {4 * 256, 15},
+    {5 * 256, 15},
     {6 * 256, 0},
     {7 * 256, 0}};
 
 static uint16_t _calibration_sharp_alt_du[][2] = {
-    {0 * 256, 70},
-    {1 * 256, 70},
-    {2 * 256, 65},
-    {3 * 256, 55},
-    {4 * 256, 29},
-    {5 * 256, 17},
+    {0 * 256, 35},
+    {1 * 256, 25},
+    {2 * 256, 30},
+    {3 * 256, 45},
+    {4 * 256, 45},
+    {5 * 256, 45},
     {6 * 256, 5},
     {7 * 256, 0}};
 
 static uint16_t _calibration_sharpen_fr[][2] = {
-    {0 * 256, 62},
-    {1 * 256, 47},
-    {2 * 256, 40},
-    {3 * 256, 30},
+    {0 * 256, 30},
+    {1 * 256, 30},
+    {2 * 256, 30},
+    {3 * 256, 35},
     {4 * 256, 18},
     {5 * 256, 8},
     {6 * 256, 4},};
@@ -166,12 +166,12 @@ static uint16_t _calibration_saturation_strength[][2] = {
     {0 * 256, 128},
     {1 * 256, 128},
     {2 * 256, 128},
-    {3 * 256, 118},
-    {4 * 256, 105},
-    {5 * 256, 90},
-    {6 * 256 - 1, 90},
-    {6 * 256, 128},
-    {7 * 256, 128}};
+    {3 * 256, 128},
+    {4 * 256, 128},
+    {5 * 256, 110},
+    {6 * 256, 110},
+    {6 * 256, 110},
+    {7 * 256, 110}};
 
 // ----------- Frame stitching motion
 static uint16_t _calibration_stitching_lm_np[][2] = {
@@ -254,7 +254,7 @@ static uint32_t _calibration_status_info[] = {
 };
 
 static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
-    20,      // dark_prc
+    25,      // dark_prc
     95,      // bright_prc
     600,     // min_dk: minimum dark enhancement
     1500,    // max_dk: maximum dark enhancement
@@ -263,35 +263,35 @@ static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
     30 << 8, // dark contrast min
     50 << 8, // dark contrast max
     0,       // min_str: iridix strength in percentage
-    50,      // max_str: iridix strength in percentage: 50 = 1x gain. 100 = 2x gain
-    40,      // dark_prc_gain_target: target in histogram (percentage) for dark_prc after iridix is applied
+    20,      // max_str: iridix strength in percentage: 50 = 1x gain. 100 = 2x gain
+    20,      // dark_prc_gain_target: target in histogram (percentage) for dark_prc after iridix is applied
     30 << 8, // contrast_min: clip factor of strength for LDR scenes.
     40 << 8, // contrast_max: clip factor of strength for HDR scenes.
-    20,      // max iridix gain
+    10,      // max iridix gain
     0        // print debug
 };
 
 static uint32_t _calibration_ae_control[] = {
     15,  // AE convergance
-    165, // LDR AE target -> this should match the 18% grey of teh output gamma
+    180, // LDR AE target -> this should match the 18% grey of teh output gamma
     0,  // AE tail weight
     77,  // WDR mode only: Max percentage of clipped pixels for long exposure: WDR mode only: 256 = 100% clipped pixels
     15,  // WDR mode only: Time filter for exposure ratio
     100, // control for clipping: bright percentage of pixels that should be below hi_target_prc
     99,  // control for clipping: highlights percentage (hi_target_prc): target for tail of histogram
-    1,   // 1:0 enable | disable iridix global gain.
+    0,   // 1:0 enable | disable iridix global gain.
     10,  // AE tolerance
 };
 
 static uint16_t _calibration_ae_control_HDR_target[][2] = {
-    {0 * 256, 139}, // HDR AE target should not be higher than LDR target
-    {1 * 256, 139},
-    {2 * 256, 139},
-    {3 * 256, 187},
-    {4 * 256, 236},
-    {5 * 256, 236},
-    {6 * 256, 236},
-    {7 * 256, 236}};
+    {0 * 256, 240}, // HDR AE target should not be higher than LDR target
+    {1 * 256, 240},
+    {2 * 256, 240},
+    {3 * 256, 240},
+    {4 * 256, 240},
+    {5 * 256, 240},
+    {6 * 256, 240},
+    {7 * 256, 240}};
 
 static uint8_t _calibration_pf_radial_lut[] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
