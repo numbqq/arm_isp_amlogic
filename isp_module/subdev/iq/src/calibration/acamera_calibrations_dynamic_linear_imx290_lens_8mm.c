@@ -36,7 +36,7 @@ static uint32_t _calibration_iridix_ev_lim_full_str[] = {1300000};
 
 static uint32_t _calibration_iridix_ev_lim_no_str[] = {3760476, 3116186};
 
-static uint8_t _calibration_ae_correction[] = {128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128};
+static uint8_t _calibration_ae_correction[] = {128, 128, 128, 140, 140, 128, 128, 128, 90, 90, 90, 90};
 
 static uint32_t _calibration_ae_exposure_correction[] = {6710, 15739, 15778, 23282, 56186, 500325, 632161, 1190074, 1406400, 2382765, 3295034, 5491142}; //500,157778,500325,632161,1406400,6046465 //23282 - Max Lab Exposure
 
@@ -45,25 +45,25 @@ static uint16_t _calibration_sinter_strength[][2] = {
     {0 * 256, 45},
     {1 * 256, 53},
     {2 * 256, 63},
-    {3 * 256, 75},
-    {4 * 256, 75},
-    {5 * 256, 80},
-    {6 * 256, 88},
-    {7 * 256, 92}};
+    {3 * 256, 120},
+    {4 * 256, 130},
+    {5 * 256, 130},
+    {6 * 256, 130},
+    {7 * 256, 130}};
 
 // ------------Noise reduction ----------------------//
 static uint16_t _calibration_sinter_strength_MC_contrast[][2] = {
     {0 * 256, 0}};
 
 static uint16_t _calibration_sinter_strength1[][2] = {
-    {0 * 256, 155},
-    {1 * 256, 155},
+    {0 * 256, 120},
+    {1 * 256, 120},
     {2 * 256, 125},
-    {3 * 256, 115},
-    {4 * 256, 115},
-    {5 * 256, 115},
-    {6 * 256, 85},
-    {7 * 256, 85}};
+    {3 * 256, 145},
+    {4 * 256, 145},
+    {5 * 256, 145},
+    {6 * 256, 145},
+    {7 * 256, 145}};
 
 static uint16_t _calibration_sinter_thresh1[][2] = {
     {0 * 256, 10},
@@ -112,43 +112,43 @@ static uint16_t _calibration_sinter_sad[][2] = {
 
 // ------------ Sharpening and demosaic
 static uint16_t _calibration_sharp_alt_d[][2] = {
-    {0 * 256, 20},
-    {1 * 256, 13},
-    {2 * 256, 15},
+    {0 * 256, 40},
+    {1 * 256, 40},
+    {2 * 256, 30},
     {3 * 256, 30},
     {4 * 256, 35},
     {5 * 256, 35},
-    {6 * 256, 5},
+    {6 * 256, 15},
     {7 * 256, 0}};
 
 static uint16_t _calibration_sharp_alt_ud[][2] = {
-    {0 * 256, 20},
-    {1 * 256, 13},
-    {2 * 256, 13},
-    {3 * 256, 13},
-    {4 * 256, 15},
-    {5 * 256, 15},
-    {6 * 256, 0},
+    {0 * 256, 40},
+    {1 * 256, 40},
+    {2 * 256, 30},
+    {3 * 256, 30},
+    {4 * 256, 20},
+    {5 * 256, 20},
+    {6 * 256, 10},
     {7 * 256, 0}};
 
 static uint16_t _calibration_sharp_alt_du[][2] = {
-    {0 * 256, 35},
-    {1 * 256, 25},
-    {2 * 256, 30},
+    {0 * 256, 50},
+    {1 * 256, 50},
+    {2 * 256, 45},
     {3 * 256, 45},
     {4 * 256, 45},
     {5 * 256, 45},
-    {6 * 256, 5},
+    {6 * 256, 15},
     {7 * 256, 0}};
 
 static uint16_t _calibration_sharpen_fr[][2] = {
-    {0 * 256, 30},
-    {1 * 256, 30},
-    {2 * 256, 30},
+    {0 * 256, 50},
+    {1 * 256, 50},
+    {2 * 256, 40},
     {3 * 256, 35},
-    {4 * 256, 18},
-    {5 * 256, 8},
-    {6 * 256, 4},};
+    {4 * 256, 20},
+    {5 * 256, 20},
+    {6 * 256, 15},};
 
 static uint16_t _calibration_demosaic_np_offset[][2] = {
     {0 * 256, 1},
@@ -232,7 +232,7 @@ static uint32_t _calibration_cmos_control[] = {
     0,   // manual isp digital gain
     0,   // manual max integration time
     0,   // max integration time
-    150, // max sensor AG
+    10, // max sensor AG
     0,   // max sensor DG
     112, // max isp DG
     255, // max exposure ratio
@@ -273,7 +273,7 @@ static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
 
 static uint32_t _calibration_ae_control[] = {
     15,  // AE convergance
-    180, // LDR AE target -> this should match the 18% grey of teh output gamma
+    250, // LDR AE target -> this should match the 18% grey of teh output gamma
     0,  // AE tail weight
     77,  // WDR mode only: Max percentage of clipped pixels for long exposure: WDR mode only: 256 = 100% clipped pixels
     15,  // WDR mode only: Time filter for exposure ratio
@@ -284,8 +284,8 @@ static uint32_t _calibration_ae_control[] = {
 };
 
 static uint16_t _calibration_ae_control_HDR_target[][2] = {
-    {0 * 256, 240}, // HDR AE target should not be higher than LDR target
-    {1 * 256, 240},
+    {0 * 256, 185}, // HDR AE target should not be higher than LDR target
+    {1 * 256, 236},
     {2 * 256, 240},
     {3 * 256, 240},
     {4 * 256, 240},
