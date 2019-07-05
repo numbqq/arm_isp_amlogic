@@ -277,7 +277,7 @@ static uint32_t _calibration_status_info[] = {
 static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
     25,      // dark_prc
     95,      // bright_prc
-    1700,     // min_dk: minimum dark enhancement
+    1500,     // min_dk: minimum dark enhancement
     2000,    // max_dk: maximum dark enhancement
     4,       // pD_cut_min: minimum intensity cut for dark regions in which dk_enh will be applied
     12,      // pD_cut_max: maximum intensity cut for dark regions in which dk_enh will be applied

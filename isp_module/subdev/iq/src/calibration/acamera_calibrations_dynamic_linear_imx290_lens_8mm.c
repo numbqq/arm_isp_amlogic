@@ -56,9 +56,9 @@ static uint16_t _calibration_sinter_strength_MC_contrast[][2] = {
     {0 * 256, 0}};
 
 static uint16_t _calibration_sinter_strength1[][2] = {
-    {0 * 256, 60},
-    {1 * 256, 70},
-    {2 * 256, 80},
+    {0 * 256, 70},
+    {1 * 256, 80},
+    {2 * 256, 90},
     {3 * 256, 90},
     {4 * 256, 100},
     {5 * 256, 100},
@@ -256,7 +256,7 @@ static uint32_t _calibration_status_info[] = {
 static uint32_t _calibration_iridix8_strength_dk_enh_control[] = {
     25,      // dark_prc
     95,      // bright_prc
-    600,     // min_dk: minimum dark enhancement
+    800,     // min_dk: minimum dark enhancement
     1500,    // max_dk: maximum dark enhancement
     4,       // pD_cut_min: minimum intensity cut for dark regions in which dk_enh will be applied
     12,      // pD_cut_max: maximum intensity cut for dark regions in which dk_enh will be applied
@@ -284,7 +284,7 @@ static uint32_t _calibration_ae_control[] = {
 };
 
 static uint16_t _calibration_ae_control_HDR_target[][2] = {
-    {0 * 256, 185}, // HDR AE target should not be higher than LDR target
+    {0 * 256, 236}, // HDR AE target should not be higher than LDR target
     {1 * 256, 236},
     {2 * 256, 240},
     {3 * 256, 240},
