@@ -123,7 +123,7 @@ unsigned char *displaybuf_ds2;
 unsigned char *displaybuf_meta;
 int from_md5 = 0;
 int to_md5 = 0;
-int slt_control = 3;
+int slt_control = 10;
 /**********
  * thread parameters
  */
