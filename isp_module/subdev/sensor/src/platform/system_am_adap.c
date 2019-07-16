@@ -771,7 +771,7 @@ int am_adap_frontend_init(void)
 		if (para.path == PATH0)
 			mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f001f);
 	} else if (para.mode == DOL_MODE) {
-		mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f10a1);
+		mipi_adap_reg_wr(CSI2_GEN_CTRL0, FRONTEND_IO, 0x001f10a3);
 
 		if (frontend1_flag) {
 				mipi_adap_reg_wr(CSI2_GEN_CTRL0 + FTE1_OFFSET, FRONTEND_IO, 0x001f10a1);

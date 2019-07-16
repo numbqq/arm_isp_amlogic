@@ -49,6 +49,7 @@
 #define AGAIN_PRECISION 7
 #define NEED_CONFIG_BSP 1   //config bsp by sensor driver owner
 
+#define FS_LIN_1080P 1
 static int sen_mode = 0;
 static void start_streaming( void *ctx );
 static void stop_streaming( void *ctx );
@@ -453,7 +454,6 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
         } else {
 
         }
-        p_ctx->s_fps = 50;
         break;
     default:
         return;
@@ -471,6 +471,9 @@ static void sensor_set_mode( void *ctx, uint8_t mode )
     } else if ((param->modes_table[mode].exposures == 2) && (param->modes_table[mode].fps == 60 * 256)) {
         p_ctx->s_fps = 60;
         p_ctx->vmax = (((uint32_t)acamera_sbus_read_u8(p_sbus,0x380e)<<8)|acamera_sbus_read_u8(p_sbus,0x380f)) - 4;
+        p_ctx->max_S = 100;
+        p_ctx->rhs1 = 100;
+        p_ctx->max_L = p_ctx->vmax - 2;
     } else {
         p_ctx->vmax = (((uint32_t)acamera_sbus_read_u8(p_sbus,0x380e)<<8)|acamera_sbus_read_u8(p_sbus,0x380f)) - 8;
     }
