@@ -534,6 +534,7 @@ static int32_t soc_sensor_probe( struct platform_device *pdev )
 
 static int soc_sensor_remove( struct platform_device *pdev )
 {
+    device_remove_file(&pdev->dev, &dev_attr_sreg);
     v4l2_async_unregister_subdev( &soc_sensor );
 
     if (sensor_bp != NULL) {
