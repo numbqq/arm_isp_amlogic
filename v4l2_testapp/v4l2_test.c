@@ -51,6 +51,14 @@ static int sensor_bits = 10;
 
 static char *str_on_off[2] = { "ON", "OFF" };
 
+const char *xcmd="echo 1080p60hz > /sys/class/display/mode;\
+				  fbset -fb /dev/fb0 -g 1920 1080 1920 2160 32;\
+				  echo 1 > /sys/class/graphics/fb0/freescale_mode;\
+				  echo 0 0 1919 1079 >  /sys/class/graphics/fb0/window_axis;\
+				  echo 0 0 1919 1079 > /sys/class/graphics/fb0/free_scale_axis;\
+				  echo 0x10001 > /sys/class/graphics/fb0/free_scale;\
+				  echo 0 > /sys/class/graphics/fb0/blank;";
+
 #if DUMP_RAW
 static int dump_fd = -1;
 #endif
@@ -1503,7 +1511,10 @@ int main(int argc, char *argv[])
     /**************************************************
      * Frame buffer initialize
      *************************************************/
-    struct fb_var_screeninfo vinfo;
+
+	system(xcmd);
+
+	struct fb_var_screeninfo vinfo;
     struct fb_fix_screeninfo finfo;
     long int screensize = 0;
     char *fbp = 0;
@@ -1529,9 +1540,36 @@ int main(int argc, char *argv[])
     }
 
     MSG("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
+#if 1
+	vinfo.red.offset = 0;
+	vinfo.red.length = 8;
+	vinfo.red.msb_right = 0;
+
+	vinfo.green.offset = 8;
+	vinfo.green.length = 8;
+	vinfo.green.msb_right = 0;
+
+	vinfo.blue.offset = 16;
+	vinfo.blue.length = 8;
+	vinfo.blue.msb_right = 0;
+
+	vinfo.transp.offset = 0;
+	vinfo.transp.length = 0;
+	vinfo.transp.msb_right = 0;
+	vinfo.nonstd = 0;
+	vinfo.bits_per_pixel = 24;
+#else
+	vinfo.red.offset = 0;
+	vinfo.green.offset = 8;
+	vinfo.blue.offset = 16;
+#endif
+	if (ioctl(fb_fd, FBIOPUT_VSCREENINFO, &vinfo) == -1) {
+		    printf("Error reading variable information\n");
+	}
+
 
     /* Figure out the size of the screen in bytes */
-    screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel * fb_buffer_cnt / 8; // 3 buffers
+    screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel * fb_buffer_cnt / 4; // 3 buffers
 
     /* Map the device to memory */
     fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE,
