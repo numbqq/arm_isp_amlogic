@@ -1,3 +1,5 @@
+export PATH=/home/nick/code/fenix/build/toolchains/gcc-linaro-aarch64-linux-gnu/bin/:$PATH 
+
 if [ "${1}" = "" ]; then
 	echo "None KDIR. Set NULL as defalut"
 	KERNEL_DIR=$(cd $(dirname $0); pwd)
