@@ -1,5 +1,8 @@
-CC=/opt/gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux/bin/aarch64-linux-gnu-gcc
-CROSS_COMPILE=/opt/gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux/bin/aarch64-linux-gnu-
+export PATH=/home/nick/code/fenix/build/toolchains/gcc-linaro-aarch64-linux-gnu/bin/:$PATH
+
+CC=aarch64-linux-gnu-gcc
+CROSS_COMPILE=aarch64-linux-gnu-
+
 
 CFLAGS=-I. -g -fPIE -Wall -pthread
 ODIR=obj
