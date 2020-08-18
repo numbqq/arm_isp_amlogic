@@ -47,7 +47,25 @@ int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fi
         */
         w = width;
         h = height;
+		memcpy(dst, src, w * h * 3);
+
+		vinfo.yoffset = 1080 * fb_index;
         break;
+	case AFD_RENDER_MODE_LEFT_TOP_ROTATE_90:
+		w = width;
+		h = height;
+		for(j = 0; j < h; j++) {
+			pos_src = j * (w * 3);
+
+			for (k = 0; k < w; k++) {
+				pos_dst = (k * finfo.line_length);
+				*(dst + pos_dst + 4 * j) = *(src + pos_src + 3 * k);
+				*(dst + pos_dst + 4 * j + 1) = *(src + pos_src + 3 * k + 1);
+				*(dst + pos_dst + 4 * j + 2) = *(src + pos_src + 3 * k + 2);
+				*(dst + pos_dst + 4 * j + 3) = 0xff;
+			}
+		}
+		break;
 
     default:
         perror("Error, invalid mode value");
@@ -55,54 +73,11 @@ int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fi
         break;
     }
 
-    /*
-    if (src.fmt == ISP_V4L2_PIX_FMT_ARGB2101010) {
-        // translate YUV to RGB line by line
-        uint64_t *src_u64;
-        uint64_t *dst_u64;
-        //int32_t offset = 0;
-        uint64_t value = 0;
-
-        for (j = 0; j < h; j++) {
-            pos_src = (src_y + j) * (src.width * bit_depth) + (src_x * bit_depth);
-            pos_dst = ((dst_y + j + vinfo.yoffset) * finfo.line_length)
-                + ((dst_x + vinfo.xoffset) * bit_depth);
-
-            src_u64 = (uint64_t *)(src.ptr + pos_src);
-            dst_u64 = (uint64_t *)(dst + pos_dst);
-
-            for (i = 0; i < (w/2); i++) {
-                value = src_u64[i];
-                dst_u64[i] =  ((value>>6) & 0x00FF000000FF0000)     // Red
-                    | ((value>>4) & 0x0000FF000000FF00)     // Green
-                    | ((value>>2) & 0x000000FF000000FF);    // Blue
-            }
-        }
-    } else
-    */
-    {
-#if 0
-        for(j = 0; j < h; j++) {
-            pos_src = (src_y + j) * (w * 3);
-            pos_dst = ((dst_y + j + vinfo.yoffset) * finfo.line_length)
-                + ((dst_x + vinfo.xoffset) * bit_depth);
-            for (k = 0; k < w; k++) {
-                *(dst + pos_dst + 4 * k) = *(src + pos_src + 3 * k + 1);
-                *(dst + pos_dst + 4 * k + 1) = *(src + pos_src + 3 * k);
-                *(dst + pos_dst + 4 * k + 2) = *(src + pos_src + 3 * k + 2);
-                *(dst + pos_dst + 4 * k + 3) = 0xff;
-            }
-        }
-#else
-        memcpy(dst, src, w * h * 3);
-#endif
-
-        vinfo.activate = FB_ACTIVATE_NOW;
-        if (fb_index >= 3)
-            fb_index = 0;
-        vinfo.yoffset = 1080 * fb_index;
-        vinfo.vmode &= ~FB_VMODE_YWRAP;
-        ioctl(fb_fd, FBIOPAN_DISPLAY, &vinfo);
-    }
-    return 0;
+	vinfo.activate = FB_ACTIVATE_NOW;
+	if (fb_index >= 3)
+		fb_index = 0;
+	vinfo.vmode &= ~FB_VMODE_YWRAP;
+	ioctl(fb_fd, FBIOPAN_DISPLAY, &vinfo);
+    
+	return 0;
 }

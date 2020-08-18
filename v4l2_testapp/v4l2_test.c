@@ -59,6 +59,14 @@ const char *xcmd="echo 1080p60hz > /sys/class/display/mode;\
 				  echo 0x10001 > /sys/class/graphics/fb0/free_scale;\
 				  echo 0 > /sys/class/graphics/fb0/blank;";
 
+const char *xcmd1="echo null > /sys/class/display/mode;\
+					echo panel > /sys/class/display/mode;\
+					fbset -fb /dev/fb0 -g 1088 1920 1088 3840 32;\
+					echo 0 0 1087 1919 > /sys/class/graphics/fb0/free_scale_axis;\
+					echo 0 0 1087 1919 > /sys/class/graphics/fb0/window_axis;\
+					echo 0 > /sys/class/graphics/fb0/free_scale;\
+					echo 1 > /sys/class/graphics/fb0/freescale_mode";
+
 #if DUMP_RAW
 static int dump_fd = -1;
 #endif
@@ -1148,7 +1156,8 @@ void * video_thread(void *arg)
         /***** select save file or display through different stream_type *****/
         if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
             int fb_offset = display_count % fb_buffer_cnt;
-            renderImage(tparm->fbp + (src.width * src.height * 3 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
+        //    renderImage(tparm->fbp + (src.width * src.height * 4 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
+			renderImage(tparm->fbp + (src.width * src.height * 4 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP_ROTATE_90, fb_fd, fb_offset);
             //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage * 2, stream_type, tparm->capture_count);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
         //do nothing
@@ -1512,7 +1521,7 @@ int main(int argc, char *argv[])
      * Frame buffer initialize
      *************************************************/
 
-	system(xcmd);
+	system(xcmd1);
 
 	struct fb_var_screeninfo vinfo;
     struct fb_fix_screeninfo finfo;
@@ -1540,7 +1549,7 @@ int main(int argc, char *argv[])
     }
 
     MSG("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
-#if 1
+#if 0
 	vinfo.red.offset = 0;
 	vinfo.red.length = 8;
 	vinfo.red.msb_right = 0;

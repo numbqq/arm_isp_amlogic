@@ -19,6 +19,7 @@
 typedef enum render_mode {
     AFD_RENDER_MODE_CENTER,
     AFD_RENDER_MODE_LEFT_TOP,
+	AFD_RENDER_MODE_LEFT_TOP_ROTATE_90,
     AFD_RENDER_MODE_MAX
 } render_mode_t;
 
