@@ -43,6 +43,12 @@
 #include "logs.h"
 #include "gdc_api.h"
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <malloc.h>
+#include <ge2d_port.h>
+#include <aml_ge2d.h>
+
 #define STATIC_STREAM_COUNT (ARM_V4L2_TEST_STREAM_MAX - ARM_V4L2_TEST_HAS_RAW)
 #define NB_BUFFER           6
 #define DUMP_RAW            0
@@ -52,12 +58,13 @@ static int sensor_bits = 10;
 static char *str_on_off[2] = { "ON", "OFF" };
 
 const char *xcmd="echo 1080p60hz > /sys/class/display/mode;\
-				  fbset -fb /dev/fb0 -g 1920 1080 1920 2160 32;\
-				  echo 1 > /sys/class/graphics/fb0/freescale_mode;\
-				  echo 0 0 1919 1079 >  /sys/class/graphics/fb0/window_axis;\
-				  echo 0 0 1919 1079 > /sys/class/graphics/fb0/free_scale_axis;\
-				  echo 0x10001 > /sys/class/graphics/fb0/free_scale;\
-				  echo 0 > /sys/class/graphics/fb0/blank;";
+				fbset -fb /dev/fb0 -g 1920 1080 1920 2160 32;\
+				echo 1 > /sys/class/graphics/fb0/freescale_mode;\
+				echo 0 0 1919 1079 >  /sys/class/graphics/fb0/window_axis;\
+				echo 0 0 1919 1079 > /sys/class/graphics/fb0/free_scale_axis;\
+				echo 0x10001 > /sys/class/graphics/fb0/free_scale;\
+				echo 0 > /sys/class/graphics/fb0/blank;";
+
 
 #if DUMP_RAW
 static int dump_fd = -1;
@@ -90,6 +97,8 @@ static uint32_t manual_isp_digital_gain = 0;
 
 static uint32_t stop_sensor_update = 0;
 static uint32_t max_int_time = 0;
+
+static aml_ge2d_t amlge2d;
 
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
 
@@ -378,7 +387,7 @@ static void set_sensor_max_integration_time(int videofd, uint32_t time)
 }
 
 
-void save_imgae(char *buff, unsigned int size, int flag, int num)
+void save_image(char *buff, unsigned int size, int flag, int num)
 {
     char name[60] = {'\0'};
     int fd = -1;
@@ -391,7 +400,7 @@ void save_imgae(char *buff, unsigned int size, int flag, int num)
     if (num % 20 != 0)
         return;
 
-    sprintf(name, "/media/ca_%d_dump-%d.raw", flag, num);
+    sprintf(name, "ca_%d_dump-%d.raw", flag, num);
 
     fd = open(name, O_RDWR | O_CREAT, 0666);
     if (fd < 0) {
@@ -986,6 +995,8 @@ void * video_thread(void *arg)
     }
 
 
+	init_ge2d(v4l2_fmt.fmt.pix.width, v4l2_fmt.fmt.pix.height, v4l2_fmt.fmt.pix.pixelformat);
+
     /**************************************************
      * V4L2 stream on, get buffers
      *************************************************/
@@ -1007,7 +1018,12 @@ void * video_thread(void *arg)
     const int POLL_TIMEOUT = 2000;
     struct pollfd pfds[1];
     int pollret;
+    struct v4l2_plane planes[3];
 
+
+    pfds[0].fd = videofd;
+    pfds[0].events = POLLIN;
+    pfds[0].revents = 0;
     /* dequeue and display */
     do {
         struct v4l2_buffer v4l2_buf;
@@ -1037,9 +1053,6 @@ void * video_thread(void *arg)
         /* wait (poll) for a frame event */
         //printf ("[T#%d] Start polling (exit flag = %d, capture count = %d)\n",
         //    stream_type, v4l2_test_thread_exit, tparm->capture_count);
-        pfds[0].fd = videofd;
-        pfds[0].events = POLLIN;
-        pfds[0].revents = 0;
         pollret = poll(pfds, 1, POLL_TIMEOUT);
         if (pollret == 0) {
             INFO ("[T#%d] %d ms poll timeout.\n", stream_type, POLL_TIMEOUT);
@@ -1061,14 +1074,12 @@ void * video_thread(void *arg)
         v4l2_buf.memory = V4L2_MEMORY_MMAP;
         if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE){
             //v4l2_buf.m.planes=buf_planes;
-            v4l2_buf.m.planes=malloc(v4l2_fmt.fmt.pix_mp.num_planes*sizeof(struct v4l2_plane));
+            v4l2_buf.m.planes=&planes;
             v4l2_buf.length = v4l2_fmt.fmt.pix_mp.num_planes;
         }
         rc = ioctl (videofd, VIDIOC_DQBUF, &v4l2_buf);
         if (rc < 0) {
             printf ("Error: dequeue buffer.\n");
-            if(v4l2_buf.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
-                free(v4l2_buf.m.planes);
             break;
 
         }
@@ -1128,7 +1139,7 @@ void * video_thread(void *arg)
                                 gdc_ctx.gs.uv_base_fd = v4l2_dma_fd[idx * 2 + 1];
 
                                 gdc_handle(&gdc_ctx);
-                                save_imgae(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type, tparm->capture_count);
+                                save_image(gdc_ctx.o_buff, gdc_ctx.o_len, stream_type, tparm->capture_count);
                         }
                 } else {
                         memcpy(displaybuf, v4l2_mem[idx * 2], v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage);
@@ -1145,17 +1156,28 @@ void * video_thread(void *arg)
             break;
         }
 
+        int dump_size;
+        if (v4l2_buf.type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
+            dump_size = v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage * 2;
+        else
+            dump_size = v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage + v4l2_fmt.fmt.pix_mp.plane_fmt[1].sizeimage;
+
         /***** select save file or display through different stream_type *****/
         if (stream_type == ARM_V4L2_TEST_STREAM_FR) {
             int fb_offset = display_count % fb_buffer_cnt;
-            renderImage(tparm->fbp + (src.width * src.height * 3 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
-            //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage * 2, stream_type, tparm->capture_count);
+//            if (v4l2_buf.type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) {
+//                renderImage(tparm->fbp + (src.width * src.height * 3 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
+//			} else {
+				renderImageGe2d(&amlge2d, displaybuf, src.width, src.height, src.fmt);
+//			}
+            //save_image(displaybuf, dump_size, stream_type, tparm->capture_count);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
-        //do nothing
+            //do nothing
         } else if (stream_type == ARM_V4L2_TEST_STREAM_DS1) {
-         //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage * 2, stream_type, tparm->capture_count);
+            //save_image(displaybuf, dump_size, stream_type, tparm->capture_count);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_DS2) {
-        //save_imgae(displaybuf, v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage, stream_type, tparm->capture_count);
+            dump_size = v4l2_fmt.fmt.pix_mp.plane_fmt[0].sizeimage;
+            //save_image(displaybuf, dump_size, stream_type, tparm->capture_count);
         }
 
         display_count++;
@@ -1180,6 +1202,7 @@ void * video_thread(void *arg)
      *************************************************/
     /* release all buffers from capture_module */
     free(displaybuf);
+	destroy_ge2d();
     release_capture_module_stream(&g_cap_mod, stream_type);
     /* stream off */
     rc = ioctl (videofd, VIDIOC_STREAMOFF, &type);
@@ -1336,6 +1359,108 @@ void parse_fmt_res(uint8_t fmt, int res, uint32_t fr_wdr_mode, uint32_t fr_expos
 
     ERR("pixel fmt 0x%x, width %d, height %d, wdr_mode %d, exposure %d",
         pixel_format, width, height, wdr_mode, exposure);
+}
+
+int init_ge2d(int width, int height, uint32_t pixelformat)
+{
+	int ret = -1;
+	int i;
+
+	memset(&amlge2d, 0, sizeof(aml_ge2d_t));
+	memset(&(amlge2d.ge2dinfo.src_info[0]), 0, sizeof(buffer_info_t));
+	memset(&(amlge2d.ge2dinfo.src_info[1]), 0, sizeof(buffer_info_t));
+	memset(&(amlge2d.ge2dinfo.dst_info), 0, sizeof(buffer_info_t));
+
+	amlge2d.ge2dinfo.src_info[0].canvas_w = width;
+	amlge2d.ge2dinfo.src_info[0].canvas_h = height;
+
+	if (V4L2_PIX_FMT_NV12 == pixelformat) {
+		amlge2d.ge2dinfo.src_info[0].format = PIXEL_FORMAT_YCbCr_420_SP_NV12;
+		amlge2d.ge2dinfo.src_info[0].plane_number = 2;
+	} else {
+		amlge2d.ge2dinfo.src_info[0].format = PIXEL_FORMAT_RGB_888;
+		amlge2d.ge2dinfo.src_info[0].plane_number = 1;
+	}
+
+//	amlge2d.ge2dinfo.src_info[1].canvas_w = 320;
+//	amlge2d.ge2dinfo.src_info[1].canvas_h = 480;
+//	amlge2d.ge2dinfo.src_info[1].format = PIXEL_FORMAT_RGBA_8888;
+//	amlge2d.ge2dinfo.src_info[1].plane_number = 1;
+
+	amlge2d.ge2dinfo.dst_info.canvas_w = width;
+	amlge2d.ge2dinfo.dst_info.canvas_h = height;
+	amlge2d.ge2dinfo.dst_info.format = PIXEL_FORMAT_RGB_888;
+	amlge2d.ge2dinfo.dst_info.plane_number = 1;
+	amlge2d.ge2dinfo.dst_info.rotation = GE2D_ROTATION_0;
+	amlge2d.ge2dinfo.offset = 0;
+	amlge2d.ge2dinfo.ge2d_op = AML_GE2D_STRETCHBLIT;//AML_GE2D_BLIT;//AML_GE2D_STRETCHBLIT;
+	amlge2d.ge2dinfo.blend_mode = BLEND_MODE_PREMULTIPLIED;
+
+	amlge2d.ge2dinfo.src_info[0].memtype = GE2D_CANVAS_ALLOC;
+	amlge2d.ge2dinfo.src_info[1].memtype = GE2D_CANVAS_TYPE_INVALID;
+	amlge2d.ge2dinfo.dst_info.memtype = GE2D_CANVAS_OSD0;
+
+	amlge2d.ge2dinfo.src_info[0].mem_alloc_type = AML_GE2D_MEM_ION;//AML_GE2D_MEM_DMABUF
+	amlge2d.ge2dinfo.src_info[1].mem_alloc_type = AML_GE2D_MEM_ION;
+	amlge2d.ge2dinfo.dst_info.mem_alloc_type = AML_GE2D_MEM_ION;
+
+	ret = aml_ge2d_init(&amlge2d);
+	if (ret < 0) {
+		printf("aml_ge2d_init failed!\n");
+		return -1;
+	}
+
+	ret = aml_ge2d_mem_alloc(&amlge2d);
+	if (ret < 0) {
+		printf("aml_ge2d_mem_alloc failed!\n");
+		return -1;
+	}
+
+	for (i=0; i<amlge2d.ge2dinfo.src_info[0].plane_number; i++) {
+		if (amlge2d.src_size[i] == 0) {
+			E_GE2D("src_size[i] = %d\n",amlge2d.src_size[i]);
+			return -1;
+		}
+		amlge2d.src_data[i] = (char *)malloc(amlge2d.src_size[i]);
+		if (!amlge2d.src_data[i]) {
+			E_GE2D("malloc for src_data failed\n");
+			return ge2d_fail;
+		}
+	}
+
+	return 0;
+}
+
+int destroy_ge2d(void)
+{
+	int i;
+
+	if (amlge2d.ge2dinfo.dst_info.mem_alloc_type == AML_GE2D_MEM_ION)
+		aml_ge2d_invalid_cache(&amlge2d.ge2dinfo);
+
+	for (i = 0; i < amlge2d.ge2dinfo.src_info[0].plane_number; i++) {
+		if (amlge2d.src_data[i]) {
+			free(amlge2d.src_data[i]);
+			amlge2d.src_data[i] = NULL;
+		}
+	}
+
+	for (i = 0; i < amlge2d.ge2dinfo.src_info[1].plane_number; i++) {
+		if (amlge2d.src2_data[i]) {
+			free(amlge2d.src2_data[i]);
+			amlge2d.src2_data[i] = NULL;
+		}
+	}
+
+	for (i = 0; i < amlge2d.ge2dinfo.dst_info.plane_number; i++) {
+		if (amlge2d.dst_data[i]) {
+			free(amlge2d.dst_data[i]);
+			amlge2d.dst_data[i] = NULL;
+		}
+	}
+
+	aml_ge2d_mem_free(&amlge2d);
+	aml_ge2d_exit(&amlge2d);
 }
 
 int main(int argc, char *argv[])
@@ -1540,6 +1665,7 @@ int main(int argc, char *argv[])
     }
 
     MSG("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
+
 #if 1
 	vinfo.red.offset = 0;
 	vinfo.red.length = 8;
@@ -1564,12 +1690,11 @@ int main(int argc, char *argv[])
 	vinfo.blue.offset = 16;
 #endif
 	if (ioctl(fb_fd, FBIOPUT_VSCREENINFO, &vinfo) == -1) {
-		    printf("Error reading variable information\n");
+		printf("Error reading variable information\n");
 	}
 
-
     /* Figure out the size of the screen in bytes */
-    screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel * fb_buffer_cnt / 4; // 3 buffers
+    screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel * fb_buffer_cnt / 8; // 3 buffers
 
     /* Map the device to memory */
     fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE,

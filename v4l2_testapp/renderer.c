@@ -22,6 +22,12 @@
 #include "common.h"
 #include "renderer.h"
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <malloc.h>
+#include <ge2d_port.h>
+#include <aml_ge2d.h>
+
 int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fix_screeninfo finfo,
     unsigned char *src, int width, int height, render_mode_t mode, int fb_fd, int fb_index)
 {
@@ -105,4 +111,34 @@ int renderImage(unsigned char *dst, struct fb_var_screeninfo vinfo, struct fb_fi
         ioctl(fb_fd, FBIOPAN_DISPLAY, &vinfo);
     }
     return 0;
+}
+
+int renderImageGe2d(aml_ge2d_t *amlge2d, unsigned char *src, int width, int height, uint32_t pixel_format)
+{
+	int ret = -1;
+	int i;
+
+	for (i=0; i<amlge2d->ge2dinfo.src_info[0].plane_number; i++) {
+		memcpy(amlge2d->ge2dinfo.src_info[0].vaddr[i], src + i * width * height, amlge2d->src_size[i]);
+	}
+
+	amlge2d->ge2dinfo.src_info[0].rect.x = 0;
+	amlge2d->ge2dinfo.src_info[0].rect.y = 0;
+	amlge2d->ge2dinfo.src_info[0].rect.w = width;
+	amlge2d->ge2dinfo.src_info[0].rect.h = height;
+	amlge2d->ge2dinfo.dst_info.rect.x = 0;
+	amlge2d->ge2dinfo.dst_info.rect.y = 0;
+	amlge2d->ge2dinfo.dst_info.rect.w = width;
+	amlge2d->ge2dinfo.dst_info.rect.h = height;
+	amlge2d->ge2dinfo.dst_info.rotation = GE2D_ROTATION_0;
+	amlge2d->ge2dinfo.src_info[0].layer_mode = 0;
+	amlge2d->ge2dinfo.src_info[0].plane_alpha = 0xff;
+
+	ret = aml_ge2d_process(&amlge2d->ge2dinfo);
+	if (ret < 0) {
+		printf("aml_ge2d_process failed!\n");
+		return -1;
+	}
+
+	return 0;
 }
