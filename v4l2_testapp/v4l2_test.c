@@ -98,6 +98,7 @@ static uint32_t manual_isp_digital_gain = 0;
 static uint32_t stop_sensor_update = 0;
 static uint32_t max_int_time = 0;
 
+static uint8_t ge2d_buffer_count = 3;
 static aml_ge2d_t amlge2d;
 
 #define GDC_CFG_FILE_NAME "nv12_1920_1080_cfg.bin"
@@ -1168,7 +1169,8 @@ void * video_thread(void *arg)
 //            if (v4l2_buf.type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) {
 //                renderImage(tparm->fbp + (src.width * src.height * 3 * fb_offset), tparm->vinfo, tparm->finfo, displaybuf, src.width, src.height, AFD_RENDER_MODE_LEFT_TOP, fb_fd, fb_offset);
 //			} else {
-				renderImageGe2d(&amlge2d, displaybuf, src.width, src.height, src.fmt);
+			int index = display_count % ge2d_buffer_count;
+				renderImageGe2d(&amlge2d, displaybuf, src.width, src.height, tparm->vinfo, src.fmt, fb_fd, index);
 //			}
             //save_image(displaybuf, dump_size, stream_type, tparm->capture_count);
         } else if (stream_type == ARM_V4L2_TEST_STREAM_META) {
